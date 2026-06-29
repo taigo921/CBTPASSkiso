@@ -354,7 +354,8 @@
 <script>
 const DATA_FILES = [
   "data/1-60.json",
-  "data/61-90.json"
+  "data/61-90.json",
+  "data/91-120.json"
 ];
 
 let DEFAULT_QUESTIONS = [];
@@ -369,7 +370,7 @@ async function loadDefaultQuestions() {
     );
     DEFAULT_QUESTIONS = results.flat();
   } catch(e) {
-    console.warn('data/1-60.json の読み込み失敗（手動JSONで代用可）:', e);
+    console.warn('data/*.json の読み込み失敗（手動JSONで代用可）:', e);
     DEFAULT_QUESTIONS = [];
   }
 }
