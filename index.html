@@ -413,7 +413,6 @@ function safeRemove(k){
 }
 
 function load(){
-  const q=safeGet(STORE_Q); if(Array.isArray(q)&&q.length) window._imported=q;
   const s=safeGet(STORE_S); if(s) stats=Object.assign({perQ:{},answered:0,correct:0},s);
   const st=safeGet(STORE_SET); if(st) settings=Object.assign(settings,st);
 }
@@ -423,7 +422,6 @@ const saveSession=()=>{ if(session&&!session.single) safeSet(STORE_SES,session);
 const clearSession=()=>{ safeRemove(STORE_SES); };
 
 function resolveQuestions(){
-  if(window._imported&&window._imported.length) return window._imported;
   return DEFAULT_QUESTIONS;
 }
 function rec(uid){ return stats.perQ[uid]||(stats.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false}); }
