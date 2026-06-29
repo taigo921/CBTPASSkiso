@@ -446,7 +446,10 @@ function favList(){return QUESTIONS.filter(q=>{const r=stats.perQ[qkey(q)];retur
 
 function renderHome(){
   el('timerChip').classList.remove('show'); clearInterval(timer.iv);
-  el('qcount').textContent=`全 ${QUESTIONS.length} 問 ・ ${QUESTIONS.filter(q=>q.image).length} 問は図つき`;
+  el('qcount').textContent=`全 ${QUESTIONS.length} 問 ・ ${QUESTIONS.filter(q=>q.has_image||q.image).length} 問は図つき`;
+  console.log('[CBT] 総問題数:', QUESTIONS.length);
+  console.log('[CBT] has_image=true:', QUESTIONS.filter(q=>q.has_image).length);
+  console.log('[CBT] imageあり:', QUESTIONS.filter(q=>q.image).length);
   el('sAnswered').textContent=stats.answered;
   el('sAcc').textContent=stats.answered?Math.round(stats.correct/stats.answered*100)+'%':'—';
   el('sFav').textContent=favList().length;
