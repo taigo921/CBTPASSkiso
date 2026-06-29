@@ -764,7 +764,7 @@ el('fileInput').addEventListener('change',e=>{
     const data=JSON.parse(rd.result);
     if(!Array.isArray(data)||!data.length)throw 0;
     if(!data.every(q=>(q.uid||q.id)&&q.question&&q.choices&&q.answer))throw 0;
-    window._imported=data; safeSet(STORE_Q,data); QUESTIONS=resolveQuestions();
+    DEFAULT_QUESTIONS=data; QUESTIONS=resolveQuestions();
     toast(`${data.length} 問を読み込みました`); renderHome();
   }catch(_){toast('JSONの形式が正しくありません');}};
   rd.readAsText(f,'utf-8'); e.target.value='';
