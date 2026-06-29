@@ -785,6 +785,7 @@ el('clearResumeBtn').addEventListener('click',()=>{clearSession();renderHome();t
 
 /* ============ 初期化 ============ */
 (async () => {
+  safeRemove(STORE_Q); // 古い手動読み込みデータを起動時に必ず消す
   await loadDefaultQuestions();
   load();
   QUESTIONS = resolveQuestions();
