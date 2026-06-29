@@ -510,8 +510,19 @@ function renderQuestion(){
   el('qText').textContent=q.question;
 
   const fig=el('qFig'),img=el('qImg');
-  if(q.image){fig.src=q.image;fig.classList.remove('hidden');}else{fig.classList.add('hidden');fig.removeAttribute('src');}
-  if(q.has_image&&!q.image){img.textContent='🖼 '+(q.image_note||'この問題には画像があります。');img.classList.remove('hidden');}else img.classList.add('hidden');
+  if(q.image_base64){
+    fig.src=q.image_base64.startsWith('data:')?q.image_base64:'data:image/png;base64,'+q.image_base64;
+    fig.classList.remove('hidden');
+    img.classList.add('hidden');
+  }else if(q.image){
+    fig.src=q.image;
+    fig.classList.remove('hidden');
+    img.classList.add('hidden');
+  }else{
+    fig.classList.add('hidden');fig.removeAttribute('src');
+    if(q.has_image){img.textContent='🖼 '+(q.image_note||'この問題には画像があります。');img.classList.remove('hidden');}
+    else img.classList.add('hidden');
+  }
 
   // favorite
   const r=stats.perQ[qkey(q)];
