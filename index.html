@@ -234,6 +234,7 @@
       <button class="mode" data-mode="fav" id="favMode"><div class="ic">⭐️</div><div class="t"><b>お気に入りだけ</b><span id="favCount">対象なし</span></div><div class="arr">›</div></button>
       <button class="mode" data-mode="noback"><div class="ic">🚫</div><div class="t"><b>戻れない連問モード</b><span>本番風・後戻り不可・最後にまとめて確認</span></div><div class="arr">›</div></button>
       <button class="mode" data-mode="image" id="imageMode"><div class="ic">🖼️</div><div class="t"><b>図・画像問題だけ</b><span id="imageCount">対象なし</span></div><div class="arr">›</div></button>
+      <button class="mode" id="sectionModeBtn"><div class="ic">🗂️</div><div class="t"><b>セクションを選んで解く</b><span>科目・分野ごとに集中演習</span></div><div class="arr">›</div></button>
     </div>
 
     <div class="sec-h">分析・設定</div>
@@ -340,6 +341,22 @@
     <div id="listBody"></div>
   </section>
 
+  <!-- SECTION LIST -->
+  <section id="sectionList" class="hidden">
+    <div class="hero"><h1 style="font-size:22px;">🗂️ セクションを選んで解く</h1><p>セクションをタップして演習を開始</p></div>
+    <div id="sectionListBody"></div>
+  </section>
+
+  <!-- SECTION PICK (順番/ランダム) -->
+  <section id="sectionPick" class="hidden">
+    <div class="hero"><h1 style="font-size:22px;" id="sectionPickTitle">—</h1><p id="sectionPickCount"></p></div>
+    <div class="modes">
+      <button class="mode primary" id="sectionPickOrder"><div class="ic">📖</div><div class="t"><b>順番に解く</b><span>セクション内の並び順</span></div><div class="arr">›</div></button>
+      <button class="mode" id="sectionPickRandom"><div class="ic">🎲</div><div class="t"><b>ランダム</b><span>セクション内をシャッフル</span></div><div class="arr">›</div></button>
+    </div>
+    <div class="row-btns"><button class="ghost-btn" id="sectionPickBack">‹ セクション一覧に戻る</button></div>
+  </section>
+
 </div>
 
 <div class="footer hidden" id="footer">
@@ -440,7 +457,7 @@ function resolveQuestions(){
 function rec(uid){ return stats.perQ[uid]||(stats.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false}); }
 
 function toast(m){const t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
-function showOnly(id){['home','quiz','finish','stats','list'].forEach(s=>el(s).classList.toggle('hidden',s!==id));}
+function showOnly(id){['home','quiz','finish','stats','list','sectionList','sectionPick'].forEach(s=>el(s).classList.toggle('hidden',s!==id));}
 function setProgress(p){el('pbarFill').style.width=Math.max(0,Math.min(100,p))+'%';}
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -750,6 +767,13 @@ function startSectionSession(uid,returnTo){
   renderQuestion();
 }
 
+/* ============ セクショングルーピング（共通ヘルパー） ============ */
+function groupBySection(arr){
+  const groups={};
+  arr.forEach(q=>{ (groups[q.section]||(groups[q.section]=[])).push(q); });
+  return groups;
+}
+
 /* ============ 問題一覧 ============ */
 let listFilter='all';
 function openList(){
@@ -766,8 +790,9 @@ function renderList(){
     if(listFilter==='fav')return r&&r.fav;
     return true;};
   const body=el('listBody'); body.innerHTML='';
-  const groups={}; let total=0;
-  QUESTIONS.forEach(q=>{ if(!pass(q))return; (groups[q.section]||(groups[q.section]=[])).push(q); total++; });
+  const filtered=QUESTIONS.filter(pass);
+  const groups=groupBySection(filtered);
+  const total=filtered.length;
   el('listCount').textContent=`${total} 問`+(listFilter!=='all'?'（絞り込み中）':'');
   if(!total){ body.innerHTML='<div class="empty">該当する問題がありません。</div>'; return; }
   Object.keys(groups).forEach(sec=>{
@@ -789,6 +814,43 @@ function renderList(){
       body.appendChild(it);
     });
   });
+}
+
+/* ============ セクションを選んで解く ============ */
+let pickedSection=null;
+function openSectionList(){
+  el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
+  renderSectionList();
+  showOnly('sectionList');
+}
+function renderSectionList(){
+  const body=el('sectionListBody'); body.innerHTML='';
+  const groups=groupBySection(QUESTIONS);
+  const secs=Object.keys(groups);
+  if(!secs.length){ body.innerHTML='<div class="empty">問題データがありません。</div>'; return; }
+  secs.forEach(sec=>{
+    const it=document.createElement('div'); it.className='litem';
+    it.innerHTML=`<span class="lq" style="font-weight:800;">${escapeHtml(sec)}</span><span class="lno">${groups[sec].length}問</span>`;
+    it.addEventListener('click',()=>openSectionPick(sec));
+    body.appendChild(it);
+  });
+}
+function openSectionPick(sec){
+  pickedSection=sec;
+  const n=QUESTIONS.filter(q=>q.section===sec).length;
+  el('sectionPickTitle').textContent=sec;
+  el('sectionPickCount').textContent=`${n} 問`;
+  showOnly('sectionPick');
+}
+function startSectionModeSession(orderMode){
+  if(!pickedSection)return;
+  let pool=QUESTIONS.filter(q=>q.section===pickedSection).map(qkey);
+  if(orderMode==='random')pool=shuffle(pool);
+  if(!pool.length){toast('対象の問題がありません');return;}
+  session={mode:orderMode,uids:pool,idx:0,records:[],sessionCorrect:0};
+  saveSession();
+  el('footer').classList.remove('hidden');
+  renderQuestion();
 }
 
 /* ============ お気に入りトグル ============ */
@@ -814,6 +876,10 @@ el('fileInput').addEventListener('change',e=>{
 document.querySelectorAll('.mode[data-mode]').forEach(b=>b.addEventListener('click',()=>{if(!b.disabled)startSession(b.dataset.mode);}));
 el('statsBtn').addEventListener('click',openStats);
 el('listBtn').addEventListener('click',openList);
+el('sectionModeBtn').addEventListener('click',openSectionList);
+el('sectionPickOrder').addEventListener('click',()=>startSectionModeSession('order'));
+el('sectionPickRandom').addEventListener('click',()=>startSectionModeSession('random'));
+el('sectionPickBack').addEventListener('click',()=>{showOnly('sectionList');});
 document.querySelectorAll('#filterBar .fbtn').forEach(b=>b.addEventListener('click',()=>{listFilter=b.dataset.f;renderList();}));
 el('resumeCard').addEventListener('click',resumeSession);
 el('nextBtn').addEventListener('click',next);
