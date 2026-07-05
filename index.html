@@ -741,6 +741,14 @@ function fillAna(id,arr,emptyMsg){
   });
 }
 function startSingle(uid,returnTo){ session={mode:'order',uids:[uid],idx:0,records:[],sessionCorrect:0,single:true,returnTo:returnTo||null}; el('footer').classList.remove('hidden'); renderQuestion(); }
+function startSectionSession(uid,returnTo){
+  const q=byUid(uid);
+  const pool=QUESTIONS.filter(x=>x.section===q.section).map(qkey);
+  let idx=pool.indexOf(uid); if(idx<0)idx=0;
+  session={mode:'order',uids:pool,idx,records:[],sessionCorrect:0,single:true,returnTo:returnTo||null};
+  el('footer').classList.remove('hidden');
+  renderQuestion();
+}
 
 /* ============ 問題一覧 ============ */
 let listFilter='all';
@@ -777,7 +785,7 @@ function renderList(){
       const it=document.createElement('div');it.className='litem';
       it.innerHTML=`<span class="lno">${qno(q)}</span><span class="lst ${st}">${mark}</span>
         <span class="lq">${escapeHtml(q.question.split('\n')[0])}</span><span class="lic">${ic}</span>`;
-      it.addEventListener('click',()=>startSingle(qkey(q),'list'));
+      it.addEventListener('click',()=>startSectionSession(qkey(q),'list'));
       body.appendChild(it);
     });
   });
