@@ -1012,20 +1012,55 @@ function statsSummary(){
     distinct:Object.keys(stats.perQ).length, bestStreak:stats.bestStreak||0, dayStreak:stats.dayStreak||0
   };
 }
+// クラウドに保存する完全ペイロード（集計＋問題ごとのコンパクト記録）
+function fullStatsPayload(){
+  const pq={};
+  for(const uid in stats.perQ){
+    const r=stats.perQ[uid]; const att=(r.correct||0)+(r.wrong||0);
+    if(att>0 || r.fav){ pq[uid]={c:r.correct||0,w:r.wrong||0,f:r.fav?1:0,l:r.last||null}; }
+  }
+  return Object.assign(statsSummary(), { perQ:pq, lastDay:stats.lastDay||null });
+}
+// クラウドの記録をローカルに統合（クラウドがマスター・数字は消えない）
+function cbtMergeCloud(cd){
+  if(!cd) return;
+  const cp=cd.perQ||{};
+  for(const uid in cp){
+    const c=cp[uid]; const cAtt=(c.c||0)+(c.w||0);
+    const l=stats.perQ[uid]; const lAtt=l?((l.correct||0)+(l.wrong||0)):-1;
+    const localFav=!!(l&&l.fav);
+    if(cAtt>lAtt){
+      stats.perQ[uid]={correct:c.c||0,wrong:c.w||0,last:c.l||(c.c>0?'correct':'wrong'),times:(l&&l.times)||[],pre:(l&&l.pre)||[],post:(l&&l.post)||[],fav:false};
+    } else if(!l){
+      stats.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false};
+    }
+    if(localFav||c.f) stats.perQ[uid].fav=true;
+  }
+  stats.bestStreak=Math.max(stats.bestStreak||0, cd.bestStreak||0);
+  stats.dayStreak=Math.max(stats.dayStreak||0, cd.dayStreak||0);
+  if(cd.lastDay && (!stats.lastDay || String(cd.lastDay)>String(stats.lastDay))) stats.lastDay=cd.lastDay;
+  let att=0,cor=0;
+  for(const uid in stats.perQ){ const r=stats.perQ[uid]; att+=(r.correct||0)+(r.wrong||0); cor+=(r.correct||0); }
+  stats.answered=att; stats.correct=cor;
+  saveStats();
+  if(typeof renderHome==='function') renderHome();
+}
 let _syncT=null;
 function cloudSyncSoon(){
-  if(!(window.cbtCloud&&window.cbtCloud.syncStats))return;
+  if(!(window.cbtCloud&&window.cbtCloud.save))return;
   clearTimeout(_syncT);
-  _syncT=setTimeout(()=>{ window.cbtCloud.syncStats(statsSummary()); },1500);
+  _syncT=setTimeout(()=>{ window.cbtCloud.save(fullStatsPayload()); },2000);
 }
-window.cbtStatsSummary=statsSummary; // 初回ログイン時の同期用
+window.cbtStatsSummary=statsSummary;
+window.cbtFullPayload=fullStatsPayload;
+window.cbtMergeCloud=cbtMergeCloud;
 
 let lbMetric='accuracy';
 async function openLeaderboard(){
   el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
   showOnly('leaderboard');
   el('lbBody').innerHTML='<div class="lb-empty">読み込み中…</div>';
-  if(window.cbtCloud&&window.cbtCloud.syncStats){ try{ await window.cbtCloud.syncStats(statsSummary()); }catch(e){} }
+  if(window.cbtCloud&&window.cbtCloud.save){ try{ await window.cbtCloud.save(fullStatsPayload()); }catch(e){} }
   renderLeaderboard();
 }
 async function renderLeaderboard(){
@@ -1073,6 +1108,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   load();
   QUESTIONS = resolveQuestions();
   renderHome();
+  window.cbtAppReady = true;
+  if (window._pendingCloud) { cbtMergeCloud(window._pendingCloud); window._pendingCloud = null; }
   // Safari file:// でlocalStorage使えない場合に警告
   if (!_lsAvail()) {
     setTimeout(() => toast('⚠️ 成績はページを閉じると消えます（Safari file://制限）'), 600);
@@ -1168,22 +1205,27 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
 
   // メインアプリから使うクラウドAPI
   window.cbtCloud = {
-    syncStats: async function(summary){
+    save: async function(payload){
       if(!window.cbtUser) return;
-      const payload = Object.assign({
+      const body = Object.assign({
         username: window.cbtUser.username || '',
         email: window.cbtUser.email || '',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, summary);
-      await db.collection('users').doc(window.cbtUser.uid).set(payload, {merge:true});
+      }, payload||{});
+      await db.collection('users').doc(window.cbtUser.uid).set(body, {merge:true});
     },
     fetchLeaderboard: async function(){
       const snap = await db.collection('users').get();
       const arr = [];
-      snap.forEach(function(d){ const x = d.data(); x.uid = d.id; arr.push(x); });
+      snap.forEach(function(d){ const x = d.data(); x.uid = d.id; delete x.perQ; arr.push(x); });
       return arr;
     }
   };
+
+  function afterAppReady(fn){
+    if(window.cbtAppReady) return fn();
+    const iv=setInterval(function(){ if(window.cbtAppReady){ clearInterval(iv); fn(); } },60);
+  }
 
   // ログイン状態の監視
   auth.onAuthStateChanged(async function(user){
@@ -1199,23 +1241,20 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     // プロフィール読み込み（無ければユーザーネーム登録）
     let snap=null;
     try{ snap = await db.collection('users').doc(user.uid).get(); }catch(e){}
-    if(snap && snap.exists && snap.data().username){
-      window.cbtUser.username = snap.data().username;
+    const cloudData = (snap && snap.exists) ? snap.data() : null;
+    if(cloudData && cloudData.username){
+      window.cbtUser.username = cloudData.username;
     } else {
       const suggested = ((user.displayName||'').split(' ')[0]) || '';
       const name = await askUsername(suggested);
       window.cbtUser.username = name;
-      try{
-        await db.collection('users').doc(user.uid).set({
-          username:name, email:email, answered:0, correct:0, accuracy:0,
-          distinct:0, bestStreak:0, dayStreak:0,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, {merge:true});
-      }catch(e){}
     }
     reveal();
-    // ローカルの既存スコアを初回同期
-    if(window.cbtStatsSummary){ try{ await window.cbtCloud.syncStats(window.cbtStatsSummary()); }catch(e){} }
+    // アプリ準備完了後：クラウド→ローカル統合 → 統合結果を書き戻す（数字は消えない）
+    afterAppReady(async function(){
+      try{ if(cloudData && window.cbtMergeCloud) window.cbtMergeCloud(cloudData); }catch(e){}
+      try{ if(window.cbtFullPayload) await window.cbtCloud.save(window.cbtFullPayload()); }catch(e){}
+    });
   });
 })();
 </script>
