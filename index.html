@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>CBT PASS クイズ</title>
+<!-- ▼ ログイン（Google Identity Services） -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  /* ▼ ログイン関所 */
+  #authGate{position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#0E5E45,#0a4736);display:flex;align-items:center;justify-content:center;padding:24px;}
+  #authGate.ok{display:none;}
+  #authGate .auth-card{background:#fff;border-radius:20px;padding:34px 26px;max-width:360px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.32);}
+  #authGate .auth-brand{font-weight:800;font-size:27px;color:#0E5E45;letter-spacing:.5px;}
+  #authGate .auth-brand span{font-size:13px;color:#5d6b64;margin-left:6px;font-weight:600;}
+  #authGate .auth-lead{color:#13201b;font-size:14px;margin:18px 0 22px;line-height:1.7;}
+  #authGate #gbtn{display:flex;justify-content:center;min-height:44px;}
+  #authGate .auth-err{color:#d8453b;font-size:13px;margin-top:16px;min-height:18px;line-height:1.55;word-break:break-all;}
+  #authGate .auth-foot{color:#94a29b;font-size:11px;margin-top:22px;line-height:1.6;}
+  #logoutBtn{position:fixed;left:12px;bottom:12px;z-index:9998;display:none;background:#fff;border:1px solid #e3e8e5;color:#5d6b64;font-size:12px;padding:7px 12px;border-radius:20px;box-shadow:0 2px 8px rgba(20,40,30,.12);cursor:pointer;}
+  #logoutBtn.show{display:block;}
+</style>
 <style>
   :root{
     --green:#0E5E45;--green-d:#0a4736;--green-l:#1B7D5E;--ink:#13201b;--muted:#5d6b64;
@@ -195,6 +211,18 @@
 </style>
 </head>
 <body>
+<!-- ▼ ログイン関所（許可されたGoogleアカウントのみ解錠） -->
+<div id="authGate">
+  <div class="auth-card">
+    <div class="auth-brand">CBT PASS<span>クイズ</span></div>
+    <p class="auth-lead">友達だけの限定アプリです。<br>許可されたGoogleアカウントでログインしてください。</p>
+    <div id="gbtn"></div>
+    <p class="auth-err" id="authErr"></p>
+    <p class="auth-foot">※ログインは本人確認のためだけに使います。</p>
+  </div>
+</div>
+<button id="logoutBtn" onclick="cbtLogout()">ログアウト</button>
+
 <header>
   <div class="head-row">
     <div class="logo">CBT PASS<small>クイズ</small></div>
@@ -902,6 +930,76 @@ el('clearResumeBtn').addEventListener('click',()=>{clearSession();renderHome();t
   if (!_lsAvail()) {
     setTimeout(() => toast('⚠️ 成績はページを閉じると消えます（Safari file://制限）'), 600);
   }
+})();
+</script>
+
+<!-- ▼ ログイン関所ロジック（Google Identity Services） -->
+<script>
+(function(){
+  // ===== ここだけ書き換えればOK =====
+  // ① Google Cloud で作った OAuth クライアントID を貼る
+  const CLIENT_ID = "657737591623-vk9f9ndrucrq82itg3tq2orc7cirro86.apps.googleusercontent.com";
+  // ② 許可するGmailの「SHA-256ハッシュ」を並べる（メアド平文は書かない）
+  //    ハッシュの出し方はコンソールで:  await cbtHash('friend@gmail.com')
+  const ALLOW = [
+    "43647e474ca3dee14d4fd6b215c496dab052075b3ffc7d79eab1aaabd6ab88cc", // taigo921@gmail.com（自分）
+    // "yyyyyyyyyyyyyyyy", // 友達@gmail.com ← 友達のハッシュをここに足していく
+  ];
+  // =================================
+
+  const AUTH_KEY = 'cbt_auth_email';
+  const gate  = document.getElementById('authGate');
+  const errEl = document.getElementById('authErr');
+
+  async function sha256(str){
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map(x=>x.toString(16).padStart(2,'0')).join('');
+  }
+  window.cbtHash = e => sha256(String(e).toLowerCase().trim()); // 便利ヘルパー
+
+  function reveal(){
+    gate.classList.add('ok');
+    const lo = document.getElementById('logoutBtn'); if(lo) lo.classList.add('show');
+  }
+  function decodeJwt(token){
+    const b = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(escape(atob(b))));
+  }
+  window.cbtLogout = function(){
+    try{ localStorage.removeItem(AUTH_KEY); }catch(e){}
+    if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
+    location.reload();
+  };
+
+  // 既にログイン済みなら即解錠
+  let saved=null; try{ saved = localStorage.getItem(AUTH_KEY); }catch(e){}
+  if(saved){ reveal(); return; }
+
+  async function onCredential(resp){
+    errEl.textContent = '';
+    let payload;
+    try{ payload = decodeJwt(resp.credential); }
+    catch(e){ errEl.textContent = 'ログイン情報の読み取りに失敗しました。'; return; }
+    const email = (payload.email||'').toLowerCase().trim();
+    if(!payload.email_verified){ errEl.textContent = 'メール未確認のGoogleアカウントは使えません。'; return; }
+    const h = await sha256(email);
+    if(ALLOW.indexOf(h) >= 0){
+      try{ localStorage.setItem(AUTH_KEY, email); }catch(e){}
+      reveal();
+    } else {
+      errEl.textContent = 'このアカウント（'+email+'）は許可されていません。管理者に連絡してください。';
+    }
+  }
+
+  function initGis(){
+    if(!(window.google && google.accounts && google.accounts.id)){ return setTimeout(initGis, 120); }
+    google.accounts.id.initialize({ client_id: CLIENT_ID, callback: onCredential, auto_select:false });
+    google.accounts.id.renderButton(
+      document.getElementById('gbtn'),
+      { theme:'filled_blue', size:'large', shape:'pill', text:'signin_with', locale:'ja', width:260 }
+    );
+  }
+  initGis();
 })();
 </script>
 </body>
