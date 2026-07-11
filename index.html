@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>CBT PASS クイズ</title>
-<!-- ▼ ログイン（Google Identity Services） -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- ▼ ログイン＆ランキング（Firebase） -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
   /* ▼ ログイン関所 */
   #authGate{position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#0E5E45,#0a4736);display:flex;align-items:center;justify-content:center;padding:24px;}
@@ -20,6 +22,35 @@
   #authGate .auth-foot{color:#94a29b;font-size:11px;margin-top:22px;line-height:1.6;}
   #logoutBtn{position:fixed;left:12px;bottom:12px;z-index:9998;display:none;background:#fff;border:1px solid #e3e8e5;color:#5d6b64;font-size:12px;padding:7px 12px;border-radius:20px;box-shadow:0 2px 8px rgba(20,40,30,.12);cursor:pointer;}
   #logoutBtn.show{display:block;}
+  /* ログインボタン */
+  #authGate #loginBtn{display:inline-flex;align-items:center;gap:10px;background:#1a73e8;color:#fff;border:none;font-size:15px;font-weight:600;padding:12px 22px;border-radius:24px;cursor:pointer;box-shadow:0 2px 6px rgba(26,115,232,.3);}
+  #authGate #loginBtn:active{transform:scale(.98);}
+  #authGate #loginBtn .gg{width:20px;height:20px;background:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:#4285f4;font-size:13px;}
+  /* モーダル */
+  .modal-backdrop{position:fixed;inset:0;z-index:100000;background:rgba(10,25,20,.55);display:none;align-items:center;justify-content:center;padding:24px;}
+  .modal-backdrop.show{display:flex;}
+  .modal{background:#fff;border-radius:18px;padding:26px 22px;max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);}
+  .modal h3{margin:0 0 6px;color:#0E5E45;font-size:19px;}
+  .modal p{margin:0 0 14px;color:#5d6b64;font-size:13px;line-height:1.6;}
+  .modal input{width:100%;padding:12px 14px;border:1.5px solid #e3e8e5;border-radius:12px;font-size:16px;margin-bottom:8px;}
+  .modal input:focus{outline:none;border-color:#1B7D5E;}
+  .modal .uname-err{color:#d8453b;min-height:16px;margin:0 0 8px;font-size:12px;}
+  .modal button{width:100%;background:#0E5E45;color:#fff;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
+  .modal button:disabled{opacity:.5;}
+  /* ランキング */
+  #leaderboard .lb-tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;}
+  #leaderboard .lb-tab{flex:0 0 auto;background:#fff;border:1.5px solid var(--line);color:var(--muted);padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;}
+  #leaderboard .lb-tab.on{background:var(--green);color:#fff;border-color:var(--green);}
+  #leaderboard .lb-row{display:flex;align-items:center;gap:12px;background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);}
+  #leaderboard .lb-row.me{outline:2px solid var(--green);}
+  #leaderboard .lb-rank{font-weight:800;font-size:17px;color:var(--muted);min-width:30px;text-align:center;}
+  #leaderboard .lb-row.top1 .lb-rank{color:#e0a500;}
+  #leaderboard .lb-row.top2 .lb-rank{color:#9aa0a6;}
+  #leaderboard .lb-row.top3 .lb-rank{color:#b06a2c;}
+  #leaderboard .lb-name{flex:1;font-weight:700;}
+  #leaderboard .lb-name small{display:block;font-weight:400;color:var(--muted);font-size:11px;}
+  #leaderboard .lb-val{font-weight:800;color:var(--green);font-size:16px;}
+  #leaderboard .lb-empty{text-align:center;color:var(--muted);padding:40px 0;}
 </style>
 <style>
   :root{
@@ -216,12 +247,23 @@
   <div class="auth-card">
     <div class="auth-brand">CBT PASS<span>クイズ</span></div>
     <p class="auth-lead">友達だけの限定アプリです。<br>許可されたGoogleアカウントでログインしてください。</p>
-    <div id="gbtn"></div>
+    <button id="loginBtn"><span class="gg">G</span>Googleでログイン</button>
     <p class="auth-err" id="authErr"></p>
     <p class="auth-foot">※ログインは本人確認のためだけに使います。</p>
   </div>
 </div>
 <button id="logoutBtn" onclick="cbtLogout()">ログアウト</button>
+
+<!-- ▼ ユーザーネーム登録モーダル -->
+<div id="unameModal" class="modal-backdrop">
+  <div class="modal">
+    <h3>ユーザーネームを決めよう</h3>
+    <p>ランキングに表示される名前です（あとで変更できます）。</p>
+    <input id="unameInput" maxlength="16" placeholder="例：たいご" autocomplete="off">
+    <p class="uname-err" id="unameErr"></p>
+    <button id="unameSave">決定</button>
+  </div>
+</div>
 
 <header>
   <div class="head-row">
@@ -269,6 +311,7 @@
     <div class="modes">
       <button class="mode" id="listBtn"><div class="ic">📋</div><div class="t"><b>問題一覧から選ぶ</b><span>状態を見ながら1問ずつ解く</span></div><div class="arr">›</div></button>
       <button class="mode" id="statsBtn"><div class="ic">📊</div><div class="t"><b>苦手分野ランキング・時間分析</b><span>正答率／時間／不安から弱点を表示</span></div><div class="arr">›</div></button>
+      <button class="mode" id="rankBtn"><div class="ic">🏆</div><div class="t"><b>みんなでランキング</b><span id="rankSub">友達と正答率・正解数・連続正解で競う</span></div><div class="arr">›</div></button>
     </div>
 
     <div class="setting">
@@ -385,6 +428,19 @@
     <div class="row-btns"><button class="ghost-btn" id="sectionPickBack">‹ セクション一覧に戻る</button></div>
   </section>
 
+  <!-- LEADERBOARD -->
+  <section id="leaderboard" class="hidden">
+    <div class="hero"><h1 style="font-size:24px;">🏆 みんなでランキング</h1><p id="lbMe"></p></div>
+    <div class="lb-tabs">
+      <button class="lb-tab on" data-metric="accuracy">正答率</button>
+      <button class="lb-tab" data-metric="correct">正解数</button>
+      <button class="lb-tab" data-metric="answered">解いた数</button>
+      <button class="lb-tab" data-metric="streak">連続正解</button>
+    </div>
+    <div id="lbBody"></div>
+    <div class="row-btns"><button class="ghost-btn" id="lbRefresh">↻ 更新</button> <button class="ghost-btn" id="lbRename">✎ 名前を変更</button></div>
+  </section>
+
 </div>
 
 <div class="footer hidden" id="footer">
@@ -436,7 +492,7 @@ async function loadDefaultQuestions() {
 /* ============ ストレージ ============ */
 const STORE_Q='cbt_questions_v1', STORE_S='cbt_stats_v2', STORE_SET='cbt_settings_v2', STORE_SES='cbt_session_v2';
 let QUESTIONS=[];
-let stats={perQ:{},answered:0,correct:0};
+let stats={perQ:{},answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null};
 let settings={slowSec:60};
 let session=null;       // {mode,uids,idx,records,sessionCorrect}
 let timer={start:0,iv:null};
@@ -473,7 +529,7 @@ function safeRemove(k){
 }
 
 function load(){
-  const s=safeGet(STORE_S); if(s) stats=Object.assign({perQ:{},answered:0,correct:0},s);
+  const s=safeGet(STORE_S); if(s) stats=Object.assign({perQ:{},answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null},s);
   const st=safeGet(STORE_SET); if(st) settings=Object.assign(settings,st);
 }
 const saveStats=()=>safeSet(STORE_S,stats);
@@ -487,7 +543,7 @@ function resolveQuestions(){
 function rec(uid){ return stats.perQ[uid]||(stats.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false}); }
 
 function toast(m){const t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
-function showOnly(id){['home','quiz','finish','stats','list','sectionList','sectionPick'].forEach(s=>el(s).classList.toggle('hidden',s!==id));}
+function showOnly(id){['home','quiz','finish','stats','list','sectionList','sectionPick','leaderboard'].forEach(s=>el(s).classList.toggle('hidden',s!==id));}
 function setProgress(p){el('pbarFill').style.width=Math.max(0,Math.min(100,p))+'%';}
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -666,7 +722,10 @@ function submit(skip){
   if(correct){r.correct++;stats.correct++;session.sessionCorrect++;}else{r.wrong++;}
   r.last=correct?'correct':'wrong'; r.times.push(+t.toFixed(1));
   if(pendingPre)r.pre.push(pendingPre);
-  stats.answered++; saveStats();
+  stats.answered++;
+  updateStreak(correct);
+  saveStats();
+  cloudSyncSoon();
   session.records.push({uid:qkey(q),no:qno(q),section:q.section,picked:skip?null:picked,answer:q.answer,correct,skip:!!skip,time:+t.toFixed(1),pre:pendingPre,post:null});
   saveSession();
 
@@ -916,8 +975,81 @@ el('nextBtn').addEventListener('click',next);
 el('prevBtn').addEventListener('click',prev);
 el('homeBtn').addEventListener('click',()=>{ if(session&&session.records&&session.idx<session.uids.length){saveSession();} renderHome(); });
 el('slowSec').addEventListener('change',e=>{let v=parseInt(e.target.value)||60;v=Math.max(5,Math.min(600,v));settings.slowSec=v;e.target.value=v;saveSettings();toast(`基準を ${v}秒 に設定`);});
-el('resetStatsBtn').addEventListener('click',()=>{if(confirm('回答履歴・正答率・お気に入りをすべて消します。よろしいですか？')){stats={perQ:{},answered:0,correct:0};saveStats();renderHome();toast('成績をリセットしました');}});
+el('resetStatsBtn').addEventListener('click',()=>{if(confirm('回答履歴・正答率・お気に入りをすべて消します。よろしいですか？')){stats={perQ:{},answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null};saveStats();cloudSyncSoon();renderHome();toast('成績をリセットしました');}});
 el('clearResumeBtn').addEventListener('click',()=>{clearSession();renderHome();toast('中断データを消しました');});
+
+/* ============ ランキング（クラウド同期） ============ */
+function updateStreak(correct){
+  if(correct){ stats.curStreak=(stats.curStreak||0)+1; if(stats.curStreak>(stats.bestStreak||0)) stats.bestStreak=stats.curStreak; }
+  else { stats.curStreak=0; }
+  const d=new Date(); const ymd=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  if(stats.lastDay!==ymd){
+    const y=new Date(d); y.setDate(y.getDate()-1);
+    const yymd=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();
+    stats.dayStreak = (stats.lastDay===yymd)? (stats.dayStreak||0)+1 : 1;
+    stats.lastDay=ymd;
+  }
+}
+function statsSummary(){
+  return {
+    answered:stats.answered||0, correct:stats.correct||0,
+    accuracy: stats.answered? Math.round(stats.correct/stats.answered*1000)/10 : 0,
+    distinct:Object.keys(stats.perQ).length, bestStreak:stats.bestStreak||0, dayStreak:stats.dayStreak||0
+  };
+}
+let _syncT=null;
+function cloudSyncSoon(){
+  if(!(window.cbtCloud&&window.cbtCloud.syncStats))return;
+  clearTimeout(_syncT);
+  _syncT=setTimeout(()=>{ window.cbtCloud.syncStats(statsSummary()); },1500);
+}
+window.cbtStatsSummary=statsSummary; // 初回ログイン時の同期用
+
+let lbMetric='accuracy';
+async function openLeaderboard(){
+  el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
+  showOnly('leaderboard');
+  el('lbBody').innerHTML='<div class="lb-empty">読み込み中…</div>';
+  if(window.cbtCloud&&window.cbtCloud.syncStats){ try{ await window.cbtCloud.syncStats(statsSummary()); }catch(e){} }
+  renderLeaderboard();
+}
+async function renderLeaderboard(){
+  const body=el('lbBody');
+  if(!(window.cbtCloud&&window.cbtCloud.fetchLeaderboard)){ body.innerHTML='<div class="lb-empty">ログインすると表示されます</div>'; el('lbMe').textContent=''; return; }
+  body.innerHTML='<div class="lb-empty">読み込み中…</div>';
+  let users;
+  try{ users=await window.cbtCloud.fetchLeaderboard(); }
+  catch(e){ body.innerHTML='<div class="lb-empty">読み込みに失敗しました</div>'; return; }
+  const meUid=window.cbtUser&&window.cbtUser.uid;
+  const defs={
+    accuracy:{f:u=>u.accuracy||0, tie:u=>u.answered||0, fmt:u=>(u.accuracy||0)+'%'},
+    correct:{f:u=>u.correct||0, tie:u=>u.answered||0, fmt:u=>(u.correct||0)+'問'},
+    answered:{f:u=>u.answered||0, tie:u=>u.correct||0, fmt:u=>(u.answered||0)+'問'},
+    streak:{f:u=>u.bestStreak||0, tie:u=>u.correct||0, fmt:u=>(u.bestStreak||0)+'連続'}
+  };
+  const md=defs[lbMetric];
+  let list=users.slice();
+  if(lbMetric==='accuracy') list=list.filter(u=>(u.answered||0)>=10);
+  list.sort((a,b)=> md.f(b)-md.f(a) || md.tie(b)-md.tie(a));
+  if(!list.length){ body.innerHTML='<div class="lb-empty">'+(lbMetric==='accuracy'?'10問以上解いた人がまだいません':'まだデータがありません')+'</div>'; el('lbMe').textContent=''; return; }
+  body.innerHTML='';
+  list.forEach((u,i)=>{
+    const row=document.createElement('div');
+    row.className='lb-row'+(u.uid===meUid?' me':'')+(i<3?' top'+(i+1):'');
+    const sub = lbMetric==='accuracy'? (u.answered||0)+'問' : '正答率 '+(u.accuracy||0)+'%';
+    row.innerHTML='<div class="lb-rank">'+(i+1)+'</div><div class="lb-name">'+escapeHtml(u.username||'名無し')+'<small>'+sub+'</small></div><div class="lb-val">'+md.fmt(u)+'</div>';
+    body.appendChild(row);
+  });
+  const meIdx=list.findIndex(u=>u.uid===meUid);
+  el('lbMe').textContent = meIdx>=0? ('あなたは '+list.length+'人中 '+(meIdx+1)+'位') : (lbMetric==='accuracy'?'あなたはまだ10問未満（正答率ランキング対象外）':'');
+}
+el('rankBtn').addEventListener('click',openLeaderboard);
+el('lbRefresh').addEventListener('click',renderLeaderboard);
+el('lbRename').addEventListener('click',()=>{ if(window.cbtRename)window.cbtRename(); });
+document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('#leaderboard .lb-tab').forEach(x=>x.classList.toggle('on',x===t));
+  lbMetric=t.dataset.metric; renderLeaderboard();
+}));
 
 /* ============ 初期化 ============ */
 (async () => {
@@ -933,74 +1065,143 @@ el('clearResumeBtn').addEventListener('click',()=>{clearSession();renderHome();t
 })();
 </script>
 
-<!-- ▼ ログイン関所ロジック（Google Identity Services） -->
+<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->
 <script>
 (function(){
-  // ===== ここだけ書き換えればOK =====
-  // ① Google Cloud で作った OAuth クライアントID を貼る
-  const CLIENT_ID = "657737591623-vk9f9ndrucrq82itg3tq2orc7cirro86.apps.googleusercontent.com";
-  // ② 許可するGmailの「SHA-256ハッシュ」を並べる（メアド平文は書かない）
-  //    ハッシュの出し方はコンソールで:  await cbtHash('friend@gmail.com')
+  // ===== 設定 =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyCcbexjiNsJd547BI-xFZ9otw6-F0ZozIM",
+    authDomain: "cbtpass-a680e.firebaseapp.com",
+    projectId: "cbtpass-a680e",
+    storageBucket: "cbtpass-a680e.firebasestorage.app",
+    messagingSenderId: "1081031054072",
+    appId: "1:1081031054072:web:81e70484b28eff6221610d",
+    measurementId: "G-M9EVCYR3QV"
+  };
+  // 許可するGmailの「SHA-256ハッシュ」（メアド平文は書かない。コメントはニックネーム）
   const ALLOW = [
-    "5ec7432d9ec2f5ab41386453c80c22f421300deb5f41f372fe5fd82a8ec80fa6", // itaigo921@gmail.com（自分）
-    "999ab454c352d735541ed1f1d1e610463bf22ea2f6c7069e945bc8ab91886c3d", // oreirei0827@gmail.com（友達）
+    "5ec7432d9ec2f5ab41386453c80c22f421300deb5f41f372fe5fd82a8ec80fa6", // 自分
+    "999ab454c352d735541ed1f1d1e610463bf22ea2f6c7069e945bc8ab91886c3d", // 友達1
     // ↑ 友達のハッシュはこの下に足していく
   ];
-  // =================================
+  // ================
 
-  const AUTH_KEY = 'cbt_auth_email';
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
   const gate  = document.getElementById('authGate');
   const errEl = document.getElementById('authErr');
+  const unameModal = document.getElementById('unameModal');
+  const unameInput = document.getElementById('unameInput');
+  const unameErr   = document.getElementById('unameErr');
+  const unameSave  = document.getElementById('unameSave');
 
   async function sha256(str){
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return [...new Uint8Array(buf)].map(x=>x.toString(16).padStart(2,'0')).join('');
   }
-  window.cbtHash = e => sha256(String(e).toLowerCase().trim()); // 便利ヘルパー
+  window.cbtHash = e => sha256(String(e).toLowerCase().trim());
 
   function reveal(){
     gate.classList.add('ok');
     const lo = document.getElementById('logoutBtn'); if(lo) lo.classList.add('show');
   }
-  function decodeJwt(token){
-    const b = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-    return JSON.parse(decodeURIComponent(escape(atob(b))));
+  window.cbtUser = null;
+  window.cbtLogout = function(){ auth.signOut().finally(()=>location.reload()); };
+
+  // ログインボタン
+  document.getElementById('loginBtn').addEventListener('click', function(){
+    errEl.textContent = '';
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(function(err){
+      if(err && (err.code==='auth/popup-closed-by-user'||err.code==='auth/cancelled-popup-request')) return;
+      errEl.textContent = 'ログインに失敗しました。もう一度お試しください。';
+      console.warn('login error', err);
+    });
+  });
+
+  // ユーザーネーム入力モーダル
+  function askUsername(prefill){
+    return new Promise(function(resolve){
+      unameInput.value = prefill || '';
+      unameErr.textContent = '';
+      unameModal.classList.add('show');
+      setTimeout(()=>unameInput.focus(), 50);
+      function done(){
+        const v = unameInput.value.trim();
+        if(v.length < 1){ unameErr.textContent = '名前を入力してください'; return; }
+        if(v.length > 16){ unameErr.textContent = '16文字以内で入力してください'; return; }
+        unameSave.removeEventListener('click', done);
+        unameInput.removeEventListener('keydown', onKey);
+        unameModal.classList.remove('show');
+        resolve(v);
+      }
+      function onKey(e){ if(e.key==='Enter'){ e.preventDefault(); done(); } }
+      unameSave.addEventListener('click', done);
+      unameInput.addEventListener('keydown', onKey);
+    });
   }
-  window.cbtLogout = function(){
-    try{ localStorage.removeItem(AUTH_KEY); }catch(e){}
-    if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
-    location.reload();
+  window.cbtRename = async function(){
+    if(!window.cbtUser) return;
+    const v = await askUsername(window.cbtUser.username);
+    window.cbtUser.username = v;
+    try{ await db.collection('users').doc(window.cbtUser.uid).set({username:v}, {merge:true}); }catch(e){}
+    if(typeof toast==='function') toast('名前を変更しました');
+    if(typeof renderLeaderboard==='function') renderLeaderboard();
   };
 
-  // 既にログイン済みなら即解錠
-  let saved=null; try{ saved = localStorage.getItem(AUTH_KEY); }catch(e){}
-  if(saved){ reveal(); return; }
-
-  async function onCredential(resp){
-    errEl.textContent = '';
-    let payload;
-    try{ payload = decodeJwt(resp.credential); }
-    catch(e){ errEl.textContent = 'ログイン情報の読み取りに失敗しました。'; return; }
-    const email = (payload.email||'').toLowerCase().trim();
-    if(!payload.email_verified){ errEl.textContent = 'メール未確認のGoogleアカウントは使えません。'; return; }
-    const h = await sha256(email);
-    if(ALLOW.indexOf(h) >= 0){
-      try{ localStorage.setItem(AUTH_KEY, email); }catch(e){}
-      reveal();
-    } else {
-      errEl.textContent = 'このアカウント（'+email+'）は許可されていません。管理者に連絡してください。';
+  // メインアプリから使うクラウドAPI
+  window.cbtCloud = {
+    syncStats: async function(summary){
+      if(!window.cbtUser) return;
+      const payload = Object.assign({
+        username: window.cbtUser.username || '',
+        email: window.cbtUser.email || '',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, summary);
+      await db.collection('users').doc(window.cbtUser.uid).set(payload, {merge:true});
+    },
+    fetchLeaderboard: async function(){
+      const snap = await db.collection('users').get();
+      const arr = [];
+      snap.forEach(function(d){ const x = d.data(); x.uid = d.id; arr.push(x); });
+      return arr;
     }
-  }
+  };
 
-  function initGis(){
-    if(!(window.google && google.accounts && google.accounts.id)){ return setTimeout(initGis, 120); }
-    google.accounts.id.initialize({ client_id: CLIENT_ID, callback: onCredential, auto_select:false });
-    google.accounts.id.renderButton(
-      document.getElementById('gbtn'),
-      { theme:'filled_blue', size:'large', shape:'pill', text:'signin_with', locale:'ja', width:260 }
-    );
-  }
-  initGis();
+  // ログイン状態の監視
+  auth.onAuthStateChanged(async function(user){
+    if(!user){ return; } // 未ログイン → 関所のまま
+    const email = (user.email||'').toLowerCase().trim();
+    const h = await sha256(email);
+    if(ALLOW.indexOf(h) < 0){
+      errEl.textContent = 'このアカウント（'+email+'）は許可されていません。管理者に連絡してください。';
+      try{ await auth.signOut(); }catch(e){}
+      return;
+    }
+    window.cbtUser = { uid:user.uid, email:email, username:'' };
+    // プロフィール読み込み（無ければユーザーネーム登録）
+    let snap=null;
+    try{ snap = await db.collection('users').doc(user.uid).get(); }catch(e){}
+    if(snap && snap.exists && snap.data().username){
+      window.cbtUser.username = snap.data().username;
+    } else {
+      const suggested = ((user.displayName||'').split(' ')[0]) || '';
+      const name = await askUsername(suggested);
+      window.cbtUser.username = name;
+      try{
+        await db.collection('users').doc(user.uid).set({
+          username:name, email:email, answered:0, correct:0, accuracy:0,
+          distinct:0, bestStreak:0, dayStreak:0,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, {merge:true});
+      }catch(e){}
+    }
+    reveal();
+    // ローカルの既存スコアを初回同期
+    if(window.cbtStatsSummary){ try{ await window.cbtCloud.syncStats(window.cbtStatsSummary()); }catch(e){} }
+  });
 })();
 </script>
 </body>
