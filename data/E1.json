@@ -2,7 +2,7 @@
   {
     "uid": "E1-1-001",
     "display_no": "001",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "衛生",
     "guide_ref": "p.318",
@@ -48,7 +48,7 @@
   {
     "uid": "E1-1-002",
     "display_no": "002",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "衛生",
     "guide_ref": "p.318",
@@ -94,7 +94,7 @@
   {
     "uid": "E1-1-003",
     "display_no": "003",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "衛生",
     "guide_ref": "p.318",
@@ -130,7 +130,7 @@
   {
     "uid": "E1-1-004",
     "display_no": "004",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "口腔外科学",
     "guide_ref": "p.319",
@@ -176,7 +176,7 @@
   {
     "uid": "E1-1-005",
     "display_no": "005",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "全部床義歯学",
     "guide_ref": "p.320",
@@ -203,7 +203,7 @@
   {
     "uid": "E1-1-006",
     "display_no": "006",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "口腔外科学",
     "guide_ref": "p.320",
@@ -250,7 +250,7 @@
   {
     "uid": "E1-1-007",
     "display_no": "007",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "歯内療法学",
     "guide_ref": "p.321",
@@ -297,7 +297,7 @@
   {
     "uid": "E1-1-008",
     "display_no": "008",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "歯内療法学",
     "guide_ref": "p.321",
@@ -333,7 +333,7 @@
   {
     "uid": "E1-1-009",
     "display_no": "009",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.322",
@@ -379,7 +379,7 @@
   {
     "uid": "E1-1-010",
     "display_no": "010",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.322",
@@ -425,7 +425,7 @@
   {
     "uid": "E1-1-011",
     "display_no": "011",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "口腔外科学",
     "guide_ref": "p.322",
@@ -471,7 +471,7 @@
   {
     "uid": "E1-1-012",
     "display_no": "012",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "口腔外科学",
     "guide_ref": "p.322",
@@ -517,7 +517,7 @@
   {
     "uid": "E1-1-013",
     "display_no": "013",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.323",
@@ -563,7 +563,7 @@
   {
     "uid": "E1-1-014",
     "display_no": "014",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.323",
@@ -609,7 +609,7 @@
   {
     "uid": "E1-1-015",
     "display_no": "015",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.323",
@@ -655,7 +655,7 @@
   {
     "uid": "E1-1-016",
     "display_no": "016",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "衛生",
     "guide_ref": "p.324",
@@ -681,7 +681,7 @@
   {
     "uid": "E1-1-017",
     "display_no": "017",
-    "section": "E-1 診療の基本",
+    "section": "E-1-1 診療の基本",
     "category": "E-1-1)",
     "subject": "衛生",
     "guide_ref": "p.324",
@@ -707,7 +707,7 @@
   {
     "uid": "E1-2-001",
     "display_no": "001",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.325",
@@ -749,7 +749,7 @@
   {
     "uid": "E1-2-002",
     "display_no": "002",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.325",
@@ -781,7 +781,7 @@
   {
     "uid": "E1-2-003",
     "display_no": "003",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.326",
@@ -813,7 +813,7 @@
   {
     "uid": "E1-2-004",
     "display_no": "004",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.327",
@@ -844,7 +844,7 @@
   {
     "uid": "E1-2-005",
     "display_no": "005",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.328",
@@ -880,7 +880,7 @@
   {
     "uid": "E1-2-006",
     "display_no": "006",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.328",
@@ -907,7 +907,7 @@
   {
     "uid": "E1-2-007",
     "display_no": "007",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.328",
@@ -948,7 +948,7 @@
   {
     "uid": "E1-2-008",
     "display_no": "008",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.328",
@@ -975,7 +975,7 @@
   {
     "uid": "E1-2-009",
     "display_no": "009",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.329",
@@ -1017,7 +1017,7 @@
   {
     "uid": "E1-2-010",
     "display_no": "010",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.329",
@@ -1044,7 +1044,7 @@
   {
     "uid": "E1-2-011",
     "display_no": "011",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.329",
@@ -1071,7 +1071,7 @@
   {
     "uid": "E1-2-012",
     "display_no": "012",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.329",
@@ -1098,7 +1098,7 @@
   {
     "uid": "E1-2-013",
     "display_no": "013",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.330",
@@ -1145,7 +1145,7 @@
   {
     "uid": "E1-2-014",
     "display_no": "014",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.331",
@@ -1192,7 +1192,7 @@
   {
     "uid": "E1-2-015",
     "display_no": "015",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.332",
@@ -1219,7 +1219,7 @@
   {
     "uid": "E1-2-016",
     "display_no": "016",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.333",
@@ -1266,7 +1266,7 @@
   {
     "uid": "E1-2-017",
     "display_no": "017",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.333",
@@ -1313,7 +1313,7 @@
   {
     "uid": "E1-2-018",
     "display_no": "018",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.336",
@@ -1360,7 +1360,7 @@
   {
     "uid": "E1-2-019",
     "display_no": "019",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.337",
@@ -1387,7 +1387,7 @@
   {
     "uid": "E1-2-020",
     "display_no": "020",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.337",
@@ -1433,7 +1433,7 @@
   {
     "uid": "E1-2-021",
     "display_no": "021",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.337",
@@ -1475,7 +1475,7 @@
   {
     "uid": "E1-2-022",
     "display_no": "022",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.338",
@@ -1521,7 +1521,7 @@
   {
     "uid": "E1-2-023",
     "display_no": "023",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.338",
@@ -1568,7 +1568,7 @@
   {
     "uid": "E1-2-024",
     "display_no": "024",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.339",
@@ -1595,7 +1595,7 @@
   {
     "uid": "E1-2-025",
     "display_no": "025",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.339",
@@ -1622,7 +1622,7 @@
   {
     "uid": "E1-2-026",
     "display_no": "026",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.339",
@@ -1649,7 +1649,7 @@
   {
     "uid": "E1-2-027",
     "display_no": "027",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.339",
@@ -1680,7 +1680,7 @@
   {
     "uid": "E1-2-028",
     "display_no": "028",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.340",
@@ -1726,7 +1726,7 @@
   {
     "uid": "E1-2-029",
     "display_no": "029",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.340",
@@ -1773,7 +1773,7 @@
   {
     "uid": "E1-2-030",
     "display_no": "030",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.340",
@@ -1800,7 +1800,7 @@
   {
     "uid": "E1-2-031",
     "display_no": "031",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.340",
@@ -1846,7 +1846,7 @@
   {
     "uid": "E1-2-032",
     "display_no": "032",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.340",
@@ -1887,7 +1887,7 @@
   {
     "uid": "E1-2-033",
     "display_no": "033",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.340",
@@ -1934,7 +1934,7 @@
   {
     "uid": "E1-2-034",
     "display_no": "034",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.341",
@@ -1960,7 +1960,7 @@
   {
     "uid": "E1-2-035",
     "display_no": "035",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.341",
@@ -2006,7 +2006,7 @@
   {
     "uid": "E1-2-036",
     "display_no": "036",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.341",
@@ -2052,7 +2052,7 @@
   {
     "uid": "E1-2-037",
     "display_no": "037",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.342",
@@ -2099,7 +2099,7 @@
   {
     "uid": "E1-2-038",
     "display_no": "038",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.342",
@@ -2126,7 +2126,7 @@
   {
     "uid": "E1-2-039",
     "display_no": "039",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.342",
@@ -2153,7 +2153,7 @@
   {
     "uid": "E1-2-040",
     "display_no": "040",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.342",
@@ -2180,7 +2180,7 @@
   {
     "uid": "E1-2-041",
     "display_no": "041",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.342",
@@ -2207,7 +2207,7 @@
   {
     "uid": "E1-2-042",
     "display_no": "042",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.342",
@@ -2234,7 +2234,7 @@
   {
     "uid": "E1-2-043",
     "display_no": "043",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.343",
@@ -2281,7 +2281,7 @@
   {
     "uid": "E1-2-044",
     "display_no": "044",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.343",
@@ -2308,7 +2308,7 @@
   {
     "uid": "E1-2-045",
     "display_no": "045",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.344",
@@ -2350,7 +2350,7 @@
   {
     "uid": "E1-2-046",
     "display_no": "046",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.344",
@@ -2392,7 +2392,7 @@
   {
     "uid": "E1-2-047",
     "display_no": "047",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.344",
@@ -2438,7 +2438,7 @@
   {
     "uid": "E1-2-048",
     "display_no": "048",
-    "section": "E-1 診療の基本",
+    "section": "E-1-2 画像検査を用いた診断",
     "category": "E-1-2)",
     "subject": "歯科放射線学",
     "guide_ref": "p.345",
@@ -2484,7 +2484,7 @@
   {
     "uid": "E1-3-001",
     "display_no": "001",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.346",
@@ -2530,7 +2530,7 @@
   {
     "uid": "E1-3-002",
     "display_no": "002",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "口腔外科学",
     "guide_ref": "p.347",
@@ -2576,7 +2576,7 @@
   {
     "uid": "E1-3-003",
     "display_no": "003",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "口腔外科学",
     "guide_ref": "p.347",
@@ -2602,7 +2602,7 @@
   {
     "uid": "E1-3-004",
     "display_no": "004",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "口腔外科学",
     "guide_ref": "p.347",
@@ -2633,7 +2633,7 @@
   {
     "uid": "E1-3-005",
     "display_no": "005",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "口腔外科学",
     "guide_ref": "p.347",
@@ -2679,7 +2679,7 @@
   {
     "uid": "E1-3-006",
     "display_no": "006",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "口腔外科学",
     "guide_ref": "p.347",
@@ -2725,7 +2725,7 @@
   {
     "uid": "E1-3-007",
     "display_no": "007",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.347",
@@ -2771,7 +2771,7 @@
   {
     "uid": "E1-3-008",
     "display_no": "008",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "口腔外科学",
     "guide_ref": "p.352",
@@ -2808,7 +2808,7 @@
   {
     "uid": "E1-3-009",
     "display_no": "009",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.352",
@@ -2855,7 +2855,7 @@
   {
     "uid": "E1-3-010",
     "display_no": "010",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -2902,7 +2902,7 @@
   {
     "uid": "E1-3-011",
     "display_no": "011",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -2933,7 +2933,7 @@
   {
     "uid": "E1-3-012",
     "display_no": "012",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -2974,7 +2974,7 @@
   {
     "uid": "E1-3-013",
     "display_no": "013",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3020,7 +3020,7 @@
   {
     "uid": "E1-3-014",
     "display_no": "014",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3067,7 +3067,7 @@
   {
     "uid": "E1-3-015",
     "display_no": "015",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3113,7 +3113,7 @@
   {
     "uid": "E1-3-016",
     "display_no": "016",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3160,7 +3160,7 @@
   {
     "uid": "E1-3-017",
     "display_no": "017",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3206,7 +3206,7 @@
   {
     "uid": "E1-3-018",
     "display_no": "018",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3232,7 +3232,7 @@
   {
     "uid": "E1-3-019",
     "display_no": "019",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3273,7 +3273,7 @@
   {
     "uid": "E1-3-020",
     "display_no": "020",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3319,7 +3319,7 @@
   {
     "uid": "E1-3-021",
     "display_no": "021",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "生理学",
     "guide_ref": "p.349",
@@ -3346,7 +3346,7 @@
   {
     "uid": "E1-3-022",
     "display_no": "022",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3393,7 +3393,7 @@
   {
     "uid": "E1-3-023",
     "display_no": "023",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3439,7 +3439,7 @@
   {
     "uid": "E1-3-024",
     "display_no": "024",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.349",
@@ -3485,7 +3485,7 @@
   {
     "uid": "E1-3-025",
     "display_no": "025",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.350",
@@ -3517,7 +3517,7 @@
   {
     "uid": "E1-3-026",
     "display_no": "026",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.350",
@@ -3544,7 +3544,7 @@
   {
     "uid": "E1-3-027",
     "display_no": "027",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "口腔外科学",
     "guide_ref": "p.350",
@@ -3591,7 +3591,7 @@
   {
     "uid": "E1-3-028",
     "display_no": "028",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.350",
@@ -3638,7 +3638,7 @@
   {
     "uid": "E1-3-029",
     "display_no": "029",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.350",
@@ -3669,7 +3669,7 @@
   {
     "uid": "E1-3-030",
     "display_no": "030",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "病理学",
     "guide_ref": "p.350",
@@ -3705,7 +3705,7 @@
   {
     "uid": "E1-3-031",
     "display_no": "031",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "病理学",
     "guide_ref": "p.351",
@@ -3751,7 +3751,7 @@
   {
     "uid": "E1-3-032",
     "display_no": "032",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "病理学",
     "guide_ref": "p.351",
@@ -3797,7 +3797,7 @@
   {
     "uid": "E1-3-033",
     "display_no": "033",
-    "section": "E-1 診療の基本",
+    "section": "E-1-3 臨床検査",
     "category": "E-1-3)",
     "subject": "病理学",
     "guide_ref": "p.351",
@@ -3843,7 +3843,7 @@
   {
     "uid": "E1-4-001",
     "display_no": "001",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-1 全身管理",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.354",
@@ -3889,7 +3889,7 @@
   {
     "uid": "E1-4-002",
     "display_no": "002",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-1 全身管理",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.354",
@@ -3920,7 +3920,7 @@
   {
     "uid": "E1-4-003",
     "display_no": "003",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-2 精神鎮静法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.355",
@@ -3966,7 +3966,7 @@
   {
     "uid": "E1-4-004",
     "display_no": "004",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-2 精神鎮静法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.355",
@@ -4007,7 +4007,7 @@
   {
     "uid": "E1-4-005",
     "display_no": "005",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-2 精神鎮静法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.355",
@@ -4048,7 +4048,7 @@
   {
     "uid": "E1-4-006",
     "display_no": "006",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-2 精神鎮静法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.355",
@@ -4094,7 +4094,7 @@
   {
     "uid": "E1-4-007",
     "display_no": "007",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-2 精神鎮静法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.355",
@@ -4135,7 +4135,7 @@
   {
     "uid": "E1-4-008",
     "display_no": "008",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-2 精神鎮静法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.355",
@@ -4181,7 +4181,7 @@
   {
     "uid": "E1-4-009",
     "display_no": "009",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-2 精神鎮静法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.355",
@@ -4208,7 +4208,7 @@
   {
     "uid": "E1-4-010",
     "display_no": "010",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-2 精神鎮静法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.355",
@@ -4255,7 +4255,7 @@
   {
     "uid": "E1-4-011",
     "display_no": "011",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-2 精神鎮静法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.356",
@@ -4286,7 +4286,7 @@
   {
     "uid": "E1-4-012",
     "display_no": "012",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-2 精神鎮静法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.356",
@@ -4332,7 +4332,7 @@
   {
     "uid": "E1-4-013",
     "display_no": "013",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.356",
@@ -4373,7 +4373,7 @@
   {
     "uid": "E1-4-014",
     "display_no": "014",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.356",
@@ -4399,7 +4399,7 @@
   {
     "uid": "E1-4-015",
     "display_no": "015",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.356",
@@ -4446,7 +4446,7 @@
   {
     "uid": "E1-4-016",
     "display_no": "016",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.356",
@@ -4492,7 +4492,7 @@
   {
     "uid": "E1-4-017",
     "display_no": "017",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.357",
@@ -4523,7 +4523,7 @@
   {
     "uid": "E1-4-018",
     "display_no": "018",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.357",
@@ -4555,7 +4555,7 @@
   {
     "uid": "E1-4-019",
     "display_no": "019",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.357",
@@ -4601,7 +4601,7 @@
   {
     "uid": "E1-4-020",
     "display_no": "020",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.358",
@@ -4627,7 +4627,7 @@
   {
     "uid": "E1-4-021",
     "display_no": "021",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.358",
@@ -4673,7 +4673,7 @@
   {
     "uid": "E1-4-022",
     "display_no": "022",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.358",
@@ -4719,7 +4719,7 @@
   {
     "uid": "E1-4-023",
     "display_no": "023",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.358",
@@ -4765,7 +4765,7 @@
   {
     "uid": "E1-4-024",
     "display_no": "024",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.358",
@@ -4811,7 +4811,7 @@
   {
     "uid": "E1-4-025",
     "display_no": "025",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.358",
@@ -4857,7 +4857,7 @@
   {
     "uid": "E1-4-026",
     "display_no": "026",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.358",
@@ -4883,7 +4883,7 @@
   {
     "uid": "E1-4-027",
     "display_no": "027",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.358",
@@ -4929,7 +4929,7 @@
   {
     "uid": "E1-4-028",
     "display_no": "028",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-3 局所麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.358",
@@ -4955,7 +4955,7 @@
   {
     "uid": "E1-4-029",
     "display_no": "029",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.359",
@@ -5001,7 +5001,7 @@
   {
     "uid": "E1-4-030",
     "display_no": "030",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.361",
@@ -5027,7 +5027,7 @@
   {
     "uid": "E1-4-031",
     "display_no": "031",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.362",
@@ -5073,7 +5073,7 @@
   {
     "uid": "E1-4-032",
     "display_no": "032",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.362",
@@ -5119,7 +5119,7 @@
   {
     "uid": "E1-4-033",
     "display_no": "033",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.362",
@@ -5165,7 +5165,7 @@
   {
     "uid": "E1-4-034",
     "display_no": "034",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.362",
@@ -5211,7 +5211,7 @@
   {
     "uid": "E1-4-035",
     "display_no": "035",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.362",
@@ -5257,7 +5257,7 @@
   {
     "uid": "E1-4-036",
     "display_no": "036",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.362",
@@ -5283,7 +5283,7 @@
   {
     "uid": "E1-4-037",
     "display_no": "037",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科薬理学",
     "guide_ref": "p.362",
@@ -5329,7 +5329,7 @@
   {
     "uid": "E1-4-038",
     "display_no": "038",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.362",
@@ -5355,7 +5355,7 @@
   {
     "uid": "E1-4-039",
     "display_no": "039",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.362",
@@ -5381,7 +5381,7 @@
   {
     "uid": "E1-4-040",
     "display_no": "040",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.363",
@@ -5427,7 +5427,7 @@
   {
     "uid": "E1-4-041",
     "display_no": "041",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科薬理学",
     "guide_ref": "p.363",
@@ -5458,7 +5458,7 @@
   {
     "uid": "E1-4-042",
     "display_no": "042",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.363",
@@ -5505,7 +5505,7 @@
   {
     "uid": "E1-4-043",
     "display_no": "043",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.363",
@@ -5547,7 +5547,7 @@
   {
     "uid": "E1-4-044",
     "display_no": "044",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.363",
@@ -5588,7 +5588,7 @@
   {
     "uid": "E1-4-045",
     "display_no": "045",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.364",
@@ -5635,7 +5635,7 @@
   {
     "uid": "E1-4-046",
     "display_no": "046",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.364",
@@ -5682,7 +5682,7 @@
   {
     "uid": "E1-4-047",
     "display_no": "047",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.364",
@@ -5728,7 +5728,7 @@
   {
     "uid": "E1-4-048",
     "display_no": "048",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.364",
@@ -5755,7 +5755,7 @@
   {
     "uid": "E1-4-049",
     "display_no": "049",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.364",
@@ -5802,7 +5802,7 @@
   {
     "uid": "E1-4-050",
     "display_no": "050",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.364",
@@ -5849,7 +5849,7 @@
   {
     "uid": "E1-4-051",
     "display_no": "051",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.364",
@@ -5886,7 +5886,7 @@
   {
     "uid": "E1-4-052",
     "display_no": "052",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.364",
@@ -5932,7 +5932,7 @@
   {
     "uid": "E1-4-053",
     "display_no": "053",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.365",
@@ -5978,7 +5978,7 @@
   {
     "uid": "E1-4-054",
     "display_no": "054",
-    "section": "E-1 診療の基本",
+    "section": "E-1-4-4 全身麻酔法",
     "category": "E-1-4)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.365",
@@ -6004,7 +6004,7 @@
   {
     "uid": "E1-5-001",
     "display_no": "001",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "歯内療法学",
     "guide_ref": "p.366",
@@ -6041,7 +6041,7 @@
   {
     "uid": "E1-5-002",
     "display_no": "002",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "小児歯科学",
     "guide_ref": "p.366",
@@ -6088,7 +6088,7 @@
   {
     "uid": "E1-5-003",
     "display_no": "003",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "小児歯科学",
     "guide_ref": "p.366",
@@ -6135,7 +6135,7 @@
   {
     "uid": "E1-5-004",
     "display_no": "004",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.366",
@@ -6182,7 +6182,7 @@
   {
     "uid": "E1-5-005",
     "display_no": "005",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.367",
@@ -6224,7 +6224,7 @@
   {
     "uid": "E1-5-006",
     "display_no": "006",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.367",
@@ -6270,7 +6270,7 @@
   {
     "uid": "E1-5-007",
     "display_no": "007",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.367",
@@ -6317,7 +6317,7 @@
   {
     "uid": "E1-5-008",
     "display_no": "008",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.367",
@@ -6364,7 +6364,7 @@
   {
     "uid": "E1-5-009",
     "display_no": "009",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.367",
@@ -6391,7 +6391,7 @@
   {
     "uid": "E1-5-010",
     "display_no": "010",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.367",
@@ -6438,7 +6438,7 @@
   {
     "uid": "E1-5-011",
     "display_no": "011",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.367",
@@ -6485,7 +6485,7 @@
   {
     "uid": "E1-5-012",
     "display_no": "012",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.368",
@@ -6531,7 +6531,7 @@
   {
     "uid": "E1-5-013",
     "display_no": "013",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.370",
@@ -6577,7 +6577,7 @@
   {
     "uid": "E1-5-014",
     "display_no": "014",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.371",
@@ -6604,7 +6604,7 @@
   {
     "uid": "E1-5-015",
     "display_no": "015",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "衛生学",
     "guide_ref": "p.371",
@@ -6650,7 +6650,7 @@
   {
     "uid": "E1-5-016",
     "display_no": "016",
-    "section": "E-1 診療の基本",
+    "section": "E-1-5 小手術",
     "category": "E-1-5)",
     "subject": "口腔外科学",
     "guide_ref": "p.371",
@@ -6691,7 +6691,7 @@
   {
     "uid": "E1-6-001",
     "display_no": "001",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.373",
@@ -6737,7 +6737,7 @@
   {
     "uid": "E1-6-002",
     "display_no": "002",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.373",
@@ -6779,7 +6779,7 @@
   {
     "uid": "E1-6-003",
     "display_no": "003",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.373",
@@ -6825,7 +6825,7 @@
   {
     "uid": "E1-6-004",
     "display_no": "004",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.373",
@@ -6867,7 +6867,7 @@
   {
     "uid": "E1-6-005",
     "display_no": "005",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.373",
@@ -6894,7 +6894,7 @@
   {
     "uid": "E1-6-006",
     "display_no": "006",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.373",
@@ -6940,7 +6940,7 @@
   {
     "uid": "E1-6-007",
     "display_no": "007",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.374",
@@ -6986,7 +6986,7 @@
   {
     "uid": "E1-6-008",
     "display_no": "008",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.374",
@@ -7032,7 +7032,7 @@
   {
     "uid": "E1-6-009",
     "display_no": "009",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.374",
@@ -7079,7 +7079,7 @@
   {
     "uid": "E1-6-010",
     "display_no": "010",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.374",
@@ -7125,7 +7125,7 @@
   {
     "uid": "E1-6-011",
     "display_no": "011",
-    "section": "E-1 診療の基本",
+    "section": "E-1-6 救急処置",
     "category": "E-1-6)",
     "subject": "歯科麻酔学",
     "guide_ref": "p.374",
