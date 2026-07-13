@@ -1164,32 +1164,15 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   window.cbtUser = null;
   window.cbtLogout = function(){ auth.signOut().finally(()=>location.reload()); };
 
-  // ホーム画面アプリ（スタンドアロン）判定
-  const isStandalone = (window.navigator.standalone === true)
-    || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-
-  // リダイレクト方式から戻ってきたときのエラー拾い
-  auth.getRedirectResult().catch(function(err){
-    if(err && err.code) { errEl.textContent = 'ログインに失敗しました。もう一度お試しください。'; console.warn('redirect error', err); }
-  });
-
-  // ログインボタン
+  // ログインボタン（ポップアップ方式・ホーム画面アプリでも入れる）
   document.getElementById('loginBtn').addEventListener('click', function(){
     errEl.textContent = '';
     const btn=this; btn.disabled=true; setTimeout(()=>{btn.disabled=false;},4000);
     const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    if(isStandalone){
-      // ホーム画面アプリ：ポップアップ二度手間を避けてリダイレクト
-      auth.signInWithRedirect(provider).catch(function(err){
-        errEl.textContent = 'ログインに失敗しました。もう一度お試しください。'; console.warn('redirect start error', err);
-      });
-    } else {
-      auth.signInWithPopup(provider).catch(function(err){
-        if(err && (err.code==='auth/popup-closed-by-user'||err.code==='auth/cancelled-popup-request')) return;
-        errEl.textContent = 'ログインに失敗しました。もう一度お試しください。'; console.warn('login error', err);
-      });
-    }
+    auth.signInWithPopup(provider).catch(function(err){
+      if(err && (err.code==='auth/popup-closed-by-user'||err.code==='auth/cancelled-popup-request')) return;
+      errEl.textContent = 'ログインに失敗しました。もう一度お試しください。'; console.warn('login error', err);
+    });
   });
 
   // ユーザーネーム入力モーダル
