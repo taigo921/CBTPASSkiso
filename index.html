@@ -454,6 +454,7 @@
       <button class="lb-tab" data-metric="correct">正解数</button>
       <button class="lb-tab" data-metric="answered">解いた数</button>
       <button class="lb-tab" data-metric="streak">連続正解</button>
+      <button class="lb-tab" data-metric="usage">連続使用</button>
     </div>
     <div id="lbBody"></div>
     <div class="row-btns"><button class="ghost-btn" id="lbRefresh">↻ 更新</button> <button class="ghost-btn" id="lbRename">✎ 名前を変更</button></div>
@@ -1156,11 +1157,21 @@ async function renderLeaderboard(){
     return Object.assign({},u,bookStats||(activeBook==='book1'?u:{}));
   });
   const meUid=window.cbtUser&&window.cbtUser.uid;
+  const currentUsageStreak=u=>{
+    if(!u.lastDay)return 0;
+    const parts=String(u.lastDay).split('-').map(Number);
+    if(parts.length!==3||parts.some(Number.isNaN))return 0;
+    const now=new Date(),today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    const last=new Date(parts[0],parts[1]-1,parts[2]);
+    const days=Math.round((today-last)/86400000);
+    return days<=1?(u.dayStreak||0):0;
+  };
   const defs={
     accuracy:{f:u=>u.accuracy||0, tie:u=>u.answered||0, fmt:u=>(u.accuracy||0)+'%'},
     correct:{f:u=>u.correct||0, tie:u=>u.answered||0, fmt:u=>(u.correct||0)+'問'},
     answered:{f:u=>u.answered||0, tie:u=>u.correct||0, fmt:u=>(u.answered||0)+'問'},
-    streak:{f:u=>u.bestStreak||0, tie:u=>u.correct||0, fmt:u=>(u.bestStreak||0)+'連続'}
+    streak:{f:u=>u.bestStreak||0, tie:u=>u.correct||0, fmt:u=>(u.bestStreak||0)+'連続'},
+    usage:{f:currentUsageStreak, tie:u=>u.answered||0, fmt:u=>currentUsageStreak(u)+'日'}
   };
   const md=defs[lbMetric];
   let list=users.slice();
@@ -1171,7 +1182,7 @@ async function renderLeaderboard(){
   list.forEach((u,i)=>{
     const row=document.createElement('div');
     row.className='lb-row'+(u.uid===meUid?' me':'')+(i<3?' top'+(i+1):'');
-    const sub = lbMetric==='accuracy'? (u.answered||0)+'問' : '正答率 '+(u.accuracy||0)+'%';
+    const sub=lbMetric==='accuracy'?(u.answered||0)+'問':(lbMetric==='usage'?'最終利用 '+(u.lastDay||'—'):'正答率 '+(u.accuracy||0)+'%');
     row.innerHTML='<div class="lb-rank">'+(i+1)+'</div><div class="lb-name">'+escapeHtml(u.username||'名無し')+'<small>'+sub+'</small></div><div class="lb-val">'+md.fmt(u)+'</div>';
     body.appendChild(row);
   });
