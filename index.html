@@ -1260,6 +1260,18 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return [...new Uint8Array(buf)].map(x=>x.toString(16).padStart(2,'0')).join('');
   }
+  function normalizeGmail(email){
+    const parts=String(email).toLowerCase().trim().split('@');
+    if(parts.length!==2)return String(email).toLowerCase().trim();
+    if(parts[1]!=='gmail.com'&&parts[1]!=='googlemail.com')return parts.join('@');
+    return parts[0].split('+')[0].replace(/\./g,'')+'@gmail.com';
+  }
+  async function emailHashCandidates(email){
+    const raw=String(email).toLowerCase().trim(),normalized=normalizeGmail(raw);
+    const hashes=[await sha256(raw)];
+    if(normalized!==raw)hashes.push(await sha256(normalized));
+    return hashes;
+  }
   window.cbtHash = e => sha256(String(e).toLowerCase().trim());
 
   function reveal(){
@@ -1364,9 +1376,10 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   auth.onAuthStateChanged(async function(user){
     if(!user){ return; } // 未ログイン → 関所のまま
     const email = (user.email||'').toLowerCase().trim();
-    const h = await sha256(email);
-    if(ALLOW.indexOf(h) < 0){
+    const hashes=await emailHashCandidates(email);
+    if(!hashes.some(h=>ALLOW.indexOf(h)>=0)){
       errEl.textContent = 'このアカウント（'+email+'）は許可されていません。管理者に連絡してください。';
+      try{if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();}catch(e){}
       try{ await auth.signOut(); }catch(e){}
       return;
     }
