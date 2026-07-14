@@ -90,6 +90,13 @@
   .hero h1{font-size:25px;line-height:1.3;margin:0 0 6px;font-weight:800;}
   .hero p{margin:0;color:var(--muted);font-size:14px;}
 
+  .book-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px;padding:5px;background:#e8eeea;border-radius:18px;}
+  .book-tab{border:0;background:transparent;color:var(--muted);border-radius:14px;padding:12px 8px;cursor:pointer;text-align:center;}
+  .book-tab b{display:block;font-size:15px;font-weight:800;}
+  .book-tab span{display:block;font-size:11px;margin-top:1px;}
+  .book-tab.on{background:var(--card);color:var(--green-d);box-shadow:var(--shadow);}
+  .book-tab.on span{color:var(--green-l);font-weight:700;}
+
   .resume{margin:16px 0 4px;background:linear-gradient(135deg,var(--green),var(--green-l));color:#fff;border-radius:var(--radius);
     padding:16px 18px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);cursor:pointer;}
   .resume .ic{font-size:24px;}
@@ -286,8 +293,13 @@
   <!-- HOME -->
   <section id="home">
     <div class="hero">
-      <h1>歯科CBT対策<br>問題集</h1>
+      <h1>歯科CBT対策<br><span id="bookTitle">問題集1</span></h1>
       <p id="qcount">読み込み中…</p>
+    </div>
+
+    <div class="book-switch" role="tablist" aria-label="問題集を切り替える">
+      <button class="book-tab on" data-book="book1" role="tab" aria-selected="true"><b>問題集1</b><span>基礎系</span></button>
+      <button class="book-tab" data-book="book2" role="tab" aria-selected="false"><b>問題集2</b><span>臨床系</span></button>
     </div>
 
     <div class="resume hidden" id="resumeCard">
@@ -459,49 +471,49 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const DATA_FILES = [
-  "data/1-60.json",
-  "data/61-90.json",
-  "data/91-120.json",
-  "data/121-144.json",
-  "data/145-174.json",
-  "data/175-204.json",
-  "data/C3-034-118.json",
-  "data/C3-119-204.json",
-  "data/C4-001-094.json",
-  "data/C5-001-055.json",
-  "data/C6-001-088.json",
-  "data/D1-001-034.json",
-  "data/D2-001-076.json",
-  "data/E1.json",
-  "data/E2.json",
-  "data/E3.json",
-  "data/E4.json",
-  "data/E5.json"
-];
+const BOOKS = {
+  book1: {
+    title:'問題集1', subtitle:'基礎系',
+    files:[
+      "data/1-60.json", "data/61-90.json", "data/91-120.json",
+      "data/121-144.json", "data/145-174.json", "data/175-204.json",
+      "data/C3-034-118.json", "data/C3-119-204.json", "data/C4-001-094.json",
+      "data/C5-001-055.json", "data/C6-001-088.json",
+      "data/D1-001-034.json", "data/D2-001-076.json"
+    ]
+  },
+  book2: {
+    title:'問題集2', subtitle:'臨床系',
+    files:["data/E1.json", "data/E2.json", "data/E3.json", "data/E4.json", "data/E5.json"]
+  }
+};
 
-let DEFAULT_QUESTIONS = [];
+const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 
 async function loadDefaultQuestions() {
   try {
-    const results = await Promise.all(
-      DATA_FILES.map(file => fetch(file).then(res => {
-        if (!res.ok) throw new Error('fetch failed: ' + file);
+    await Promise.all(Object.entries(BOOKS).map(async ([book,config])=>{
+      const results=await Promise.all(config.files.map(file=>fetch(file).then(res=>{
+        if(!res.ok)throw new Error('fetch failed: '+file);
         return res.json();
-      }))
-    );
-    DEFAULT_QUESTIONS = results.flat();
+      })));
+      DEFAULT_QUESTIONS_BY_BOOK[book]=results.flat();
+    }));
   } catch(e) {
     console.warn('data/*.json の読み込み失敗（手動JSONで代用可）:', e);
-    DEFAULT_QUESTIONS = [];
+    DEFAULT_QUESTIONS_BY_BOOK.book1=[];
+    DEFAULT_QUESTIONS_BY_BOOK.book2=[];
   }
 }
 
 /* ============ ストレージ ============ */
-const STORE_Q='cbt_questions_v1', STORE_S='cbt_stats_v2', STORE_SET='cbt_settings_v2', STORE_SES='cbt_session_v2';
+const STORE_Q='cbt_questions_v1', STORE_S='cbt_stats_v2', STORE_S_BOOKS='cbt_stats_books_v1', STORE_SET='cbt_settings_v2', STORE_SES='cbt_session_v2', STORE_SES_PREFIX='cbt_session_v3_';
 let QUESTIONS=[];
-let stats={perQ:{},answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null};
-let settings={slowSec:60};
+const emptyStats=()=>({perQ:{},answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null});
+let statsByBook={book1:emptyStats(),book2:emptyStats()};
+let stats=statsByBook.book1;
+let settings={slowSec:60,activeBook:'book1'};
+let activeBook='book1';
 let session=null;       // {mode,uids,idx,records,sessionCorrect}
 let timer={start:0,iv:null};
 let pendingPre=null;    // 選択中の事前自信
@@ -537,16 +549,38 @@ function safeRemove(k){
 }
 
 function load(){
-  const s=safeGet(STORE_S); if(s) stats=Object.assign({perQ:{},answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null},s);
   const st=safeGet(STORE_SET); if(st) settings=Object.assign(settings,st);
+  const requestedBook=new URLSearchParams(location.search).get('book');
+  activeBook=BOOKS[requestedBook]?requestedBook:(BOOKS[settings.activeBook]?settings.activeBook:'book1');
+  const stored=safeGet(STORE_S_BOOKS);
+  if(stored){
+    statsByBook.book1=Object.assign(emptyStats(),stored.book1||{});
+    statsByBook.book2=Object.assign(emptyStats(),stored.book2||{});
+  }else{
+    const legacy=safeGet(STORE_S);
+    if(legacy&&legacy.perQ){
+      const uidBooks={};
+      Object.entries(DEFAULT_QUESTIONS_BY_BOOK).forEach(([book,list])=>list.forEach(q=>uidBooks[qkey(q)]=book));
+      Object.entries(legacy.perQ).forEach(([uid,record])=>{
+        const book=uidBooks[uid]; if(book)statsByBook[book].perQ[uid]=record;
+      });
+      Object.values(statsByBook).forEach(s=>{
+        Object.values(s.perQ).forEach(r=>{s.answered+=(r.correct||0)+(r.wrong||0);s.correct+=(r.correct||0);});
+        s.bestStreak=legacy.bestStreak||0;s.dayStreak=legacy.dayStreak||0;s.lastDay=legacy.lastDay||null;
+      });
+      safeSet(STORE_S_BOOKS,statsByBook);
+    }
+  }
+  stats=statsByBook[activeBook];
 }
-const saveStats=()=>safeSet(STORE_S,stats);
+const saveStats=()=>{statsByBook[activeBook]=stats;safeSet(STORE_S_BOOKS,statsByBook);};
 const saveSettings=()=>safeSet(STORE_SET,settings);
-const saveSession=()=>{ if(session&&!session.single) safeSet(STORE_SES,session); };
-const clearSession=()=>{ safeRemove(STORE_SES); };
+const sessionStoreKey=(book=activeBook)=>STORE_SES_PREFIX+book;
+const saveSession=()=>{if(session&&!session.single){session.book=activeBook;safeSet(sessionStoreKey(),session);}};
+const clearSession=()=>{safeRemove(sessionStoreKey());};
 
 function resolveQuestions(){
-  return DEFAULT_QUESTIONS;
+  return DEFAULT_QUESTIONS_BY_BOOK[activeBook]||[];
 }
 function rec(uid){ return stats.perQ[uid]||(stats.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false}); }
 
@@ -571,8 +605,15 @@ function imageList(){return QUESTIONS.filter(q=>q.has_image||q.image||q.image_ba
 
 function renderHome(){
   el('timerChip').classList.remove('show'); clearInterval(timer.iv);
-  el('qcount').textContent=`全 ${QUESTIONS.length} 問`;
-  console.log('[問題集] 総問題数:', QUESTIONS.length);
+  const book=BOOKS[activeBook];
+  el('bookTitle').textContent=book.title;
+  el('qcount').textContent=`${book.subtitle} ・ 全 ${QUESTIONS.length} 問`;
+  document.querySelectorAll('.book-tab').forEach(tab=>{
+    const on=tab.dataset.book===activeBook;
+    tab.classList.toggle('on',on);tab.setAttribute('aria-selected',on?'true':'false');
+  });
+  const logoSmall=document.querySelector('.logo small');if(logoSmall)logoSmall.textContent=book.title;
+  console.log(`[${book.title}] 総問題数:`, QUESTIONS.length);
   console.log('[問題集] has_image=true:', QUESTIONS.filter(q=>q.has_image).length);
   console.log('[問題集] imageあり:', QUESTIONS.filter(q=>q.image).length);
   el('sAnswered').textContent=stats.answered;
@@ -583,7 +624,7 @@ function renderHome(){
   const il=imageList(); el('imageCount').textContent=il.length?`${il.length} 問が対象`:'対象なし'; el('imageMode').disabled=!il.length;
   el('slowSec').value=settings.slowSec;
   // resume
-  const ses=safeGet(STORE_SES);
+  const ses=safeGet(sessionStoreKey());
   if(ses&&ses.uids&&(ses.records?ses.records.length:ses.idx)<ses.uids.length){
     el('resumeCard').classList.remove('hidden');
     const nm={random:'ランダム',order:'順番',review:'復習',fav:'お気に入り',noback:'連問'}[ses.mode]||'';
@@ -591,6 +632,17 @@ function renderHome(){
     el('resumeInfo').textContent=`${nm}モード ・ ${done}/${ses.uids.length}問まで完了`;
   } else el('resumeCard').classList.add('hidden');
   showOnly('home'); el('footer').classList.add('hidden'); setProgress(0);
+}
+
+function switchBook(book){
+  if(!BOOKS[book]||book===activeBook)return;
+  if(session&&session.records&&session.idx<session.uids.length)saveSession();
+  saveStats();
+  activeBook=book;settings.activeBook=book;saveSettings();
+  const url=new URL(location.href);url.searchParams.set('book',book);history.replaceState(null,'',url);
+  stats=statsByBook[activeBook];QUESTIONS=resolveQuestions();session=null;
+  renderHome();toast(`${BOOKS[book].title}に切り替えました`);
+  cloudSyncSoon();
 }
 
 /* ============ セッション ============ */
@@ -611,7 +663,7 @@ function startSession(mode){
   renderQuestion();
 }
 function resumeSession(){
-  const ses=safeGet(STORE_SES);
+  const ses=safeGet(sessionStoreKey());
   if(!ses){renderHome();return;}
   ses.uids=ses.uids.filter(byUid);
   // 回答済みの次の問題から再開（二重カウント防止）
@@ -973,7 +1025,7 @@ el('fileInput').addEventListener('change',e=>{
     const data=JSON.parse(rd.result);
     if(!Array.isArray(data)||!data.length)throw 0;
     if(!data.every(q=>(q.uid||q.id)&&q.question&&q.choices&&q.answer))throw 0;
-    DEFAULT_QUESTIONS=data; QUESTIONS=resolveQuestions();
+    DEFAULT_QUESTIONS_BY_BOOK[activeBook]=data; QUESTIONS=resolveQuestions();
     toast(`${data.length} 問を読み込みました`); renderHome();
   }catch(_){toast('JSONの形式が正しくありません');}};
   rd.readAsText(f,'utf-8'); e.target.value='';
@@ -981,6 +1033,7 @@ el('fileInput').addEventListener('change',e=>{
 
 /* ============ イベント ============ */
 document.querySelectorAll('.mode[data-mode]').forEach(b=>b.addEventListener('click',()=>{if(!b.disabled)startSession(b.dataset.mode);}));
+document.querySelectorAll('.book-tab').forEach(b=>b.addEventListener('click',()=>switchBook(b.dataset.book)));
 el('statsBtn').addEventListener('click',openStats);
 el('listBtn').addEventListener('click',openList);
 el('sectionModeBtn').addEventListener('click',openSectionList);
@@ -993,7 +1046,7 @@ el('nextBtn').addEventListener('click',next);
 el('prevBtn').addEventListener('click',prev);
 el('homeBtn').addEventListener('click',()=>{ if(session&&session.records&&session.idx<session.uids.length){saveSession();} renderHome(); });
 el('slowSec').addEventListener('change',e=>{let v=parseInt(e.target.value)||60;v=Math.max(5,Math.min(600,v));settings.slowSec=v;e.target.value=v;saveSettings();toast(`基準を ${v}秒 に設定`);});
-el('resetStatsBtn').addEventListener('click',()=>{if(confirm('回答履歴・正答率・お気に入りをすべて消します。よろしいですか？')){stats={perQ:{},answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null};saveStats();cloudSyncSoon();renderHome();toast('成績をリセットしました');}});
+el('resetStatsBtn').addEventListener('click',()=>{if(confirm(`${BOOKS[activeBook].title}の回答履歴・正答率・お気に入りをすべて消します。よろしいですか？`)){stats=emptyStats();statsByBook[activeBook]=stats;saveStats();cloudSyncSoon();renderHome();toast(`${BOOKS[activeBook].title}の成績をリセットしました`);}});
 el('clearResumeBtn').addEventListener('click',()=>{clearSession();renderHome();toast('中断データを消しました');});
 
 /* ============ ランキング（クラウド同期） ============ */
@@ -1008,43 +1061,68 @@ function updateStreak(correct){
     stats.lastDay=ymd;
   }
 }
-function statsSummary(){
+function statsSummaryFor(s){
   return {
-    answered:stats.answered||0, correct:stats.correct||0,
-    accuracy: stats.answered? Math.round(stats.correct/stats.answered*1000)/10 : 0,
-    distinct:Object.keys(stats.perQ).length, bestStreak:stats.bestStreak||0, dayStreak:stats.dayStreak||0
+    answered:s.answered||0, correct:s.correct||0,
+    accuracy:s.answered?Math.round(s.correct/s.answered*1000)/10:0,
+    distinct:Object.keys(s.perQ).length,bestStreak:s.bestStreak||0,dayStreak:s.dayStreak||0
   };
 }
-// クラウドに保存する完全ペイロード（集計＋問題ごとのコンパクト記録）
-function fullStatsPayload(){
+function statsSummary(){return statsSummaryFor(stats);}
+function compactStatsPayload(source){
   const pq={};
-  for(const uid in stats.perQ){
-    const r=stats.perQ[uid]; const att=(r.correct||0)+(r.wrong||0);
+  for(const uid in source.perQ){
+    const r=source.perQ[uid];const att=(r.correct||0)+(r.wrong||0);
     if(att>0 || r.fav){ pq[uid]={c:r.correct||0,w:r.wrong||0,f:r.fav?1:0,l:r.last||null}; }
   }
-  return Object.assign(statsSummary(), { perQ:pq, lastDay:stats.lastDay||null });
+  return Object.assign(statsSummaryFor(source),{perQ:pq,lastDay:source.lastDay||null});
+}
+// 問題集ごとの成績を別々に保存。トップ階層は現在の問題集のランキング用。
+function fullStatsPayload(){
+  return Object.assign({
+    activeBook,
+    books:{book1:compactStatsPayload(statsByBook.book1),book2:compactStatsPayload(statsByBook.book2)}
+  },statsSummary());
 }
 // クラウドの記録をローカルに統合（クラウドがマスター・数字は消えない）
-function cbtMergeCloud(cd){
-  if(!cd) return;
+function mergeStatsTarget(target,cd){
+  if(!cd)return target;
   const cp=cd.perQ||{};
   for(const uid in cp){
     const c=cp[uid]; const cAtt=(c.c||0)+(c.w||0);
-    const l=stats.perQ[uid]; const lAtt=l?((l.correct||0)+(l.wrong||0)):-1;
+    const l=target.perQ[uid];const lAtt=l?((l.correct||0)+(l.wrong||0)):-1;
     const localFav=!!(l&&l.fav);
     if(cAtt>lAtt){
-      stats.perQ[uid]={correct:c.c||0,wrong:c.w||0,last:c.l||(c.c>0?'correct':'wrong'),times:(l&&l.times)||[],pre:(l&&l.pre)||[],post:(l&&l.post)||[],fav:false};
+      target.perQ[uid]={correct:c.c||0,wrong:c.w||0,last:c.l||(c.c>0?'correct':'wrong'),times:(l&&l.times)||[],pre:(l&&l.pre)||[],post:(l&&l.post)||[],fav:false};
     } else if(!l){
-      stats.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false};
+      target.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false};
     }
-    if(localFav||c.f) stats.perQ[uid].fav=true;
+    if(localFav||c.f)target.perQ[uid].fav=true;
   }
-  stats.bestStreak=Math.max(stats.bestStreak||0, cd.bestStreak||0);
-  stats.dayStreak=Math.max(stats.dayStreak||0, cd.dayStreak||0);
-  if(cd.lastDay && (!stats.lastDay || String(cd.lastDay)>String(stats.lastDay))) stats.lastDay=cd.lastDay;
+  target.bestStreak=Math.max(target.bestStreak||0,cd.bestStreak||0);
+  target.dayStreak=Math.max(target.dayStreak||0,cd.dayStreak||0);
+  if(cd.lastDay&&(!target.lastDay||String(cd.lastDay)>String(target.lastDay)))target.lastDay=cd.lastDay;
   let att=0,cor=0;
-  for(const uid in stats.perQ){ const r=stats.perQ[uid]; att+=(r.correct||0)+(r.wrong||0); cor+=(r.correct||0); }
-  stats.answered=att; stats.correct=cor;
+  for(const uid in target.perQ){const r=target.perQ[uid];att+=(r.correct||0)+(r.wrong||0);cor+=(r.correct||0);}
+  target.answered=att;target.correct=cor;
+  return target;
+}
+function cbtMergeCloud(cd){
+  if(!cd)return;
+  if(cd.books){
+    statsByBook.book1=mergeStatsTarget(statsByBook.book1,cd.books.book1);
+    statsByBook.book2=mergeStatsTarget(statsByBook.book2,cd.books.book2);
+  }else{
+    // 旧形式のクラウド成績はUIDから元の問題集へ一度だけ振り分ける。
+    const uidBooks={};Object.entries(DEFAULT_QUESTIONS_BY_BOOK).forEach(([book,list])=>list.forEach(q=>uidBooks[qkey(q)]=book));
+    const split={book1:{perQ:{}},book2:{perQ:{}}};
+    Object.entries(cd.perQ||{}).forEach(([uid,r])=>{const book=uidBooks[uid];if(book)split[book].perQ[uid]=r;});
+    ['book1','book2'].forEach(book=>{
+      split[book].bestStreak=cd.bestStreak;split[book].dayStreak=cd.dayStreak;split[book].lastDay=cd.lastDay;
+      statsByBook[book]=mergeStatsTarget(statsByBook[book],split[book]);
+    });
+  }
+  stats=statsByBook[activeBook];
   saveStats();
   if(typeof renderHome==='function') renderHome();
 }
@@ -1073,6 +1151,10 @@ async function renderLeaderboard(){
   let users;
   try{ users=await window.cbtCloud.fetchLeaderboard(); }
   catch(e){ body.innerHTML='<div class="lb-empty">読み込みに失敗しました</div>'; return; }
+  users=users.map(u=>{
+    const bookStats=u.books&&u.books[activeBook];
+    return Object.assign({},u,bookStats||(activeBook==='book1'?u:{}));
+  });
   const meUid=window.cbtUser&&window.cbtUser.uid;
   const defs={
     accuracy:{f:u=>u.accuracy||0, tie:u=>u.answered||0, fmt:u=>(u.accuracy||0)+'%'},
@@ -1110,6 +1192,13 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   await loadDefaultQuestions();
   load();
   QUESTIONS = resolveQuestions();
+  const legacySession=safeGet(STORE_SES);
+  if(legacySession&&legacySession.uids&&legacySession.uids.length){
+    const firstUid=legacySession.uids[0];
+    const legacyBook=Object.entries(DEFAULT_QUESTIONS_BY_BOOK).find(([,list])=>list.some(q=>qkey(q)===firstUid));
+    if(legacyBook&&!safeGet(sessionStoreKey(legacyBook[0]))){legacySession.book=legacyBook[0];safeSet(sessionStoreKey(legacyBook[0]),legacySession);}
+    safeRemove(STORE_SES);
+  }
   renderHome();
   window.cbtAppReady = true;
   if (window._pendingCloud) { cbtMergeCloud(window._pendingCloud); window._pendingCloud = null; }
@@ -1241,7 +1330,15 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     fetchLeaderboard: async function(){
       const snap = await db.collection('users').get();
       const arr = [];
-      snap.forEach(function(d){ const x = d.data(); x.uid = d.id; delete x.perQ; arr.push(x); });
+      snap.forEach(function(d){
+        const x=d.data();x.uid=d.id;delete x.perQ;
+        if(x.books){
+          x.books=Object.fromEntries(Object.entries(x.books).map(function(entry){
+            const summary=Object.assign({},entry[1]);delete summary.perQ;return [entry[0],summary];
+          }));
+        }
+        arr.push(x);
+      });
       return arr;
     }
   };
