@@ -24,6 +24,9 @@
   #authGate .auth-brand span{font-size:13px;color:#5d6b64;margin-left:6px;font-weight:600;}
   #authGate .auth-lead{color:#13201b;font-size:14px;margin:18px 0 22px;line-height:1.7;}
   #authGate #gbtn{display:flex;justify-content:center;min-height:44px;}
+  #authGate .auth-browser-help{margin:14px auto 0;padding:12px 14px;border-radius:12px;background:#f2f7f5;color:#4c6259;font-size:12px;line-height:1.6;}
+  #authGate .auth-browser-help strong{display:block;color:#0E5E45;font-size:13px;margin-bottom:4px;}
+  #authGate .auth-browser-help a{display:inline-flex;margin-top:8px;padding:8px 16px;border-radius:18px;background:#0E5E45;color:#fff;text-decoration:none;font-weight:700;}
   #authGate .auth-err{color:#d8453b;font-size:13px;margin-top:16px;min-height:18px;line-height:1.55;word-break:break-all;}
   #authGate .auth-foot{color:#94a29b;font-size:11px;margin-top:22px;line-height:1.6;}
   #logoutBtn{position:fixed;left:12px;bottom:12px;z-index:9998;display:none;background:#fff;border:1px solid #e3e8e5;color:#5d6b64;font-size:12px;padding:7px 12px;border-radius:20px;box-shadow:0 2px 8px rgba(20,40,30,.12);cursor:pointer;}
@@ -261,6 +264,11 @@
     <div class="auth-brand">歯科CBT<span>クイズ</span></div>
     <p class="auth-lead">友達だけの限定アプリです。<br>許可されたGoogleアカウントでログインしてください。</p>
     <div id="gbtn" style="display:flex;justify-content:center;min-height:44px;"></div>
+    <div class="auth-browser-help" id="authBrowserHelp">
+      <strong>iPhoneでエラー403が出る場合</strong>
+      ホーム画面のアプリ内ではなく、Safariでこのページを開いてからログインしてください。<br>
+      <a href="https://taigo921.github.io/CBTPASSkiso/" target="_blank" rel="noopener">Safariで開く</a>
+    </div>
     <p class="auth-err" id="authErr"></p>
     <p class="auth-foot">※ログインは本人確認のためだけに使います。</p>
   </div>
@@ -1241,6 +1249,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     "85949f0f4ce6cced17672c297bc7f54cae9315cb67cff3bf84911f3f29690e83", // 友達3
     "d7f8d24cbb8f0e792862b1dfa301ab2e2a87b043cd7ee796799c3b0b78242363", // 友達4
     "6cc5881e908692f312d0b11a1a416723d11d2905de1a3df3844554ba84c5b16e", // 友達5
+    "c519bfd7735cd2a3984f3646069ef194a7ba08507948fe33b54b2f0fd7657491", // 友達5（画像のアカウント）
     // ↑ 友達のハッシュはこの下に足していく
   ];
   // ================
@@ -1284,7 +1293,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     auth.signOut().finally(()=>location.reload());
   };
 
-  // Google Identity Services（アプリ内完結ログイン。ホーム画面アプリでも入れる）
+  // Google Identity Services（Googleの規約上、ログインは通常のブラウザで行う）
   const GIS_CLIENT_ID = "657737591623-vk9f9ndrucrq82itg3tq2orc7cirro86.apps.googleusercontent.com";
   function onGoogleCredential(resp){
     errEl.textContent = '';
@@ -1298,6 +1307,13 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   }
   function initGis(){
     if(!(window.google && google.accounts && google.accounts.id)){ return setTimeout(initGis, 150); }
+    // iOSのホーム画面アプリは埋め込みブラウザ扱いになり、GoogleがOAuthを拒否する。
+    // この場合は上のリンクからSafariへ移動してもらう。
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if(standalone){
+      document.getElementById('gbtn').innerHTML = '<span style="font-size:13px;color:#5d6b64;padding:10px 0">Safariで開いてログインしてください</span>';
+      return;
+    }
     google.accounts.id.initialize({
       client_id: GIS_CLIENT_ID,
       callback: onGoogleCredential,
