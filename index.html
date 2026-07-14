@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="CBT PASS">
+<meta name="apple-mobile-web-app-title" content="歯科CBT問題集">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<title>CBT PASS クイズ</title>
+<title>歯科CBT問題集</title>
 <!-- ▼ ログイン＆ランキング（Firebase） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -251,7 +251,7 @@
 <!-- ▼ ログイン関所（許可されたGoogleアカウントのみ解錠） -->
 <div id="authGate">
   <div class="auth-card">
-    <div class="auth-brand">CBT PASS<span>クイズ</span></div>
+    <div class="auth-brand">歯科CBT<span>クイズ</span></div>
     <p class="auth-lead">友達だけの限定アプリです。<br>許可されたGoogleアカウントでログインしてください。</p>
     <div id="gbtn" style="display:flex;justify-content:center;min-height:44px;"></div>
     <p class="auth-err" id="authErr"></p>
@@ -273,7 +273,7 @@
 
 <header>
   <div class="head-row">
-    <div class="logo">CBT PASS<small>クイズ</small></div>
+    <div class="logo">歯科CBT<small>クイズ</small></div>
     <div class="head-spacer"></div>
     <div class="timer-chip" id="timerChip">⏱ <span id="timerVal">0.0</span>s</div>
     <button class="ghost-btn" id="homeBtn">ホーム</button>
@@ -286,7 +286,7 @@
   <!-- HOME -->
   <section id="home">
     <div class="hero">
-      <h1>歯科CBT対策<br>CBT PASS 問題集</h1>
+      <h1>歯科CBT対策<br>問題集</h1>
       <p id="qcount">読み込み中…</p>
     </div>
 
@@ -572,9 +572,9 @@ function imageList(){return QUESTIONS.filter(q=>q.has_image||q.image||q.image_ba
 function renderHome(){
   el('timerChip').classList.remove('show'); clearInterval(timer.iv);
   el('qcount').textContent=`全 ${QUESTIONS.length} 問`;
-  console.log('[CBT] 総問題数:', QUESTIONS.length);
-  console.log('[CBT] has_image=true:', QUESTIONS.filter(q=>q.has_image).length);
-  console.log('[CBT] imageあり:', QUESTIONS.filter(q=>q.image).length);
+  console.log('[問題集] 総問題数:', QUESTIONS.length);
+  console.log('[問題集] has_image=true:', QUESTIONS.filter(q=>q.has_image).length);
+  console.log('[問題集] imageあり:', QUESTIONS.filter(q=>q.image).length);
   el('sAnswered').textContent=stats.answered;
   el('sAcc').textContent=stats.answered?Math.round(stats.correct/stats.answered*100)+'%':'—';
   el('sFav').textContent=favList().length;
