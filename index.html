@@ -27,6 +27,15 @@
   #authGate .auth-browser-help{margin:14px auto 0;padding:12px 14px;border-radius:12px;background:#f2f7f5;color:#4c6259;font-size:12px;line-height:1.6;}
   #authGate .auth-browser-help strong{display:block;color:#0E5E45;font-size:13px;margin-bottom:4px;}
   #authGate .auth-browser-help a{display:inline-flex;margin-top:8px;padding:8px 16px;border-radius:18px;background:#0E5E45;color:#fff;text-decoration:none;font-weight:700;}
+  #authGate .auth-email{display:none;margin-top:10px;text-align:left;}
+  #authGate .auth-email.show{display:block;}
+  #authGate .auth-email input{width:100%;box-sizing:border-box;margin-top:9px;padding:12px 14px;border:1.5px solid #d9e2de;border-radius:12px;font-size:16px;background:#fff;}
+  #authGate .auth-email input:focus{outline:none;border-color:#1B7D5E;}
+  #authGate .auth-email-actions{display:flex;gap:8px;margin-top:10px;}
+  #authGate .auth-email button{flex:1;border:0;border-radius:12px;padding:11px 8px;font-size:13px;font-weight:700;cursor:pointer;}
+  #authGate #emailLoginBtn{background:#0E5E45;color:#fff;}
+  #authGate #emailSetupBtn{background:#e8f2ee;color:#0E5E45;}
+  #authGate .auth-email-note{margin:9px 2px 0;color:#6f8078;font-size:11px;line-height:1.55;}
   #authGate .auth-err{color:#d8453b;font-size:13px;margin-top:16px;min-height:18px;line-height:1.55;word-break:break-all;}
   #authGate .auth-foot{color:#94a29b;font-size:11px;margin-top:22px;line-height:1.6;}
   #logoutBtn{position:fixed;left:12px;bottom:12px;z-index:9998;display:none;background:#fff;border:1px solid #e3e8e5;color:#5d6b64;font-size:12px;padding:7px 12px;border-radius:20px;box-shadow:0 2px 8px rgba(20,40,30,.12);cursor:pointer;}
@@ -264,6 +273,15 @@
     <div class="auth-brand">歯科CBT<span>クイズ</span></div>
     <p class="auth-lead">友達だけの限定アプリです。<br>許可されたGoogleアカウントでログインしてください。</p>
     <div id="gbtn" style="display:flex;justify-content:center;min-height:44px;"></div>
+    <div class="auth-email" id="authEmailBox">
+      <input id="authEmail" type="email" inputmode="email" autocomplete="email" placeholder="許可されたGmail">
+      <input id="authPassword" type="password" autocomplete="current-password" placeholder="ホーム画面用パスワード">
+      <div class="auth-email-actions">
+        <button id="emailLoginBtn" type="button">ログイン</button>
+        <button id="emailSetupBtn" type="button">初回設定</button>
+      </div>
+      <p class="auth-email-note">初回設定を押すと、パスワード設定メールが届きます。設定後、この画面へ戻ってログインしてください。</p>
+    </div>
     <div class="auth-browser-help" id="authBrowserHelp">
       <strong>iPhoneでエラー403が出る場合</strong>
       ホーム画面のアプリ内ではなく、Safariでこのページを開いてからログインしてください。<br>
@@ -1282,6 +1300,10 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     if(normalized!==raw)hashes.push(await sha256(normalized));
     return hashes;
   }
+  async function isAllowedEmail(email){
+    const hashes=await emailHashCandidates(email);
+    return hashes.some(hash=>ALLOW.indexOf(hash)>=0);
+  }
   window.cbtHash = e => sha256(String(e).toLowerCase().trim());
 
   function reveal(){
@@ -1293,6 +1315,39 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     try{ if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); }catch(e){}
     auth.signOut().finally(()=>location.reload());
   };
+
+  async function emailPasswordLogin(){
+    const email=document.getElementById('authEmail').value.trim();
+    const password=document.getElementById('authPassword').value;
+    errEl.style.color='';
+    errEl.textContent='';
+    if(!email || !password){ errEl.textContent='Gmailとパスワードを入力してください。'; return; }
+    if(!(await isAllowedEmail(email))){ errEl.textContent='このGoogleアカウントは許可されていません。'; return; }
+    try{
+      await auth.signInWithEmailAndPassword(email,password);
+    }catch(error){
+      console.warn('email sign-in error',error);
+      errEl.textContent='ログインできませんでした。初回設定またはパスワードを確認してください。';
+    }
+  }
+  async function sendPasswordSetup(){
+    const email=document.getElementById('authEmail').value.trim();
+    errEl.style.color='';
+    errEl.textContent='';
+    if(!email){ errEl.textContent='許可されたGmailを入力してください。'; return; }
+    if(!(await isAllowedEmail(email))){ errEl.textContent='このGoogleアカウントは許可されていません。'; return; }
+    try{
+      await auth.sendPasswordResetEmail(email,{url:'https://taigo921.github.io/CBTPASSkiso/'});
+      errEl.style.color='#0E5E45';
+      errEl.textContent='パスワード設定メールを送りました。メールを確認してください。';
+    }catch(error){
+      console.warn('password setup error',error);
+      errEl.textContent='設定メールを送れませんでした。少し待ってもう一度お試しください。';
+    }
+  }
+  document.getElementById('emailLoginBtn').addEventListener('click',emailPasswordLogin);
+  document.getElementById('emailSetupBtn').addEventListener('click',sendPasswordSetup);
+  document.getElementById('authPassword').addEventListener('keydown',event=>{ if(event.key==='Enter') emailPasswordLogin(); });
 
   // Google Identity Services（Googleの規約上、ログインは通常のブラウザで行う）
   const GIS_CLIENT_ID = "657737591623-vk9f9ndrucrq82itg3tq2orc7cirro86.apps.googleusercontent.com";
@@ -1312,7 +1367,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     // この場合は上のリンクからSafariへ移動してもらう。
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     if(standalone){
-      document.getElementById('gbtn').innerHTML = '<span style="font-size:13px;color:#5d6b64;padding:10px 0">Safariで開いてログインしてください</span>';
+      document.getElementById('gbtn').innerHTML = '<span style="font-size:13px;color:#5d6b64;padding:6px 0">ホーム画面用ログイン</span>';
+      document.getElementById('authEmailBox').classList.add('show');
       return;
     }
     google.accounts.id.initialize({
