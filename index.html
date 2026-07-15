@@ -33,6 +33,7 @@
   #authGate .auth-email input:focus{outline:none;border-color:#1B7D5E;}
   #authGate .auth-email-actions{display:flex;gap:8px;margin-top:10px;}
   #authGate .auth-email button{flex:1;border:0;border-radius:12px;padding:11px 8px;font-size:13px;font-weight:700;cursor:pointer;}
+  #authGate .auth-email button:disabled{cursor:default;opacity:.68;}
   #authGate #emailLoginBtn{background:#0E5E45;color:#fff;}
   #authGate #emailSetupBtn{background:#e8f2ee;color:#0E5E45;}
   #authGate .auth-email-note{margin:9px 2px 0;color:#6f8078;font-size:11px;line-height:1.55;}
@@ -1332,16 +1333,29 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   }
   async function sendPasswordSetup(){
     const email=document.getElementById('authEmail').value.trim();
+    const setupBtn=document.getElementById('emailSetupBtn');
+    if(setupBtn.disabled)return;
     errEl.style.color='';
     errEl.textContent='';
     if(!email){ errEl.textContent='許可されたGmailを入力してください。'; return; }
-    if(!(await isAllowedEmail(email))){ errEl.textContent='このGoogleアカウントは許可されていません。'; return; }
+    setupBtn.disabled=true;
+    setupBtn.textContent='確認中…';
+    if(!(await isAllowedEmail(email))){
+      setupBtn.disabled=false;
+      setupBtn.textContent='初回設定';
+      errEl.textContent='このGoogleアカウントは許可されていません。';
+      return;
+    }
+    setupBtn.textContent='送信中…';
     try{
       await auth.sendPasswordResetEmail(email,{url:'https://taigo921.github.io/CBTPASSkiso/'});
+      setupBtn.textContent='送信しました';
       errEl.style.color='#0E5E45';
       errEl.textContent='パスワード設定メールを送りました。メールを確認してください。';
     }catch(error){
       console.warn('password setup error',error);
+      setupBtn.disabled=false;
+      setupBtn.textContent='初回設定';
       errEl.textContent='設定メールを送れませんでした。少し待ってもう一度お試しください。';
     }
   }
