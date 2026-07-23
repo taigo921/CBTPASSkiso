@@ -199,7 +199,18 @@
   .exp-item .m{font-weight:800;flex:none;font-size:15px;}
   .exp-item .m.o{color:var(--correct);} .exp-item .m.x{color:var(--wrong);}
   .exp-item .lab{font-weight:800;margin-right:2px;}
-  .guide{font-size:11.5px;color:var(--muted);margin-top:10px;}
+  .guide{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:12px;}
+  .guide .guide-label{font-weight:700;}
+  .guide .guide-link{border:1px solid #bdd9cd;background:#eaf4ef;color:var(--green-d);border-radius:999px;padding:6px 11px;font-size:12px;font-weight:800;cursor:pointer;}
+  .guide .guide-subject{margin-left:2px;}
+
+  .guide-viewer{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;}
+  .guide-viewer-head{flex:none;display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(20,40,30,.08);}
+  .guide-viewer-head button{border:1px solid var(--line);background:#fff;color:var(--green-d);border-radius:999px;padding:8px 13px;font-size:13px;font-weight:800;cursor:pointer;}
+  .guide-viewer-head strong{font-size:15px;color:var(--green-d);}
+  .guide-viewer-scroll{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 8px calc(20px + env(safe-area-inset-bottom));text-align:center;}
+  .guide-viewer img{display:block;width:100%;max-width:976px;height:auto;margin:0 auto;background:#fff;box-shadow:var(--shadow);}
+  .guide-viewer-error{margin:40px auto;padding:16px;max-width:360px;color:var(--wrong);font-size:14px;line-height:1.7;}
 
   .footer{position:fixed;left:0;right:0;bottom:0;z-index:30;background:linear-gradient(180deg,rgba(245,247,245,0),rgba(245,247,245,.96) 30%);
     padding:14px 16px calc(14px + env(safe-area-inset-bottom));}
@@ -293,6 +304,17 @@
   </div>
 </div>
 <button id="logoutBtn" onclick="cbtLogout()">ログアウト</button>
+
+<div id="guideViewer" class="guide-viewer hidden" role="dialog" aria-modal="true" aria-label="ガイド編">
+  <div class="guide-viewer-head">
+    <button id="guideCloseBtn" type="button">‹ 問題へ戻る</button>
+    <strong id="guideTitle">ガイド編</strong>
+  </div>
+  <div class="guide-viewer-scroll" id="guideScroll">
+    <img id="guidePageImg" alt="ガイド編の参照ページ">
+    <div id="guidePageError" class="guide-viewer-error hidden">ページを読み込めませんでした。通信状態を確認して、もう一度お試しください。</div>
+  </div>
+</div>
 
 <!-- ▼ ユーザーネーム登録モーダル -->
 <div id="unameModal" class="modal-backdrop">
@@ -549,6 +571,39 @@ let pendingPre=null;    // 選択中の事前自信
 const el=id=>document.getElementById(id);
 const qkey=q=>q.uid||q.id;
 const qno=q=>q.display_no||q.id;
+
+function guidePages(ref){
+  return [...new Set((String(ref||'').match(/\d+/g)||[]).map(Number).filter(page=>page>=1&&page<=681))];
+}
+function openGuide(page){
+  const viewer=el('guideViewer'),img=el('guidePageImg'),error=el('guidePageError');
+  el('guideTitle').textContent=`ガイド編 p.${page}`;
+  error.classList.add('hidden');
+  img.classList.remove('hidden');
+  img.src=`guide/p${page}.webp`;
+  viewer.classList.remove('hidden');
+  el('guideScroll').scrollTop=0;
+  document.body.style.overflow='hidden';
+}
+function closeGuide(){
+  el('guideViewer').classList.add('hidden');
+  document.body.style.overflow='';
+}
+function renderGuideLinks(q){
+  const guide=el('qGuide');
+  guide.innerHTML='';
+  const pages=guidePages(q.guide_ref);
+  if(!pages.length){guide.classList.add('hidden');return;}
+  const label=document.createElement('span');label.className='guide-label';label.textContent='📘 ガイド編';guide.appendChild(label);
+  pages.forEach(page=>{
+    const button=document.createElement('button');button.type='button';button.className='guide-link';button.textContent=`p.${page}を開く`;
+    button.addEventListener('click',()=>openGuide(page));guide.appendChild(button);
+  });
+  if(q.subject){const subject=document.createElement('span');subject.className='guide-subject';subject.textContent=`／ 科目：${q.subject}`;guide.appendChild(subject);}
+  guide.classList.remove('hidden');
+}
+el('guideCloseBtn').addEventListener('click',closeGuide);
+el('guidePageImg').addEventListener('error',()=>{el('guidePageImg').classList.add('hidden');el('guidePageError').classList.remove('hidden');});
 
 /* Safari file:// 対応：localStorageが使えない場合はメモリにフォールバック */
 const _memStore={};
@@ -839,7 +894,7 @@ function submit(skip){
     d.innerHTML=`<span class="m ${cls}">${escapeHtml(mk)}</span><span><span class="lab">${escapeHtml(it.labels||'')}：</span>${escapeHtml(it.text||'')}</span>`;
     list.appendChild(d);
   });
-  el('qGuide').textContent=q.guide_ref?`📘 ガイド編 ▶ ${q.guide_ref}　／　科目 ▶ ${q.subject||''}`:'';
+  renderGuideLinks(q);
   el('resultBlock').classList.remove('hidden');
   el('nextBtn').textContent=(session.idx<session.uids.length-1)?'次の問題へ ›':lastLabel();
   el('nextBtn').disabled=false;
