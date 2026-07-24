@@ -208,9 +208,13 @@
   .guide-viewer-head{flex:none;display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(20,40,30,.08);}
   .guide-viewer-head button{border:1px solid var(--line);background:#fff;color:var(--green-d);border-radius:999px;padding:8px 13px;font-size:13px;font-weight:800;cursor:pointer;}
   .guide-viewer-head strong{font-size:15px;color:var(--green-d);}
-  .guide-viewer-scroll{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 8px calc(20px + env(safe-area-inset-bottom));text-align:center;}
-  .guide-viewer img{display:block;width:100%;max-width:976px;height:auto;margin:0 auto;background:#fff;box-shadow:var(--shadow);}
-  .guide-viewer-error{margin:40px auto;padding:16px;max-width:360px;color:var(--wrong);font-size:14px;line-height:1.7;}
+  .guide-viewer-scroll{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 8px calc(20px + env(safe-area-inset-bottom));text-align:center;overflow-anchor:none;}
+  .guide-pages{width:100%;max-width:976px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}
+  .guide-page{position:relative;width:100%;aspect-ratio:976/1395;background:#fff;box-shadow:var(--shadow);overflow:hidden;}
+  .guide-page img{display:block;width:100%;height:100%;object-fit:contain;background:#fff;}
+  .guide-page-placeholder{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:13px;background:#fff;}
+  .guide-page.loaded .guide-page-placeholder{display:none;}
+  .guide-page-error{position:absolute;inset:0;display:grid;place-items:center;padding:24px;color:var(--wrong);font-size:14px;line-height:1.7;background:#fff;}
 
   .footer{position:fixed;left:0;right:0;bottom:0;z-index:30;background:linear-gradient(180deg,rgba(245,247,245,0),rgba(245,247,245,.96) 30%);
     padding:14px 16px calc(14px + env(safe-area-inset-bottom));}
@@ -311,8 +315,7 @@
     <strong id="guideTitle">ガイド編</strong>
   </div>
   <div class="guide-viewer-scroll" id="guideScroll">
-    <img id="guidePageImg" alt="ガイド編の参照ページ">
-    <div id="guidePageError" class="guide-viewer-error hidden">ページを読み込めませんでした。通信状態を確認して、もう一度お試しください。</div>
+    <div id="guidePages" class="guide-pages"></div>
   </div>
 </div>
 
@@ -575,15 +578,75 @@ const qno=q=>q.display_no||q.id;
 function guidePages(ref){
   return [...new Set((String(ref||'').match(/\d+/g)||[]).map(Number).filter(page=>page>=1&&page<=681))];
 }
+const GUIDE_TOTAL_PAGES=681;
+let guidePagesBuilt=false;
+let guideLoadObserver=null;
+function buildGuidePages(){
+  if(guidePagesBuilt)return;
+  const host=el('guidePages'),scroll=el('guideScroll');
+  const fragment=document.createDocumentFragment();
+  for(let page=1;page<=GUIDE_TOTAL_PAGES;page++){
+    const item=document.createElement('section');
+    item.className='guide-page';
+    item.id=`guide-page-${page}`;
+    item.dataset.page=page;
+    const placeholder=document.createElement('div');
+    placeholder.className='guide-page-placeholder';
+    placeholder.textContent=`ガイド編 p.${page}`;
+    const img=document.createElement('img');
+    img.alt=`ガイド編 p.${page}`;
+    img.dataset.src=`guide/p${page}.webp`;
+    img.addEventListener('load',()=>{
+      item.querySelector('.guide-page-error')?.remove();
+      item.classList.add('loaded');
+    });
+    img.addEventListener('error',()=>{
+      if(!img.getAttribute('src'))return;
+      item.classList.add('loaded');
+      const error=document.createElement('div');
+      error.className='guide-page-error';
+      error.textContent=`p.${page}を読み込めませんでした。通信状態を確認してください。`;
+      item.appendChild(error);
+    });
+    item.append(placeholder,img);
+    fragment.appendChild(item);
+  }
+  host.appendChild(fragment);
+  if('IntersectionObserver' in window){
+    guideLoadObserver=new IntersectionObserver(entries=>{
+      entries.forEach(entry=>{
+        const img=entry.target;
+        if(entry.isIntersecting){
+          if(!img.getAttribute('src'))img.src=img.dataset.src;
+        }else if(img.getAttribute('src')){
+          img.removeAttribute('src');
+          img.closest('.guide-page').querySelector('.guide-page-error')?.remove();
+          img.closest('.guide-page').classList.remove('loaded');
+        }
+      });
+    },{root:scroll,rootMargin:'1400px 0px'});
+    host.querySelectorAll('img').forEach(img=>guideLoadObserver.observe(img));
+  }else{
+    host.querySelectorAll('img').forEach(img=>{img.src=img.dataset.src;});
+  }
+  guidePagesBuilt=true;
+}
+function updateGuideTitle(){
+  const scroll=el('guideScroll'),rect=scroll.getBoundingClientRect();
+  const node=document.elementFromPoint(rect.left+Math.min(20,rect.width/2),rect.top+20);
+  const page=node&&node.closest?node.closest('.guide-page'):null;
+  if(page)el('guideTitle').textContent=`ガイド編 p.${page.dataset.page} / ${GUIDE_TOTAL_PAGES}`;
+}
 function openGuide(page){
-  const viewer=el('guideViewer'),img=el('guidePageImg'),error=el('guidePageError');
-  el('guideTitle').textContent=`ガイド編 p.${page}`;
-  error.classList.add('hidden');
-  img.classList.remove('hidden');
-  img.src=`guide/p${page}.webp`;
+  const viewer=el('guideViewer');
+  buildGuidePages();
+  el('guideTitle').textContent=`ガイド編 p.${page} / ${GUIDE_TOTAL_PAGES}`;
   viewer.classList.remove('hidden');
-  el('guideScroll').scrollTop=0;
   document.body.style.overflow='hidden';
+  requestAnimationFrame(()=>{
+    const target=el(`guide-page-${page}`);
+    if(target)target.scrollIntoView({block:'start'});
+  });
 }
 function closeGuide(){
   el('guideViewer').classList.add('hidden');
@@ -603,7 +666,7 @@ function renderGuideLinks(q){
   guide.classList.remove('hidden');
 }
 el('guideCloseBtn').addEventListener('click',closeGuide);
-el('guidePageImg').addEventListener('error',()=>{el('guidePageImg').classList.add('hidden');el('guidePageError').classList.remove('hidden');});
+el('guideScroll').addEventListener('scroll',updateGuideTitle,{passive:true});
 
 /* Safari file:// 対応：localStorageが使えない場合はメモリにフォールバック */
 const _memStore={};
