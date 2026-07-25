@@ -110,6 +110,20 @@
   .book-tab.on{background:var(--card);color:var(--green-d);box-shadow:var(--shadow);}
   .book-tab.on span{color:var(--green-l);font-weight:700;}
 
+  .game-card{margin:14px 0 4px;padding:16px;background:linear-gradient(135deg,#fff,#f2f8f5);border:1px solid #d6e5de;border-radius:var(--radius);
+    display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);}
+  .level-orb{width:64px;height:64px;flex:none;border-radius:20px;background:linear-gradient(145deg,var(--green),var(--green-l));color:#fff;
+    display:grid;place-content:center;text-align:center;box-shadow:0 8px 20px rgba(0,105,74,.18);}
+  .level-orb small{font-size:8px;font-weight:900;letter-spacing:.12em;line-height:1;}
+  .level-orb b{font-size:27px;line-height:1.05;}
+  .game-main{min-width:0;flex:1;}
+  .game-top{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+  .rank-badge{display:inline-flex;align-items:center;background:#e6f2ed;color:var(--green-d);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900;}
+  .game-xp{margin-left:auto;color:var(--muted);font-size:11px;font-weight:800;}
+  .xp-bar{height:8px;background:#dfe9e4;border-radius:999px;overflow:hidden;}
+  .xp-bar i{display:block;width:0;height:100%;background:linear-gradient(90deg,#24a878,#f0b94d);border-radius:inherit;transition:width .6s ease;}
+  .xp-note{font-size:10.5px;color:var(--muted);font-weight:700;margin-top:6px;}
+
   .resume{margin:16px 0 4px;background:linear-gradient(135deg,var(--green),var(--green-l));color:#fff;border-radius:var(--radius);
     padding:16px 18px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);cursor:pointer;}
   .resume .ic{font-size:24px;}
@@ -191,6 +205,8 @@
   .verdict .ans{margin-left:auto;font-size:13px;color:var(--muted);font-weight:700;}
   .verdict .ans b{color:var(--green);font-size:16px;}
   .verdict .tm{font-size:12px;color:var(--muted);font-weight:700;background:#eef2ef;border-radius:999px;padding:3px 9px;}
+  .xp-gain{font-size:12px;color:#986a00;background:#fff3cd;border-radius:999px;padding:4px 9px;animation:xpPop .4s ease both;}
+  @keyframes xpPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 
   .exp{margin-top:14px;border-top:1px dashed var(--line);padding-top:14px;}
   .exp h4{margin:0 0 10px;font-size:13px;color:var(--green);font-weight:800;}
@@ -280,6 +296,15 @@
   .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;font-weight:700;
     padding:10px 16px;border-radius:999px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center;}
   .toast.show{opacity:.95;}
+  .level-up{position:fixed;inset:0;z-index:90;background:rgba(3,45,32,.5);display:none;place-items:center;padding:24px;}
+  .level-up.show{display:grid;animation:fadeIn .25s ease both;}
+  .level-up-card{width:min(280px,90vw);background:#fff;border-radius:28px;padding:30px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.28);
+    animation:levelPop .55s cubic-bezier(.18,.89,.32,1.28) both;}
+  .level-up-card small{display:block;color:#c58b10;font-size:12px;font-weight:900;letter-spacing:.18em;}
+  .level-up-card b{display:block;color:var(--green);font-size:68px;line-height:1.08;margin:5px 0;}
+  .level-up-card span{font-size:14px;font-weight:800;color:var(--muted);}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes levelPop{from{transform:scale(.65) rotate(-3deg);opacity:0}to{transform:scale(1);opacity:1}}
 </style>
 </head>
 <body>
@@ -352,6 +377,15 @@
     <div class="book-switch" role="tablist" aria-label="問題集を切り替える">
       <button class="book-tab on" data-book="book1" role="tab" aria-selected="true"><b>問題集1</b><span>基礎系</span></button>
       <button class="book-tab" data-book="book2" role="tab" aria-selected="false"><b>問題集2</b><span>臨床系</span></button>
+    </div>
+
+    <div class="game-card" aria-label="レベルとランク">
+      <div class="level-orb"><small>LEVEL</small><b id="gameLevel">1</b></div>
+      <div class="game-main">
+        <div class="game-top"><span class="rank-badge" id="gameRank">ルーキー</span><span class="game-xp" id="gameXp">0 XP</span></div>
+        <div class="xp-bar"><i id="xpFill"></i></div>
+        <div class="xp-note" id="xpNote">最初の問題に挑戦しよう</div>
+      </div>
     </div>
 
     <div class="resume hidden" id="resumeCard">
@@ -507,6 +541,7 @@
       <button class="lb-tab" data-metric="answered">解いた数</button>
       <button class="lb-tab" data-metric="streak">連続正解</button>
       <button class="lb-tab" data-metric="usage">連続使用</button>
+      <button class="lb-tab" data-metric="level">レベル</button>
     </div>
     <div id="lbBody"></div>
     <div class="row-btns"><button class="ghost-btn" id="lbRefresh">↻ 更新</button> <button class="ghost-btn" id="lbRename">✎ 名前を変更</button></div>
@@ -521,6 +556,7 @@
   </div>
 </div>
 
+<div class="level-up" id="levelUp" aria-hidden="true"><div class="level-up-card"><small>LEVEL UP</small><b id="levelUpNum">2</b><span>新しいレベルに到達！</span></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -560,11 +596,12 @@ async function loadDefaultQuestions() {
 }
 
 /* ============ ストレージ ============ */
-const STORE_Q='cbt_questions_v1', STORE_S='cbt_stats_v2', STORE_S_BOOKS='cbt_stats_books_v1', STORE_SET='cbt_settings_v2', STORE_SES='cbt_session_v2', STORE_SES_PREFIX='cbt_session_v3_';
+const STORE_Q='cbt_questions_v1', STORE_S='cbt_stats_v2', STORE_S_BOOKS='cbt_stats_books_v1', STORE_SET='cbt_settings_v2', STORE_SES='cbt_session_v2', STORE_SES_PREFIX='cbt_session_v3_', STORE_GAME='cbt_game_v1';
 let QUESTIONS=[];
-const emptyStats=()=>({perQ:{},answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null});
+const emptyStats=()=>({perQ:{},rankAttempts:[],answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null});
 let statsByBook={book1:emptyStats(),book2:emptyStats()};
 let stats=statsByBook.book1;
+let game={xp:0,lastBonusDay:null};
 let settings={slowSec:60,activeBook:'book1'};
 let activeBook='book1';
 let session=null;       // {mode,uids,idx,records,sessionCorrect}
@@ -718,8 +755,10 @@ function load(){
     }
   }
   stats=statsByBook[activeBook];
+  game=Object.assign(game,safeGet(STORE_GAME)||{});
 }
 const saveStats=()=>{statsByBook[activeBook]=stats;safeSet(STORE_S_BOOKS,statsByBook);};
+const saveGame=()=>safeSet(STORE_GAME,game);
 const saveSettings=()=>safeSet(STORE_SET,settings);
 const sessionStoreKey=(book=activeBook)=>STORE_SES_PREFIX+book;
 const saveSession=()=>{if(session&&!session.single){session.book=activeBook;safeSet(sessionStoreKey(),session);}};
@@ -728,7 +767,101 @@ const clearSession=()=>{safeRemove(sessionStoreKey());};
 function resolveQuestions(){
   return DEFAULT_QUESTIONS_BY_BOOK[activeBook]||[];
 }
-function rec(uid){ return stats.perQ[uid]||(stats.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false}); }
+function rec(uid){ return stats.perQ[uid]||(stats.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false,xpV:1,rankV:1,xpDay:null}); }
+
+const ymdNow=()=>{
+  const d=new Date();
+  return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+};
+function levelThreshold(level){
+  const n=Math.max(0,level-1);
+  return n*100+n*(n-1)*25/2;
+}
+function levelInfo(xp=game.xp||0){
+  let level=1;
+  while(levelThreshold(level+1)<=xp)level++;
+  const start=levelThreshold(level),next=levelThreshold(level+1);
+  return {level,start,next,progress:next===start?100:(xp-start)/(next-start)*100};
+}
+const RANKS=['ルーキー','ブロンズ','シルバー','ゴールド','プラチナ','ダイヤ','マスター'];
+function latestRankAttempts(source){
+  const seen=new Set(),out=[];
+  [...(source.rankAttempts||[])].sort((a,b)=>(b.a||0)-(a.a||0)).forEach(a=>{
+    if(a&&a.u&&!seen.has(a.u)&&out.length<100){seen.add(a.u);out.push(a);}
+  });
+  return out;
+}
+function rankInfo(source){
+  const attempts=latestRankAttempts(source),n=attempts.length;
+  if(!n)return {name:RANKS[0],score:0,count:0};
+  const score=Math.round(attempts.reduce((sum,a)=>{
+    const correct=a.c?1:0;
+    const speed=correct?((a.s||999)<=settings.slowSec?100:70):0;
+    const conf=correct?(a.p==='自信あり'?100:a.p==='不安'?80:60):(a.p==='自信あり'?0:a.p==='不安'?30:50);
+    return sum+correct*70+speed*.2+conf*.1;
+  },0)/n);
+  let tier=0;
+  if(n>=10)tier=1;
+  if(n>=20&&score>=55)tier=2;
+  if(n>=40&&score>=65)tier=3;
+  if(n>=60&&score>=75)tier=4;
+  if(n>=80&&score>=85)tier=5;
+  if(n>=100&&score>=92)tier=6;
+  return {name:RANKS[tier],score,count:n};
+}
+function renderGameCard(){
+  const lv=levelInfo(),rank=rankInfo(stats);
+  el('gameLevel').textContent=lv.level;
+  el('gameRank').textContent=rank.name;
+  el('gameXp').textContent=`${game.xp||0} XP`;
+  el('xpFill').style.width=Math.max(0,Math.min(100,lv.progress))+'%';
+  el('xpNote').textContent=rank.count<10
+    ?`あと ${10-rank.count} 種類解くとブロンズ判定`
+    :`次のレベルまで ${lv.next-(game.xp||0)} XP ・ ランクスコア ${rank.score}`;
+}
+function showLevelUp(level){
+  el('levelUpNum').textContent=level;
+  el('levelUp').classList.add('show');el('levelUp').setAttribute('aria-hidden','false');
+  clearTimeout(el('levelUp')._t);
+  el('levelUp')._t=setTimeout(()=>{el('levelUp').classList.remove('show');el('levelUp').setAttribute('aria-hidden','true');},1500);
+}
+function awardXp(r,correct,attemptsBefore,hadCorrect){
+  const today=ymdNow();
+  let gain=attemptsBefore===0?(correct?15:3):(!hadCorrect&&correct?10:(correct&&r.xpDay!==today?2:0));
+  if(gain>0&&game.lastBonusDay!==today){gain+=20;game.lastBonusDay=today;}
+  if(gain>0&&correct)gain+=Math.min(5,Math.floor((stats.curStreak||0)/5));
+  r.xpDay=today;r.xpV=1;
+  const old=levelInfo().level;
+  game.xp=(game.xp||0)+gain;saveGame();
+  const now=levelInfo().level;
+  if(now>old)setTimeout(()=>showLevelUp(now),250);
+  return gain;
+}
+function addRankAttempt(book,uid,correct,seconds,pre,id,at){
+  const s=statsByBook[book];
+  s.rankAttempts=s.rankAttempts||[];
+  s.rankAttempts.push({i:id||`${Date.now()}-${uid}-${Math.random().toString(36).slice(2,7)}`,u:uid,c:correct?1:0,s:+seconds||0,p:pre||'',a:at||Date.now()});
+  s.rankAttempts=s.rankAttempts.sort((a,b)=>(a.a||0)-(b.a||0)).slice(-200);
+}
+function migrateGameData(){
+  let changed=false,credit=0,stamp=Date.now()-100000;
+  Object.entries(statsByBook).forEach(([book,s])=>{
+    s.rankAttempts=Array.isArray(s.rankAttempts)?s.rankAttempts:[];
+    Object.entries(s.perQ||{}).forEach(([uid,r])=>{
+      const attempts=(r.correct||0)+(r.wrong||0);
+      if(attempts&&!r.xpV){
+        credit+=3+((r.correct||0)>0?12:0)+Math.min(3,Math.max(0,attempts-1))*2;
+        r.xpV=1;changed=true;
+      }
+      if(attempts&&!r.rankV){
+        addRankAttempt(book,uid,r.last==='correct'||((r.correct||0)>0&&(r.wrong||0)===0),(r.times||[]).slice(-1)[0]||settings.slowSec,(r.pre||[]).slice(-1)[0]||'',`legacy-${book}-${uid}`,stamp++);
+        r.rankV=1;changed=true;
+      }
+    });
+  });
+  if(credit){game.xp=(game.xp||0)+credit;changed=true;}
+  if(changed){safeSet(STORE_S_BOOKS,statsByBook);saveGame();}
+}
 
 function toast(m){const t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
 function showOnly(id){['home','quiz','finish','stats','list','sectionList','sectionPick','leaderboard'].forEach(s=>el(s).classList.toggle('hidden',s!==id));}
@@ -765,6 +898,7 @@ function renderHome(){
   el('sAnswered').textContent=stats.answered;
   el('sAcc').textContent=stats.answered?Math.round(stats.correct/stats.answered*100)+'%':'—';
   el('sFav').textContent=favList().length;
+  renderGameCard();
   const wl=wrongList(); el('reviewCount').textContent=wl.length?`${wl.length} 問が対象`:'対象なし'; el('reviewMode').disabled=!wl.length;
   const fl=favList(); el('favCount').textContent=fl.length?`${fl.length} 問が対象`:'対象なし'; el('favMode').disabled=!fl.length;
   const il=imageList(); el('imageCount').textContent=il.length?`${il.length} 問が対象`:'対象なし'; el('imageMode').disabled=!il.length;
@@ -925,11 +1059,15 @@ function submit(skip){
 
   // 記録
   const r=rec(qkey(q));
+  const attemptsBefore=(r.correct||0)+(r.wrong||0),hadCorrect=(r.correct||0)>0;
   if(correct){r.correct++;stats.correct++;session.sessionCorrect++;}else{r.wrong++;}
   r.last=correct?'correct':'wrong'; r.times.push(+t.toFixed(1));
   if(pendingPre)r.pre.push(pendingPre);
   stats.answered++;
   updateStreak(correct);
+  const xpGain=awardXp(r,correct,attemptsBefore,hadCorrect);
+  addRankAttempt(activeBook,qkey(q),correct,t,pendingPre);
+  r.rankV=1;
   saveStats();
   cloudSyncSoon();
   session.records.push({uid:qkey(q),no:qno(q),section:q.section,picked:skip?null:picked,answer:q.answer,correct,skip:!!skip,time:+t.toFixed(1),pre:pendingPre,post:null});
@@ -946,6 +1084,7 @@ function submit(skip){
   // verdict
   const v=el('qVerdict');v.className='verdict '+(correct?'ok':'ng');
   v.innerHTML=(skip?'⏭ 捨て問':(correct?'⭕️ 正解！':'❌ 不正解'))
+    +(xpGain?`<span class="xp-gain">+${xpGain} XP</span>`:'')
     +`<span class="tm">⏱ ${t.toFixed(1)}s</span><span class="ans">正解 <b>${q.answer}</b></span>`;
   // explanation
   const intro=el('expIntro');
@@ -1192,8 +1331,9 @@ el('nextBtn').addEventListener('click',next);
 el('prevBtn').addEventListener('click',prev);
 el('homeBtn').addEventListener('click',()=>{ if(session&&session.records&&session.idx<session.uids.length){saveSession();} renderHome(); });
 el('slowSec').addEventListener('change',e=>{let v=parseInt(e.target.value)||60;v=Math.max(5,Math.min(600,v));settings.slowSec=v;e.target.value=v;saveSettings();toast(`基準を ${v}秒 に設定`);});
-el('resetStatsBtn').addEventListener('click',()=>{if(confirm(`${BOOKS[activeBook].title}の回答履歴・正答率・お気に入りをすべて消します。よろしいですか？`)){stats=emptyStats();statsByBook[activeBook]=stats;saveStats();cloudSyncSoon();renderHome();toast(`${BOOKS[activeBook].title}の成績をリセットしました`);}});
+el('resetStatsBtn').addEventListener('click',()=>{if(confirm(`${BOOKS[activeBook].title}の回答履歴・正答率・お気に入り・ランク履歴を消します。共通レベルとXPは残ります。よろしいですか？`)){stats=emptyStats();statsByBook[activeBook]=stats;saveStats();cloudSyncSoon();renderHome();toast(`${BOOKS[activeBook].title}の成績をリセットしました`);}});
 el('clearResumeBtn').addEventListener('click',()=>{clearSession();renderHome();toast('中断データを消しました');});
+el('levelUp').addEventListener('click',()=>{el('levelUp').classList.remove('show');el('levelUp').setAttribute('aria-hidden','true');});
 
 /* ============ ランキング（クラウド同期） ============ */
 function updateStreak(correct){
@@ -1219,14 +1359,15 @@ function compactStatsPayload(source){
   const pq={};
   for(const uid in source.perQ){
     const r=source.perQ[uid];const att=(r.correct||0)+(r.wrong||0);
-    if(att>0 || r.fav){ pq[uid]={c:r.correct||0,w:r.wrong||0,f:r.fav?1:0,l:r.last||null}; }
+    if(att>0 || r.fav){ pq[uid]={c:r.correct||0,w:r.wrong||0,f:r.fav?1:0,l:r.last||null,x:r.xpV?1:0,d:r.xpDay||null,r:r.rankV?1:0}; }
   }
-  return Object.assign(statsSummaryFor(source),{perQ:pq,lastDay:source.lastDay||null});
+  return Object.assign(statsSummaryFor(source),{perQ:pq,lastDay:source.lastDay||null,rankAttempts:(source.rankAttempts||[]).slice(-200)});
 }
 // 問題集ごとの成績を別々に保存。トップ階層は現在の問題集のランキング用。
 function fullStatsPayload(){
   return Object.assign({
     activeBook,
+    game:{xp:game.xp||0,lastBonusDay:game.lastBonusDay||null},
     books:{book1:compactStatsPayload(statsByBook.book1),book2:compactStatsPayload(statsByBook.book2)}
   },statsSummary());
 }
@@ -1238,13 +1379,19 @@ function mergeStatsTarget(target,cd){
     const c=cp[uid]; const cAtt=(c.c||0)+(c.w||0);
     const l=target.perQ[uid];const lAtt=l?((l.correct||0)+(l.wrong||0)):-1;
     const localFav=!!(l&&l.fav);
+    const markers={xpV:!!((l&&l.xpV)||c.x),rankV:!!((l&&l.rankV)||c.r),xpDay:(l&&l.xpDay)||c.d||null};
     if(cAtt>lAtt){
-      target.perQ[uid]={correct:c.c||0,wrong:c.w||0,last:c.l||(c.c>0?'correct':'wrong'),times:(l&&l.times)||[],pre:(l&&l.pre)||[],post:(l&&l.post)||[],fav:false};
+      target.perQ[uid]={correct:c.c||0,wrong:c.w||0,last:c.l||(c.c>0?'correct':'wrong'),times:(l&&l.times)||[],pre:(l&&l.pre)||[],post:(l&&l.post)||[],fav:false,...markers};
     } else if(!l){
-      target.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false};
+      target.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],fav:false,...markers};
+    } else {
+      Object.assign(target.perQ[uid],markers);
     }
     if(localFav||c.f)target.perQ[uid].fav=true;
   }
+  const rankMap=new Map();
+  [...(target.rankAttempts||[]),...(cd.rankAttempts||[])].forEach(a=>{if(a&&a.i)rankMap.set(a.i,a);});
+  target.rankAttempts=[...rankMap.values()].sort((a,b)=>(a.a||0)-(b.a||0)).slice(-200);
   target.bestStreak=Math.max(target.bestStreak||0,cd.bestStreak||0);
   target.dayStreak=Math.max(target.dayStreak||0,cd.dayStreak||0);
   if(cd.lastDay&&(!target.lastDay||String(cd.lastDay)>String(target.lastDay)))target.lastDay=cd.lastDay;
@@ -1255,6 +1402,11 @@ function mergeStatsTarget(target,cd){
 }
 function cbtMergeCloud(cd){
   if(!cd)return;
+  if(cd.game){
+    game.xp=Math.max(game.xp||0,cd.game.xp||0);
+    if(cd.game.lastBonusDay&&(!game.lastBonusDay||cd.game.lastBonusDay>game.lastBonusDay))game.lastBonusDay=cd.game.lastBonusDay;
+    saveGame();
+  }
   if(cd.books){
     statsByBook.book1=mergeStatsTarget(statsByBook.book1,cd.books.book1);
     statsByBook.book2=mergeStatsTarget(statsByBook.book2,cd.books.book2);
@@ -1269,7 +1421,7 @@ function cbtMergeCloud(cd){
     });
   }
   stats=statsByBook[activeBook];
-  saveStats();
+  migrateGameData();saveStats();
   if(typeof renderHome==='function') renderHome();
 }
 let _syncT=null;
@@ -1316,7 +1468,8 @@ async function renderLeaderboard(){
     correct:{f:u=>u.correct||0, tie:u=>u.answered||0, fmt:u=>(u.correct||0)+'問'},
     answered:{f:u=>u.answered||0, tie:u=>u.correct||0, fmt:u=>(u.answered||0)+'問'},
     streak:{f:u=>u.bestStreak||0, tie:u=>u.correct||0, fmt:u=>(u.bestStreak||0)+'連続'},
-    usage:{f:currentUsageStreak, tie:u=>u.answered||0, fmt:u=>currentUsageStreak(u)+'日'}
+    usage:{f:currentUsageStreak, tie:u=>u.answered||0, fmt:u=>currentUsageStreak(u)+'日'},
+    level:{f:u=>levelInfo((u.game&&u.game.xp)||0).level,tie:u=>(u.game&&u.game.xp)||0,fmt:u=>'Lv.'+levelInfo((u.game&&u.game.xp)||0).level}
   };
   const md=defs[lbMetric];
   let list=users.slice();
@@ -1327,7 +1480,7 @@ async function renderLeaderboard(){
   list.forEach((u,i)=>{
     const row=document.createElement('div');
     row.className='lb-row'+(u.uid===meUid?' me':'')+(i<3?' top'+(i+1):'');
-    const sub=lbMetric==='accuracy'?(u.answered||0)+'問':(lbMetric==='usage'?'最終利用 '+(u.lastDay||'—'):'正答率 '+(u.accuracy||0)+'%');
+    const sub=lbMetric==='accuracy'?(u.answered||0)+'問':(lbMetric==='usage'?'最終利用 '+(u.lastDay||'—'):(lbMetric==='level'?((u.game&&u.game.xp)||0)+' XP':'正答率 '+(u.accuracy||0)+'%'));
     row.innerHTML='<div class="lb-rank">'+(i+1)+'</div><div class="lb-name">'+escapeHtml(u.username||'名無し')+'<small>'+sub+'</small></div><div class="lb-val">'+md.fmt(u)+'</div>';
     body.appendChild(row);
   });
@@ -1347,6 +1500,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   safeRemove(STORE_Q); // 古い手動読み込みデータを起動時に必ず消す
   await loadDefaultQuestions();
   load();
+  migrateGameData();
   QUESTIONS = resolveQuestions();
   const legacySession=safeGet(STORE_SES);
   if(legacySession&&legacySession.uids&&legacySession.uids.length){
@@ -1564,7 +1718,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
         const x=d.data();x.uid=d.id;delete x.perQ;
         if(x.books){
           x.books=Object.fromEntries(Object.entries(x.books).map(function(entry){
-            const summary=Object.assign({},entry[1]);delete summary.perQ;return [entry[0],summary];
+            const summary=Object.assign({},entry[1]);delete summary.perQ;delete summary.rankAttempts;return [entry[0],summary];
           }));
         }
         arr.push(x);
