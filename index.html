@@ -809,39 +809,22 @@ const RANK_STEPS=[
   {name:'ダイヤ3',laps:3.70},
   {name:'マスター',laps:4}
 ];
-function rankInfo(source){
-  const total=QUESTIONS.length;
-  if(!total)return {name:RANK_STEPS[0].name,progress:0,next:RANK_STEPS[1],remaining:0};
-  const counts=QUESTIONS.map(q=>{
-    const r=source.perQ&&source.perQ[qkey(q)];
-    return r?Math.max(0,(r.correct||0)+(r.wrong||0)):0;
+function rankInfo(){
+  const xp=game.xp||0;
+  const total=DEFAULT_QUESTIONS_BY_BOOK.book1.length||QUESTIONS.length||1;
+  const steps=RANK_STEPS.map(step=>{
+    const perQuestion=step.laps<=1?15*step.laps:15+5*(step.laps-1);
+    return Object.assign({},step,{xp:Math.round(total*perQuestion)});
   });
-  let progress=0;
-  for(let pass=1;pass<=4;pass++){
-    const coverage=counts.filter(count=>count>=pass).length/total;
-    progress=(pass-1)+coverage;
-    if(coverage<1)break;
-  }
   let tier=0;
-  RANK_STEPS.forEach((step,index)=>{
-    if(progress+1e-9>=step.laps)tier=index;
+  steps.forEach((step,index)=>{
+    if(xp>=step.xp)tier=index;
   });
-  const next=RANK_STEPS[tier+1]||null;
-  let remaining=0;
-  if(next){
-    const fullPasses=Math.floor(next.laps+1e-9);
-    const partial=next.laps-fullPasses;
-    remaining=counts.reduce((sum,count)=>sum+Math.max(0,fullPasses-count),0);
-    if(partial>1e-9){
-      const needed=Math.ceil(total*partial);
-      const ready=counts.filter(count=>count>=fullPasses+1).length;
-      remaining+=Math.max(0,needed-ready);
-    }
-  }
-  return {name:RANK_STEPS[tier].name,progress,next,remaining};
+  const next=steps[tier+1]||null;
+  return {name:steps[tier].name,xp,next,remaining:next?Math.max(0,next.xp-xp):0};
 }
 function renderGameCard(){
-  const lv=levelInfo(),rank=rankInfo(stats);
+  const lv=levelInfo(),rank=rankInfo();
   el('gameLevel').textContent=lv.level;
   el('gameRank').textContent=rank.name;
   el('gameXp').textContent=`${game.xp||0} XP`;
@@ -849,7 +832,8 @@ function renderGameCard(){
   if(!rank.next){
     el('xpNote').textContent=`次のレベルまで ${lv.next-(game.xp||0)} XP ・ 最高ランク到達`;
   }else{
-    el('xpNote').textContent=`次のレベルまで ${lv.next-(game.xp||0)} XP ・ ${rank.next.name}まであと ${rank.remaining}問`;
+    const lapLabel=Number.isInteger(rank.next.laps)?rank.next.laps:rank.next.laps.toFixed(2).replace(/0$/,'');
+    el('xpNote').textContent=`${rank.next.name}まであと ${rank.remaining} XP（目安 ${lapLabel}周）`;
   }
 }
 function showLevelUp(level){
@@ -860,9 +844,11 @@ function showLevelUp(level){
 }
 function awardXp(r,correct,attemptsBefore,hadCorrect){
   const today=ymdNow();
-  let gain=attemptsBefore===0?(correct?15:3):(!hadCorrect&&correct?10:(correct&&r.xpDay!==today?2:0));
-  if(gain>0&&game.lastBonusDay!==today){gain+=20;game.lastBonusDay=today;}
-  if(gain>0&&correct)gain+=Math.min(5,Math.floor((stats.curStreak||0)/5));
+  let gain=correct?(attemptsBefore===0?15:(!hadCorrect?10:5)):0;
+  if(game.lastBonusDay!==today){
+    gain+=20+Math.min(5,Math.max(0,(stats.dayStreak||1)-1));
+    game.lastBonusDay=today;
+  }
   r.xpDay=today;r.xpV=1;
   const old=levelInfo().level;
   game.xp=(game.xp||0)+gain;saveGame();
