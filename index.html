@@ -220,11 +220,12 @@
   .guide .guide-link{border:1px solid #bdd9cd;background:#eaf4ef;color:var(--green-d);border-radius:999px;padding:6px 11px;font-size:12px;font-weight:800;cursor:pointer;}
   .guide .guide-subject{margin-left:2px;}
 
-  .guide-viewer{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;}
-  .guide-viewer-head{flex:none;display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(20,40,30,.08);}
+  .guide-viewer{position:fixed;inset:0;z-index:10000;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;}
+  .guide-viewer-head{position:relative;z-index:2;flex:none;display:flex;align-items:center;gap:12px;min-height:56px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px 160px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(20,40,30,.08);}
   .guide-viewer-head button{border:1px solid var(--line);background:#fff;color:var(--green-d);border-radius:999px;padding:8px 13px;font-size:13px;font-weight:800;cursor:pointer;}
+  #guideCloseBtn{position:fixed;top:calc(10px + env(safe-area-inset-top));left:14px;z-index:10002;box-shadow:0 2px 10px rgba(20,40,30,.15);}
   .guide-viewer-head strong{font-size:15px;color:var(--green-d);}
-  .guide-viewer-scroll{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 8px calc(20px + env(safe-area-inset-bottom));text-align:center;overflow-anchor:none;}
+  .guide-viewer-scroll{min-height:0;flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 8px calc(20px + env(safe-area-inset-bottom));text-align:center;overflow-anchor:none;overscroll-behavior:contain;}
   .guide-pages{width:100%;max-width:976px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}
   .guide-page{position:relative;width:100%;aspect-ratio:976/1395;background:#fff;box-shadow:var(--shadow);overflow:hidden;}
   .guide-page img{display:block;width:100%;height:100%;object-fit:contain;background:#fff;}
@@ -618,6 +619,7 @@ function guidePages(ref){
 const GUIDE_TOTAL_PAGES=681;
 let guidePagesBuilt=false;
 let guideLoadObserver=null;
+let guideReturnScrollY=0;
 function buildGuidePages(){
   if(guidePagesBuilt)return;
   const host=el('guidePages'),scroll=el('guideScroll');
@@ -677,17 +679,19 @@ function updateGuideTitle(){
 function openGuide(page){
   const viewer=el('guideViewer');
   buildGuidePages();
+  guideReturnScrollY=window.scrollY;
   el('guideTitle').textContent=`ガイド編 p.${page} / ${GUIDE_TOTAL_PAGES}`;
   viewer.classList.remove('hidden');
   document.body.style.overflow='hidden';
   requestAnimationFrame(()=>{
     const target=el(`guide-page-${page}`);
-    if(target)target.scrollIntoView({block:'start'});
+    if(target)el('guideScroll').scrollTop=Math.max(0,target.offsetTop-12);
   });
 }
 function closeGuide(){
   el('guideViewer').classList.add('hidden');
   document.body.style.overflow='';
+  window.scrollTo(0,guideReturnScrollY);
 }
 function renderGuideLinks(q){
   const guide=el('qGuide');
@@ -704,6 +708,9 @@ function renderGuideLinks(q){
 }
 el('guideCloseBtn').addEventListener('click',closeGuide);
 el('guideScroll').addEventListener('scroll',updateGuideTitle,{passive:true});
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&!el('guideViewer').classList.contains('hidden'))closeGuide();
+});
 
 /* Safari file:// 対応：localStorageが使えない場合はメモリにフォールバック */
 const _memStore={};
