@@ -790,17 +790,35 @@ function levelInfo(xp=game.xp||0){
   const start=levelThreshold(level),next=levelThreshold(level+1);
   return {level,start,next,progress:next===start?100:(xp-start)/(next-start)*100};
 }
-const RANKS=['ルーキー','ブロンズ','シルバー','ゴールド','プラチナ','ダイヤ','マスター'];
+const RANK_STEPS=[
+  {name:'ルーキー',count:0,score:0},
+  {name:'ブロンズ1',count:10,score:0},
+  {name:'ブロンズ2',count:14,score:45},
+  {name:'ブロンズ3',count:18,score:50},
+  {name:'シルバー1',count:20,score:55},
+  {name:'シルバー2',count:27,score:58},
+  {name:'シルバー3',count:34,score:62},
+  {name:'ゴールド1',count:40,score:65},
+  {name:'ゴールド2',count:50,score:70},
+  {name:'ゴールド3',count:58,score:73},
+  {name:'プラチナ1',count:60,score:75},
+  {name:'プラチナ2',count:68,score:79},
+  {name:'プラチナ3',count:75,score:82},
+  {name:'ダイヤ1',count:80,score:85},
+  {name:'ダイヤ2',count:88,score:88},
+  {name:'ダイヤ3',count:95,score:90},
+  {name:'マスター',count:100,score:92}
+];
 function latestRankAttempts(source){
   const seen=new Set(),out=[];
   [...(source.rankAttempts||[])].sort((a,b)=>(b.a||0)-(a.a||0)).forEach(a=>{
-    if(a&&a.u&&!seen.has(a.u)&&out.length<100){seen.add(a.u);out.push(a);}
+    if(a&&a.u&&!seen.has(a.u)&&out.length<200){seen.add(a.u);out.push(a);}
   });
   return out;
 }
 function rankInfo(source){
   const attempts=latestRankAttempts(source),n=attempts.length;
-  if(!n)return {name:RANKS[0],score:0,count:0};
+  if(!n)return {name:RANK_STEPS[0].name,score:0,count:0,next:RANK_STEPS[1]};
   const score=Math.round(attempts.reduce((sum,a)=>{
     const correct=a.c?1:0;
     const speed=correct?((a.s||999)<=settings.slowSec?100:70):0;
@@ -808,13 +826,10 @@ function rankInfo(source){
     return sum+correct*70+speed*.2+conf*.1;
   },0)/n);
   let tier=0;
-  if(n>=10)tier=1;
-  if(n>=20&&score>=55)tier=2;
-  if(n>=40&&score>=65)tier=3;
-  if(n>=60&&score>=75)tier=4;
-  if(n>=80&&score>=85)tier=5;
-  if(n>=100&&score>=92)tier=6;
-  return {name:RANKS[tier],score,count:n};
+  RANK_STEPS.forEach((step,index)=>{
+    if(n>=step.count&&score>=step.score)tier=index;
+  });
+  return {name:RANK_STEPS[tier].name,score,count:n,next:RANK_STEPS[tier+1]||null};
 }
 function renderGameCard(){
   const lv=levelInfo(),rank=rankInfo(stats);
@@ -822,9 +837,15 @@ function renderGameCard(){
   el('gameRank').textContent=rank.name;
   el('gameXp').textContent=`${game.xp||0} XP`;
   el('xpFill').style.width=Math.max(0,Math.min(100,lv.progress))+'%';
-  el('xpNote').textContent=rank.count<10
-    ?`あと ${10-rank.count} 種類解くとブロンズ判定`
-    :`次のレベルまで ${lv.next-(game.xp||0)} XP ・ ランクスコア ${rank.score}`;
+  if(!rank.next){
+    el('xpNote').textContent=`次のレベルまで ${lv.next-(game.xp||0)} XP ・ 最高ランク到達`;
+  }else{
+    const remain=Math.max(0,rank.next.count-rank.count);
+    const rankGoal=remain
+      ?`${rank.next.name}まであと ${remain}種類`
+      :`${rank.next.name}までスコアあと ${Math.max(0,rank.next.score-rank.score)}`;
+    el('xpNote').textContent=`次のレベルまで ${lv.next-(game.xp||0)} XP ・ ${rankGoal}`;
+  }
 }
 function showLevelUp(level){
   el('levelUpNum').textContent=level;
