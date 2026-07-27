@@ -178,9 +178,12 @@
   .confrow{display:flex;align-items:center;gap:8px;margin:16px 0 2px;flex-wrap:wrap;}
   .confrow .clab{font-size:12px;font-weight:800;color:var(--muted);}
   .confrow button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;}
-  .confrow button[data-pc="自信あり"].on,.confrow button[data-oc="できた"].on{border-color:var(--correct);background:var(--correct-bg);color:var(--correct);}
-  .confrow button[data-pc="不安"].on,.confrow button[data-oc="微妙"].on{border-color:var(--amber);background:var(--amber-bg);color:var(--amber);}
-  .confrow button[data-pc="捨て問"].on,.confrow button[data-oc="まぐれ"].on{border-color:var(--wrong);background:var(--wrong-bg);color:var(--wrong);}
+  .confrow button[data-oc="できた"].on{border-color:var(--correct);background:var(--correct-bg);color:var(--correct);}
+  .confrow button[data-oc="微妙"].on{border-color:var(--amber);background:var(--amber-bg);color:var(--amber);}
+  .confrow button[data-oc="まぐれ"].on{border-color:var(--wrong);background:var(--wrong-bg);color:var(--wrong);}
+  .skiprow{display:flex;justify-content:flex-end;margin:14px 0 2px;}
+  .skip-btn{border:1.5px solid #efc6c2;background:#fff8f7;color:var(--wrong);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;}
+  .skip-btn:disabled{opacity:.45;cursor:default;}
 
   .choices{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
   .choice{display:flex;align-items:flex-start;gap:12px;text-align:left;width:100%;background:#fff;border:1.5px solid var(--line);
@@ -415,7 +418,7 @@
     <div class="sec-h">分析・設定</div>
     <div class="modes">
       <button class="mode" id="listBtn"><div class="ic">📋</div><div class="t"><b>問題一覧から選ぶ</b><span>状態を見ながら1問ずつ解く</span></div><div class="arr">›</div></button>
-      <button class="mode" id="statsBtn"><div class="ic">📊</div><div class="t"><b>苦手分野ランキング・時間分析</b><span>正答率／時間／不安から弱点を表示</span></div><div class="arr">›</div></button>
+      <button class="mode" id="statsBtn"><div class="ic">📊</div><div class="t"><b>苦手分野ランキング・時間分析</b><span>正答率／解答時間から弱点を表示</span></div><div class="arr">›</div></button>
       <button class="mode" id="rankBtn"><div class="ic">🏆</div><div class="t"><b>みんなでランキング</b><span id="rankSub">友達と正答率・正解数・連続正解で競う</span></div><div class="arr">›</div></button>
     </div>
 
@@ -449,11 +452,8 @@
       <img class="qfig hidden" id="qFig" alt="問題の図">
       <div class="imgnote hidden" id="qImg"></div>
 
-      <div class="confrow" id="preConf">
-        <span class="clab">自信</span>
-        <button data-pc="自信あり">自信あり</button>
-        <button data-pc="不安">不安</button>
-        <button data-pc="捨て問">捨て問</button>
+      <div class="skiprow" id="skipRow">
+        <button class="skip-btn" id="skipBtn" type="button">⏭ スキップ</button>
       </div>
 
       <div class="choices" id="qChoices"></div>
@@ -607,7 +607,6 @@ let settings={slowSec:60,activeBook:'book1'};
 let activeBook='book1';
 let session=null;       // {mode,uids,idx,records,sessionCorrect}
 let timer={start:0,iv:null};
-let pendingPre=null;    // 選択中の事前自信
 
 const el=id=>document.getElementById(id);
 const qkey=q=>q.uid||q.id;
@@ -978,7 +977,7 @@ let answered=false, picked=null;
 function renderQuestion(){
   showOnly('quiz');
   const q=byUid(session.uids[session.idx]);
-  answered=false; picked=null; pendingPre=null;
+  answered=false; picked=null;
   const noback=session.mode==='noback';
 
   el('qBadge').textContent=qno(q);
@@ -1006,9 +1005,8 @@ function renderQuestion(){
   const r=stats.perQ[qkey(q)];
   setFav(r&&r.fav);
 
-  // pre-confidence reset
-  document.querySelectorAll('#preConf button').forEach(b=>b.classList.remove('on'));
-  el('preConf').classList.remove('hidden');
+  el('skipRow').classList.remove('hidden');
+  el('skipBtn').disabled=false;
 
   // choices
   const wrap=el('qChoices');wrap.innerHTML='';
@@ -1038,14 +1036,8 @@ function pick(k){
   el('nextBtn').disabled=false;
 }
 
-/* 事前自信 */
-document.querySelectorAll('#preConf button').forEach(b=>{
-  b.addEventListener('click',()=>{
-    if(answered)return;
-    pendingPre=b.dataset.pc;
-    document.querySelectorAll('#preConf button').forEach(x=>x.classList.toggle('on',x===b));
-    if(pendingPre==='捨て問'){ submit(true); } // 捨て問は即・解答表示
-  });
+el('skipBtn').addEventListener('click',()=>{
+  if(!answered)submit(true);
 });
 /* 事後手応え */
 document.querySelectorAll('#postConf button').forEach(b=>{
@@ -1067,13 +1059,14 @@ function submit(skip){
   // 選択肢の見た目（連問モードは結果を隠す）
   document.querySelectorAll('.choice').forEach(c=>{
     c.disabled=true;c.classList.remove('sel');
-    if(noback){ if(c.dataset.key===picked)c.classList.add('sel'); return; }
+    if(noback&&!skip){ if(c.dataset.key===picked)c.classList.add('sel'); return; }
     const key=c.dataset.key;
     if(key===q.answer){c.classList.add('correct');c.insertAdjacentHTML('beforeend','<span class="resmark">○</span>');}
     else if(key===picked){c.classList.add('wrong');c.insertAdjacentHTML('beforeend','<span class="resmark">✗</span>');}
     else c.classList.add('dim');
   });
-  el('preConf').classList.add('hidden');
+  el('skipRow').classList.add('hidden');
+  el('skipBtn').disabled=true;
   el('timerChip').classList.remove('show'); clearInterval(timer.iv);
 
   // 記録
@@ -1081,18 +1074,17 @@ function submit(skip){
   const attemptsBefore=(r.correct||0)+(r.wrong||0),hadCorrect=(r.correct||0)>0;
   if(correct){r.correct++;stats.correct++;session.sessionCorrect++;}else{r.wrong++;}
   r.last=correct?'correct':'wrong'; r.times.push(+t.toFixed(1));
-  if(pendingPre)r.pre.push(pendingPre);
   stats.answered++;
   updateStreak(correct);
   const xpGain=awardXp(r,correct,attemptsBefore,hadCorrect);
-  addRankAttempt(activeBook,qkey(q),correct,t,pendingPre);
+  addRankAttempt(activeBook,qkey(q),correct,t,null);
   r.rankV=1;
   saveStats();
   cloudSyncSoon();
-  session.records.push({uid:qkey(q),no:qno(q),section:q.section,picked:skip?null:picked,answer:q.answer,correct,skip:!!skip,time:+t.toFixed(1),pre:pendingPre,post:null});
+  session.records.push({uid:qkey(q),no:qno(q),section:q.section,picked:skip?null:picked,answer:q.answer,correct,skip:!!skip,time:+t.toFixed(1),pre:null,post:null});
   saveSession();
 
-  if(noback){
+  if(noback&&!skip){
     // 結果も解説も出さず次へ
     el('nextBtn').textContent=(session.idx<session.uids.length-1)?'次の問題へ ›':lastLabel();
     el('nextBtn').disabled=false;
@@ -1102,7 +1094,7 @@ function submit(skip){
 
   // verdict
   const v=el('qVerdict');v.className='verdict '+(correct?'ok':'ng');
-  v.innerHTML=(skip?'⏭ 捨て問':(correct?'⭕️ 正解！':'❌ 不正解'))
+  v.innerHTML=(skip?'⏭ スキップ':(correct?'⭕️ 正解！':'❌ 不正解'))
     +(xpGain?`<span class="xp-gain">+${xpGain} XP</span>`:'')
     +`<span class="tm">⏱ ${t.toFixed(1)}s</span><span class="ans">正解 <b>${q.answer}</b></span>`;
   // explanation
@@ -1153,7 +1145,7 @@ function finish(){
         <span class="rev-meta">${r.time}s</span>
       </div><div class="rev-body"></div>`;
     const body=item.querySelector('.rev-body');
-    let h=`<div style="margin-bottom:6px;"><b>あなたの解答:</b> ${r.skip?'（捨て問）':escapeHtml(r.picked||'—')}　/　<b>正解:</b> ${escapeHtml(r.answer)}</div>`;
+    let h=`<div style="margin-bottom:6px;"><b>あなたの解答:</b> ${r.skip?'（スキップ）':escapeHtml(r.picked||'—')}　/　<b>正解:</b> ${escapeHtml(r.answer)}</div>`;
     if(q.explanation_intro)h+=`<div style="margin-bottom:6px;">${escapeHtml(q.explanation_intro)}</div>`;
     (q.explanation||[]).forEach(it=>{h+=`<div style="margin-bottom:5px;"><b>${escapeHtml(it.mark||'')} ${escapeHtml(it.labels||'')}：</b>${escapeHtml(it.text||'')}</div>`;});
     body.innerHTML=h;
@@ -1168,15 +1160,14 @@ function openStats(){
   // セクション集計
   const secs={};
   QUESTIONS.forEach(q=>{const r=stats.perQ[qkey(q)];if(!r||(r.correct+r.wrong)===0)return;
-    const s=secs[q.section]||(secs[q.section]={ans:0,cor:0,tsum:0,tn:0,anx:0});
+    const s=secs[q.section]||(secs[q.section]={ans:0,cor:0,tsum:0,tn:0});
     s.ans+=r.correct+r.wrong; s.cor+=r.correct;
     r.times.forEach(t=>{s.tsum+=t;s.tn++;});
-    s.anx+=r.pre.filter(p=>p==='不安'||p==='捨て問').length;
   });
   const arr=Object.entries(secs).map(([name,s])=>{
-    const acc=s.ans?s.cor/s.ans:0, avgT=s.tn?s.tsum/s.tn:0, anxR=s.ans?s.anx/s.ans:0;
-    const weak=(1-acc)*0.6+Math.min(avgT/Math.max(settings.slowSec,1),1)*0.2+anxR*0.2;
-    return {name,acc,avgT,anxR,ans:s.ans,weak};
+    const acc=s.ans?s.cor/s.ans:0, avgT=s.tn?s.tsum/s.tn:0;
+    const weak=(1-acc)*0.75+Math.min(avgT/Math.max(settings.slowSec,1),1)*0.25;
+    return {name,acc,avgT,ans:s.ans,weak};
   }).sort((a,b)=>b.weak-a.weak);
   const rl=el('rankList');rl.innerHTML='';
   if(!arr.length){rl.innerHTML='<div class="empty">まだ回答データがありません。問題を解くとここに苦手分野が出ます。</div>';}
@@ -1186,7 +1177,7 @@ function openStats(){
     const d=document.createElement('div');d.className='rank';
     d.innerHTML=`<div class="rank-head"><span class="nm">${escapeHtml(x.name)}</span><span class="acc ${cls}">${pct}%</span></div>
       <div class="rbar"><i style="width:${pct}%;background:${col};"></i></div>
-      <div class="rank-meta"><span>解答 ${x.ans}問</span><span>平均 ${x.avgT.toFixed(1)}秒</span><span>不安率 ${Math.round(x.anxR*100)}%</span></div>`;
+      <div class="rank-meta"><span>解答 ${x.ans}問</span><span>平均 ${x.avgT.toFixed(1)}秒</span></div>`;
     rl.appendChild(d);
   });
   // 時間分析
@@ -1256,10 +1247,6 @@ function renderList(){
       const st=statusOf(q); const mark=st==='ok'?'○':(st==='ng'?'✗':'・');
       let ic='';
       if(r.fav)ic+='<span class="star">★</span>';
-      const lastPre=r.pre&&r.pre.length?r.pre[r.pre.length-1]:null;
-      if(lastPre==='不安')ic+='<span class="cf anx">不安</span>';
-      else if(lastPre==='自信あり')ic+='<span class="cf sure">自信</span>';
-      else if(lastPre==='捨て問')ic+='<span class="cf skip">捨</span>';
       const it=document.createElement('div');it.className='litem';
       it.innerHTML=`<span class="lno">${qno(q)}</span><span class="lst ${st}">${mark}</span>
         <span class="lq">${escapeHtml(q.question.split('\n')[0])}</span><span class="lic">${ic}</span>`;
