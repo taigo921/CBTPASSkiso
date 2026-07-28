@@ -297,6 +297,9 @@
   .litem .lic .cf.anx{color:var(--amber);background:var(--amber-bg);}
   .litem .lic .cf.sure{color:var(--correct);background:var(--correct-bg);}
   .litem .lic .cf.skip{color:var(--wrong);background:var(--wrong-bg);}
+  .litem.resume-point{border-color:var(--green);background:#f1faf6;box-shadow:0 5px 18px rgba(6,103,73,.13);}
+  .resume-tag{flex:none;font-size:11px;font-weight:800;color:#fff;background:var(--green);border-radius:999px;padding:3px 8px;white-space:nowrap;}
+  .section-start-note{margin:0 0 12px;padding:11px 13px;border-radius:12px;background:#eaf4ef;color:var(--green-d);font-size:13px;font-weight:700;line-height:1.55;}
   .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;font-weight:700;
     padding:10px 16px;border-radius:999px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center;}
   .toast.show{opacity:.95;}
@@ -533,6 +536,14 @@
     <div class="row-btns"><button class="ghost-btn" id="sectionPickBack">‹ セクション一覧に戻る</button></div>
   </section>
 
+  <!-- SECTION START (開始問題を指定) -->
+  <section id="sectionStart" class="hidden">
+    <div class="hero"><h1 style="font-size:22px;" id="sectionStartTitle">—</h1><p>どの問題から始めるか選んでください</p></div>
+    <div id="sectionStartNote" class="section-start-note hidden"></div>
+    <div id="sectionStartBody"></div>
+    <div class="row-btns"><button class="ghost-btn" id="sectionStartBack">‹ 解き方の選択に戻る</button></div>
+  </section>
+
   <!-- LEADERBOARD -->
   <section id="leaderboard" class="hidden">
     <div class="hero"><h1 style="font-size:24px;">🏆 みんなでランキング</h1><p id="lbMe"></p></div>
@@ -597,7 +608,7 @@ async function loadDefaultQuestions() {
 }
 
 /* ============ ストレージ ============ */
-const STORE_Q='cbt_questions_v1', STORE_S='cbt_stats_v2', STORE_S_BOOKS='cbt_stats_books_v1', STORE_SET='cbt_settings_v2', STORE_SES='cbt_session_v2', STORE_SES_PREFIX='cbt_session_v3_', STORE_GAME='cbt_game_v1';
+const STORE_Q='cbt_questions_v1', STORE_S='cbt_stats_v2', STORE_S_BOOKS='cbt_stats_books_v1', STORE_SET='cbt_settings_v2', STORE_SES='cbt_session_v2', STORE_SES_PREFIX='cbt_session_v3_', STORE_SECTION_PROGRESS='cbt_section_progress_v1', STORE_GAME='cbt_game_v1';
 let QUESTIONS=[];
 const emptyStats=()=>({perQ:{},rankAttempts:[],answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null});
 let statsByBook={book1:emptyStats(),book2:emptyStats()};
@@ -769,6 +780,22 @@ const saveSettings=()=>safeSet(STORE_SET,settings);
 const sessionStoreKey=(book=activeBook)=>STORE_SES_PREFIX+book;
 const saveSession=()=>{if(session&&!session.single){session.book=activeBook;safeSet(sessionStoreKey(),session);}};
 const clearSession=()=>{safeRemove(sessionStoreKey());};
+function sectionProgress(){
+  const all=safeGet(STORE_SECTION_PROGRESS)||{};
+  if(!all[activeBook])all[activeBook]={};
+  return all;
+}
+function savedSectionUid(section){
+  const uid=sectionProgress()[activeBook][section]?.uid;
+  return uid&&QUESTIONS.some(q=>q.section===section&&qkey(q)===uid)?uid:null;
+}
+function saveSectionUid(section,uid){
+  if(!section)return;
+  const all=sectionProgress();
+  if(uid)all[activeBook][section]={uid,updatedAt:Date.now()};
+  else delete all[activeBook][section];
+  safeSet(STORE_SECTION_PROGRESS,all);
+}
 
 function resolveQuestions(){
   return DEFAULT_QUESTIONS_BY_BOOK[activeBook]||[];
@@ -882,7 +909,7 @@ function migrateGameData(){
 }
 
 function toast(m){const t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
-function showOnly(id){['home','quiz','finish','stats','list','sectionList','sectionPick','leaderboard'].forEach(s=>el(s).classList.toggle('hidden',s!==id));}
+function showOnly(id){['home','quiz','finish','stats','list','sectionList','sectionPick','sectionStart','leaderboard'].forEach(s=>el(s).classList.toggle('hidden',s!==id));}
 function setProgress(p){el('pbarFill').style.width=Math.max(0,Math.min(100,p))+'%';}
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -923,11 +950,14 @@ function renderHome(){
   el('slowSec').value=settings.slowSec;
   // resume
   const ses=safeGet(sessionStoreKey());
-  if(ses&&ses.uids&&(ses.records?ses.records.length:ses.idx)<ses.uids.length){
+  const resumeAt=ses&&(Number.isInteger(ses.resumeIdx)?ses.resumeIdx:ses.idx);
+  if(ses&&ses.uids&&Number.isInteger(resumeAt)&&resumeAt<ses.uids.length){
     el('resumeCard').classList.remove('hidden');
     const nm={random:'ランダム',order:'順番',review:'復習',fav:'お気に入り',noback:'連問'}[ses.mode]||'';
-    const done=ses.records?ses.records.length:ses.idx;
-    el('resumeInfo').textContent=`${nm}モード ・ ${done}/${ses.uids.length}問まで完了`;
+    const current=byUid(ses.uids[resumeAt]);
+    el('resumeInfo').textContent=current
+      ?`${nm}モード ・ ${qno(current)} から再開`
+      :`${nm}モード ・ ${resumeAt+1}/${ses.uids.length}問目から再開`;
   } else el('resumeCard').classList.add('hidden');
   showOnly('home'); el('footer').classList.add('hidden'); setProgress(0);
 }
@@ -964,8 +994,10 @@ function resumeSession(){
   const ses=safeGet(sessionStoreKey());
   if(!ses){renderHome();return;}
   ses.uids=ses.uids.filter(byUid);
-  // 回答済みの次の問題から再開（二重カウント防止）
-  ses.idx=Math.min(ses.records?ses.records.length:ses.idx, ses.uids.length);
+  // 開始問題を途中に指定したセッションでも、保存した位置をそのまま使う
+  const savedIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0);
+  ses.idx=Math.max(0,Math.min(savedIdx,ses.uids.length));
+  ses.resumeIdx=ses.idx;
   session=ses;
   if(session.idx>=session.uids.length){clearSession();renderHome();return;}
   el('footer').classList.remove('hidden');
@@ -978,7 +1010,9 @@ function renderQuestion(){
   showOnly('quiz');
   const q=byUid(session.uids[session.idx]);
   answered=false; picked=null;
+  session.resumeIdx=session.idx;
   const noback=session.mode==='noback';
+  if(session.sectionKey&&session.mode==='order')saveSectionUid(session.sectionKey,qkey(q));
 
   el('qBadge').textContent=qno(q);
   el('qSection').textContent=q.section||'—';
@@ -1082,6 +1116,10 @@ function submit(skip){
   saveStats();
   cloudSyncSoon();
   session.records.push({uid:qkey(q),no:qno(q),section:q.section,picked:skip?null:picked,answer:q.answer,correct,skip:!!skip,time:+t.toFixed(1),pre:null,post:null});
+  session.resumeIdx=Math.min(session.idx+1,session.uids.length);
+  if(session.sectionKey&&session.mode==='order'){
+    saveSectionUid(session.sectionKey,session.uids[session.idx+1]||null);
+  }
   saveSession();
 
   if(noback&&!skip){
@@ -1292,12 +1330,42 @@ function openSectionPick(sec){
   el('sectionPickCount').textContent=`${n} 問`;
   showOnly('sectionPick');
 }
-function startSectionModeSession(orderMode){
+function openSectionStart(){
+  if(!pickedSection)return;
+  const list=QUESTIONS.filter(q=>q.section===pickedSection);
+  const savedUid=savedSectionUid(pickedSection);
+  el('sectionStartTitle').textContent=pickedSection;
+  const note=el('sectionStartNote');
+  if(savedUid){
+    const savedQ=byUid(savedUid);
+    note.textContent=`前回の続きは ${qno(savedQ)} です。続きからでも、好きな問題からでも始められます。`;
+    note.classList.remove('hidden');
+  }else{
+    note.classList.add('hidden');
+    note.textContent='';
+  }
+  const body=el('sectionStartBody');body.innerHTML='';
+  list.forEach((q,index)=>{
+    const st=statusOf(q),mark=st==='ok'?'○':(st==='ng'?'✗':'・');
+    const isResume=qkey(q)===savedUid;
+    const it=document.createElement('div');
+    it.className='litem'+(isResume?' resume-point':'');
+    it.innerHTML=`<span class="lno">${qno(q)}</span><span class="lst ${st}">${mark}</span>`
+      +`<span class="lq">${escapeHtml(q.question.split('\n')[0])}</span>`
+      +(isResume?'<span class="resume-tag">続き</span>':'');
+    it.addEventListener('click',()=>startSectionModeSession('order',qkey(q)));
+    body.appendChild(it);
+  });
+  showOnly('sectionStart');
+}
+function startSectionModeSession(orderMode,startUid=null){
   if(!pickedSection)return;
   let pool=QUESTIONS.filter(q=>q.section===pickedSection).map(qkey);
   if(orderMode==='random')pool=shuffle(pool);
   if(!pool.length){toast('対象の問題がありません');return;}
-  session={mode:orderMode,uids:pool,idx:0,records:[],sessionCorrect:0};
+  let idx=startUid?pool.indexOf(startUid):0;
+  if(idx<0)idx=0;
+  session={mode:orderMode,uids:pool,idx,records:[],sessionCorrect:0,sectionKey:orderMode==='order'?pickedSection:null};
   saveSession();
   el('footer').classList.remove('hidden');
   renderQuestion();
@@ -1328,9 +1396,10 @@ document.querySelectorAll('.book-tab').forEach(b=>b.addEventListener('click',()=
 el('statsBtn').addEventListener('click',openStats);
 el('listBtn').addEventListener('click',openList);
 el('sectionModeBtn').addEventListener('click',openSectionList);
-el('sectionPickOrder').addEventListener('click',()=>startSectionModeSession('order'));
+el('sectionPickOrder').addEventListener('click',openSectionStart);
 el('sectionPickRandom').addEventListener('click',()=>startSectionModeSession('random'));
 el('sectionPickBack').addEventListener('click',()=>{showOnly('sectionList');});
+el('sectionStartBack').addEventListener('click',()=>{showOnly('sectionPick');});
 document.querySelectorAll('#filterBar .fbtn').forEach(b=>b.addEventListener('click',()=>{listFilter=b.dataset.f;renderList();}));
 el('resumeCard').addEventListener('click',resumeSession);
 el('nextBtn').addEventListener('click',next);
