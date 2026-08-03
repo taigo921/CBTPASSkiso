@@ -178,6 +178,10 @@
   .plan-day.off small{color:#b2b2b2;}
   .plan-day.high{background:#fff8e9;border-color:#ead7aa;}
   .plan-day.high small{color:#a66c00;}
+  .plan-day.done{background:var(--correct-bg);border-color:#b9ddca;}
+  .plan-day.done small{color:var(--correct);}
+  .plan-day.missed{background:var(--wrong-bg);border-color:#ecc5c1;}
+  .plan-day.missed small{color:var(--wrong);}
   .plan-day.today{outline:2px solid var(--green);outline-offset:1px;}
   .plan-day.exam{background:#fff0e8;color:#b65324;border-color:#f1c7b3;}
   .plan-day:disabled{opacity:.38;cursor:default;}
@@ -187,6 +191,8 @@
   .plan-mastery-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;font-weight:800;color:var(--green-d);}
   .plan-mastery-bar{height:9px;background:#e6eee9;border-radius:999px;overflow:hidden;margin-top:9px;}
   .plan-mastery-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),#42b883);border-radius:999px;}
+  .plan-today-status{margin:10px 0 4px;padding:12px 14px;border:1px solid #d5e6dd;border-radius:12px;background:#f0f8f4;color:var(--green-d);font-size:12px;font-weight:800;text-align:center;}
+  .plan-today-status.done{background:var(--correct-bg);border-color:#b9ddca;color:var(--correct);}
   @media(max-width:390px){.plan-card{padding:13px 5px}.plan-card b{font-size:24px}.plan-card span{font-size:9.5px}.plan-day{min-height:44px}}
   #fileInput{display:none;}
   .filelabel{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--green);
@@ -483,6 +489,11 @@
     </div>
     <div class="plan-mastery"><div class="plan-mastery-head"><span id="planMasteryText">習得済み 0 / 0問</span><span id="planMasteryPct">0%</span></div><div class="plan-mastery-bar"><i id="planMasteryBar" style="width:0%"></i></div></div>
     <button class="mode primary" id="planStartBtn"><div class="ic">▶️</div><div class="t"><b>今日の指定課題を始める</b><span id="planStartInfo">—</span></div><div class="arr">›</div></button>
+    <div class="plan-today-status" id="planTodayStatus">今日のノルマはまだ開始していません</div>
+    <div class="setting">
+      <label>CBTPASS開始日 <input type="date" id="planStartDate"></label>
+      <div class="note">初期設定は2026年9月1日です。8月は定期試験期間としてルートを開始しません。</div>
+    </div>
     <div class="setting">
       <label>CBT本番 <input type="date" id="planExamDate"></label>
       <div class="note">現在は2027年1月26日です。</div>
@@ -502,7 +513,7 @@
       <div class="plan-cal-head"><button id="planPrevMonth" type="button">‹</button><b id="planMonthLabel">—</b><button id="planNextMonth" type="button">›</button></div>
       <div class="plan-week"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div>
       <div class="plan-days" id="planCalendarDays"></div>
-      <div class="plan-cal-note">予定日を押すと「休」に変わります。「多」は土日祝などの多めの日、「他」は他教材・総復習期間です。</div>
+      <div class="plan-cal-note">「済」は達成、「未」は未達成です。「多」は土日祝などの多めの日、「試」は開始前、「他」は他教材・総復習期間です。</div>
     </div>
     <div class="sec-h">これからの学習内容（目安）</div>
     <div id="planUpcoming"></div>
@@ -903,7 +914,7 @@ function addPlanDays(key,days){
 }
 function planMonthKey(key=dateKey()){return String(key).slice(0,7);}
 function planFinishDate(p){return addPlanDays(p.examDate,-Math.max(1,+p.finishLeadDays||30));}
-function isPlanStudyDay(key,p){return key<=planFinishDate(p)&&!p.unavailable[key];}
+function isPlanStudyDay(key,p){return key>=p.startDate&&key<=planFinishDate(p)&&!p.unavailable[key];}
 function planIsHighLoadDay(key,p){
   const parts=key.split('-').map(Number),day=new Date(parts[0],parts[1]-1,parts[2],12).getDay();
   return day===0||day===6||JP_HOLIDAYS.has(key)||!!(p.schoolOff||{})[key];
@@ -926,9 +937,9 @@ function planRemainingEffort(item){
 }
 function planNextEffort(item){const round=planItemRound(item);return PLAN_EFFORTS[Math.min(round,PLAN_EFFORTS.length-1)];}
 function planFor(){
-  if(!studyPlans.shared)studyPlans.shared={active:false,examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},dailyReview:200,reviewBoostV:1,items:{},daily:{date:dateKey(),count:0},updatedAt:0};
+  if(!studyPlans.shared)studyPlans.shared={active:false,startDate:'2026-09-01',examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},dailyReview:200,reviewBoostV:1,items:{},assignments:{},daily:{date:dateKey(),count:0},updatedAt:0};
   const p=studyPlans.shared;
-  p.items=p.items||{};p.unavailable=p.unavailable||{};p.schoolOff=p.schoolOff||{};p.examDate=p.examDate||'2027-01-26';
+  p.items=p.items||{};p.assignments=p.assignments||{};p.unavailable=p.unavailable||{};p.schoolOff=p.schoolOff||{};p.startDate=p.startDate||'2026-09-01';p.examDate=p.examDate||'2027-01-26';
   p.finishLeadDays=Number.isFinite(+p.finishLeadDays)?Math.max(1,+p.finishLeadDays):30;
   p.dailyReview=Number.isFinite(+p.dailyReview)?+p.dailyReview:200;
   if(!p.reviewBoostV){p.dailyReview=Math.max(200,p.dailyReview);p.reviewBoostV=1;}
@@ -944,7 +955,7 @@ function saveStudyPlans(sync=true){
 function rebuildStudyPlan(showMessage=true){
   const old=planFor(),today=dateKey(),latest={};
   Object.values(statsByBook).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>{if(a&&a.u&&(!latest[a.u]||(a.a||0)>latest[a.u]))latest[a.u]=a.a||0;}));
-  const p={active:true,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,dailyReview:old.dailyReview,reviewBoostV:1,items:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
+  const p={active:true,startDate:old.startDate,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,dailyReview:old.dailyReview,reviewBoostV:1,items:{},assignments:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
   Object.values(statsByBook).forEach(bookStats=>Object.entries(bookStats.perQ||{}).forEach(([uid,r])=>{
     if(((r.correct||0)+(r.wrong||0))<1)return;
     const last=latest[uid]?dateKey(new Date(latest[uid])):today;
@@ -984,6 +995,7 @@ function setPlanExplanation(uid,explained){
 function studyPlanSummary(){
   const p=ensureStudyPlan(),today=dateKey();
   const finishDate=planFinishDate(p);
+  const beforeStart=today<p.startDate;
   const studyToday=isPlanStudyDay(today,p);
   const studyDays=countPlanStudyDays(today,addPlanDays(finishDate,1),p);
   const dueAll=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.completed&&item.due<=today).sort((a,b)=>a[1].due.localeCompare(b[1].due)).map(([uid])=>uid);
@@ -1001,7 +1013,7 @@ function studyPlanSummary(){
   const freshCount=studyToday?Math.min(unseen.length,Math.max(budgetFresh,urgentFresh)):0;
   const fresh=unseen.slice(0,freshCount);
   const mastered=all.filter(q=>!!p.items[qkey(q)]?.completed).length;
-  return {p,today,finishDate,studyToday,studyDays,due,dueAll,unseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...due,...fresh])]};
+  return {p,today,finishDate,beforeStart,studyToday,studyDays,due,dueAll,unseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...due,...fresh])]};
 }
 function formatPlanDate(key){
   const p=key.split('-').map(Number),d=new Date(p[0],p[1]-1,p[2]);
@@ -1040,11 +1052,38 @@ function planUpcomingRows(s){
   }
   return rows;
 }
+function createPlanAssignment(key,uids){
+  const p=ensureStudyPlan(),unique=[...new Set(uids)];
+  if(!p.assignments[key])p.assignments[key]={date:key,uids:unique,completedUids:{},assigned:unique.length,completed:0,done:false,updatedAt:Date.now()};
+  else{
+    const assignment=p.assignments[key];assignment.uids=[...new Set([...(assignment.uids||[]),...unique])];assignment.completedUids=assignment.completedUids||{};
+    assignment.assigned=assignment.uids.length;assignment.completed=assignment.uids.filter(uid=>assignment.completedUids[uid]).length;assignment.done=assignment.completed>=assignment.assigned;assignment.updatedAt=Date.now();
+  }
+  p.updatedAt=Date.now();saveStudyPlans();return p.assignments[key];
+}
+function markPlanAssignment(uid){
+  if(!session||session.mode!=='plan')return;
+  const p=ensureStudyPlan(),key=session.assignmentDate||dateKey(),assignment=p.assignments[key]||createPlanAssignment(key,session.uids);
+  assignment.completedUids=assignment.completedUids||{};assignment.completedUids[uid]=true;
+  assignment.completed=assignment.uids.filter(id=>assignment.completedUids[id]).length;
+  assignment.assigned=assignment.uids.length;assignment.done=assignment.completed>=assignment.assigned;assignment.updatedAt=Date.now();
+  p.updatedAt=Date.now();saveStudyPlans();
+}
+function pendingPlanAssignment(){
+  const p=planFor(),today=dateKey();
+  return Object.values(p.assignments||{}).filter(a=>a&&a.date<=today&&!a.done&&Array.isArray(a.uids)).sort((a,b)=>a.date.localeCompare(b.date))[0]||null;
+}
 function savedPlanBacklog(){
-  const saved=safeGet(sharedPlanSessionKey());if(!saved||saved.mode!=='plan'||!Array.isArray(saved.uids))return null;
-  const idx=Number.isInteger(saved.resumeIdx)?saved.resumeIdx:(Number.isInteger(saved.idx)?saved.idx:0);
-  const remaining=saved.uids.slice(idx).filter(uid=>!!planQuestion(uid));
-  return remaining.length?{saved,idx,remaining}:null;
+  const saved=safeGet(sharedPlanSessionKey());
+  if(saved&&saved.mode==='plan'&&Array.isArray(saved.uids)){
+    const idx=Number.isInteger(saved.resumeIdx)?saved.resumeIdx:(Number.isInteger(saved.idx)?saved.idx:0);
+    const remaining=saved.uids.slice(idx).filter(uid=>!!planQuestion(uid));
+    if(remaining.length)return {saved,idx,remaining,assignmentDate:saved.assignmentDate||null};
+  }
+  const pending=pendingPlanAssignment();if(!pending)return null;
+  const completed=pending.completedUids||{},pendingUids=pending.uids.filter(uid=>!completed[uid]&&planQuestion(uid));
+  if(!pendingUids.length)return null;
+  return {saved:{mode:'plan',uids:pendingUids,bookByUid:Object.fromEntries(pendingUids.map(uid=>[uid,planBookForUid(uid)])),idx:0,resumeIdx:0,records:[],sessionCorrect:0,assignmentDate:pending.date},idx:0,remaining:pendingUids,assignmentDate:pending.date};
 }
 function renderPlanCalendar(p){
   const today=dateKey(),finish=planFinishDate(p);
@@ -1055,10 +1094,11 @@ function renderPlanCalendar(p){
   for(let i=0;i<first.getDay();i++)cells.push('<button class="plan-day blank" disabled></button>');
   for(let day=1;day<=last;day++){
     const key=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const exam=key===p.examDate,finishDay=key===finish,past=key<today,after=key>p.examDate,other=key>finish&&key<p.examDate,off=!!p.unavailable[key],high=!off&&planIsHighLoadDay(key,p);
-    const cls=['plan-day',off?'off':'',high?'high':'',key===today?'today':'',(exam||finishDay)?'exam':''].filter(Boolean).join(' ');
-    const label=exam?'本番':(finishDay?'仕上':(other?'他':(off?'休':(high?'多':'学'))));
-    cells.push(`<button class="${cls}" data-date="${key}" ${(past||finishDay||other||exam||after)?'disabled':''}>${day}<small>${label}</small></button>`);
+    const exam=key===p.examDate,finishDay=key===finish,past=key<today,beforeStart=key<p.startDate,after=key>p.examDate,other=key>finish&&key<p.examDate,off=!!p.unavailable[key],assignment=p.assignments[key],done=!!assignment?.done,missed=past&&!beforeStart&&!off&&!done&&key<=finish,high=!beforeStart&&!off&&planIsHighLoadDay(key,p);
+    const cls=['plan-day',off?'off':'',done?'done':'',missed?'missed':'',high&&!done&&!missed?'high':'',key===today?'today':'',(exam||finishDay)?'exam':''].filter(Boolean).join(' ');
+    let label=high?'多':'学';
+    if(assignment)label='中';if(missed)label='未';if(done)label='済';if(off)label='休';if(beforeStart)label='試';if(other)label='他';if(finishDay)label='仕上';if(exam)label='本番';
+    cells.push(`<button class="${cls}" data-date="${key}" ${(past||beforeStart||finishDay||other||exam||after)?'disabled':''}>${day}<small>${label}</small></button>`);
   }
   el('planCalendarDays').innerHTML=cells.join('');
   el('planPrevMonth').disabled=planCalendarMonth<=planMonthKey(today);
@@ -1072,6 +1112,7 @@ function renderStudyPlan(){
   el('planDueLabel').textContent=s.dueAll.length>s.due.length?`今日の復習（待ち${s.dueAll.length}問）`:'今日までの復習';
   el('planNewCount').textContent=s.fresh.length;
   el('planStudyDays').textContent=s.studyDays;
+  el('planStartDate').value=s.p.startDate;
   el('planExamDate').value=s.p.examDate;
   el('planFinishLead').value=s.p.finishLeadDays;
   el('planFinishNote').textContent=`${formatPlanDate(s.finishDate)}に仕上げ、本番まで${bufferDays}日を他教材・総復習に使います。`;
@@ -1080,10 +1121,16 @@ function renderStudyPlan(){
   el('planMasteryText').textContent=`習得済み ${s.mastered} / ${s.total}問`;
   el('planMasteryPct').textContent=`${masteryPct}%`;
   el('planMasteryBar').style.width=`${masteryPct}%`;
-  const backlog=savedPlanBacklog();
-  el('planStartInfo').textContent=!s.studyToday?'今日は予定あり（休み）':(backlog?`前回の未完了 ${backlog.remaining.length}問を先に実施`:(s.pool.length?`${s.highLoad?'多めの日 ・ ':''}復習 ${s.due.length}問 ＋ 新規 ${s.fresh.length}問`:'今日の課題は完了しました'));
+  const backlog=savedPlanBacklog(),todayAssignment=s.p.assignments[s.today],status=el('planTodayStatus');
+  el('planStartInfo').textContent=s.beforeStart?`${formatPlanDate(s.p.startDate)}からルート開始`:(!s.studyToday?'今日は予定あり（休み）':(backlog?`前回の未完了 ${backlog.remaining.length}問を先に実施`:(s.pool.length?`${s.highLoad?'多めの日 ・ ':''}復習 ${s.due.length}問 ＋ 新規 ${s.fresh.length}問`:'今日の課題は完了しました')));
   el('planStartBtn').disabled=!s.studyToday||(!backlog&&!s.pool.length);
-  el('planToggleTodayBtn').textContent=s.studyToday?'今日を休みにする':'今日を勉強日に戻す';
+  status.classList.toggle('done',!!todayAssignment?.done);
+  if(s.beforeStart)status.textContent=`ルート開始は ${formatPlanDate(s.p.startDate)} です`;
+  else if(todayAssignment?.done)status.textContent=`✅ 今日のノルマ達成（${todayAssignment.completed}/${todayAssignment.assigned}問）`;
+  else if(backlog&&backlog.assignmentDate&&backlog.assignmentDate<s.today)status.textContent=`未達成分 ${backlog.remaining.length}問を完了後、今日の計画を再計算します`;
+  else if(todayAssignment)status.textContent=`今日のノルマ ${todayAssignment.completed||0}/${todayAssignment.assigned}問 完了`;
+  else status.textContent='今日のノルマはまだ開始していません';
+  el('planToggleTodayBtn').textContent=s.beforeStart?'ルート開始前':(s.studyToday?'今日を休みにする':'今日を勉強日に戻す');
   const rows=planUpcomingRows(s),upcoming=el('planUpcoming');
   upcoming.innerHTML=rows.length?rows.map(row=>`<div class="plan-upcoming"><time>${formatPlanDate(row.key)}</time><span>${row.highLoad?'多め ・ ':''}復習 ${row.review}問 ＋ 新規 ${row.fresh}問</span><b>${row.review+row.fresh}問</b></div>`).join(''):'<div class="empty">仕上げ目標日までの勉強可能日がありません。</div>';
   renderPlanCalendar(s.p);
@@ -1095,14 +1142,17 @@ function openStudyPlan(){
   renderStudyPlan();showOnly('studyPlan');
 }
 function startStudyPlan(){
-  const s=studyPlanSummary();if(!s.studyToday){toast('今日はルートの休み日です');return;}
+  const s=studyPlanSummary();if(s.beforeStart){toast(`ルート開始は ${formatPlanDate(s.p.startDate)} です`);return;}if(!s.studyToday){toast('今日はルートの休み日です');return;}
   const backlog=savedPlanBacklog();
   if(backlog){
-    session=backlog.saved;session.idx=backlog.idx;session.resumeIdx=backlog.idx;session.bookByUid=session.bookByUid||Object.fromEntries(session.uids.map(uid=>[uid,planBookForUid(uid)]));
+    session=backlog.saved;session.idx=backlog.idx;session.resumeIdx=backlog.idx;session.assignmentDate=backlog.assignmentDate||session.assignmentDate||dateKey();session.bookByUid=session.bookByUid||Object.fromEntries(session.uids.map(uid=>[uid,planBookForUid(uid)]));
+    const assignment=createPlanAssignment(session.assignmentDate,session.uids);
+    if(!backlog.assignmentDate&&backlog.idx>0){assignment.completedUids=assignment.completedUids||{};session.uids.slice(0,backlog.idx).forEach(uid=>assignment.completedUids[uid]=true);assignment.completed=Object.keys(assignment.completedUids).length;assignment.done=assignment.completed>=assignment.assigned;saveStudyPlans();}
     saveSession();el('footer').classList.remove('hidden');toast(`前回の残り ${backlog.remaining.length}問から再開`);renderQuestion();return;
   }
   if(!s.pool.length){toast('今日の課題は完了しています');return;}
-  session={mode:'plan',uids:s.pool,bookByUid:Object.fromEntries(s.pool.map(uid=>[uid,planBookForUid(uid)])),idx:0,records:[],sessionCorrect:0};
+  const assignmentDate=dateKey();createPlanAssignment(assignmentDate,s.pool);
+  session={mode:'plan',uids:s.pool,bookByUid:Object.fromEntries(s.pool.map(uid=>[uid,planBookForUid(uid)])),assignmentDate,idx:0,records:[],sessionCorrect:0};
   saveSession();el('footer').classList.remove('hidden');renderQuestion();
 }
 
@@ -1257,7 +1307,7 @@ function renderHome(){
   if(hp.active){
     const ps=studyPlanSummary(),backlog=savedPlanBacklog();
     const masteryPct=ps.total?Math.round(ps.mastered/ps.total*100):0;
-    el('planHomeCount').textContent=(!ps.studyToday?'今日は予定あり（休み）':(backlog?`未完了 ${backlog.remaining.length}問から再開`:(ps.pool.length?`今日 ${ps.pool.length}問（復習${ps.due.length} ＋ 新規${ps.fresh.length}）`:'今日の課題は完了')))+` ・ 習得${masteryPct}%`;
+    el('planHomeCount').textContent=(ps.beforeStart?`${formatPlanDate(ps.p.startDate)}から開始`:(!ps.studyToday?'今日は予定あり（休み）':(backlog?`未完了 ${backlog.remaining.length}問から再開`:(ps.pool.length?`今日 ${ps.pool.length}問（復習${ps.due.length} ＋ 新規${ps.fresh.length}）`:'今日の課題は完了'))))+` ・ 習得${masteryPct}%`;
   }else el('planHomeCount').textContent='毎日の指定課題だけで問題集を仕上げる';
   const wl=wrongList(); el('reviewCount').textContent=wl.length?`${wl.length} 問が対象`:'対象なし'; el('reviewMode').disabled=!wl.length;
   const fl=favList(); el('favCount').textContent=fl.length?`${fl.length} 問が対象`:'対象なし'; el('favMode').disabled=!fl.length;
@@ -1315,7 +1365,7 @@ function startSession(mode){
 function resumeSession(){
   const ses=safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey());
   if(!ses){renderHome();return;}
-  if(ses.mode==='plan'&&!studyPlanSummary().studyToday){renderHome();toast('今日はルートの休み日です');return;}
+  if(ses.mode==='plan'){const ps=studyPlanSummary();if(!ps.studyToday){renderHome();toast(ps.beforeStart?`ルート開始は ${formatPlanDate(ps.p.startDate)} です`:'今日はルートの休み日です');return;}}
   ses.uids=ses.uids.filter(byUid);
   // 開始問題を途中に指定したセッションでも、保存した位置をそのまま使う
   const savedIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0);
@@ -1437,7 +1487,7 @@ function submit(skip){
   updateStreak(correct);
   const xpGain=awardXp(r,correct,attemptsBefore,hadCorrect);
   addRankAttempt(activeBook,qkey(q),correct,t,null);
-  if(session.mode==='plan')updateStudyPlan(qkey(q),correct);
+  if(session.mode==='plan'){updateStudyPlan(qkey(q),correct);markPlanAssignment(qkey(q));}
   r.rankV=1;
   saveStats();
   cloudSyncSoon();
@@ -1483,7 +1533,7 @@ function lastLabel(){ if(session.single&&session.returnTo==='list')return '一�
 function next(){
   if(!answered){submit(false);return;}
   if(session.idx<session.uids.length-1){session.idx++;saveSession();renderQuestion();}
-  else { if(session.single&&session.returnTo==='list'){clearSession();renderList();showOnly('list');el('footer').classList.add('hidden');} else if(session.single&&session.returnTo==='stats'){clearSession();openStats();} else finish(); }
+  else { if(session.single&&session.returnTo==='list'){clearSession();renderList();showOnly('list');el('footer').classList.add('hidden');} else if(session.single&&session.returnTo==='stats'){clearSession();openStats();} else if(session.mode==='plan'&&session.assignmentDate&&session.assignmentDate<dateKey()){clearSession();session=null;openStudyPlan();toast('未達成分を完了。今日以降の計画を再計算しました');} else finish(); }
 }
 function prev(){ if(session.mode!=='noback'&&session.idx>0){session.idx--;saveSession();renderQuestion();} }
 
@@ -1724,18 +1774,23 @@ el('listBtn').addEventListener('click',openList);
 el('planModeBtn').addEventListener('click',openStudyPlan);
 el('planStartBtn').addEventListener('click',startStudyPlan);
 el('planBackBtn').addEventListener('click',renderHome);
+el('planStartDate').addEventListener('change',event=>{
+  const p=ensureStudyPlan(),value=event.target.value;
+  if(!value||value>planFinishDate(p)){event.target.value=p.startDate;toast('開始日は仕上げ目標日以前に設定してください');return;}
+  p.startDate=value;Object.keys(p.assignments||{}).forEach(key=>{if(key<value&&!p.assignments[key].done)delete p.assignments[key];});safeRemove(sharedPlanSessionKey());p.updatedAt=Date.now();saveStudyPlans();renderStudyPlan();toast(`ルート開始を ${formatPlanDate(value)} に設定`);
+});
 el('planExamDate').addEventListener('change',event=>{
   const p=ensureStudyPlan(),value=event.target.value;
   if(!value||value<=dateKey()){event.target.value=p.examDate;toast('本番日は明日以降に設定してください');return;}
   const maxLead=Math.max(1,Math.floor((new Date(value+'T12:00:00')-new Date(dateKey()+'T12:00:00'))/86400000)-1);
   p.finishLeadDays=Math.min(p.finishLeadDays,maxLead);
-  p.examDate=value;p.updatedAt=Date.now();saveStudyPlans();renderStudyPlan();toast(`CBT本番を ${formatPlanDate(value)} に設定`);
+  p.examDate=value;if(p.startDate>planFinishDate(p))p.startDate=dateKey();p.updatedAt=Date.now();saveStudyPlans();renderStudyPlan();toast(`CBT本番を ${formatPlanDate(value)} に設定`);
 });
 el('planFinishLead').addEventListener('change',event=>{
   const p=ensureStudyPlan();let value=parseInt(event.target.value,10);
   const maxLead=Math.max(1,Math.min(180,Math.floor((new Date(p.examDate+'T12:00:00')-new Date(dateKey()+'T12:00:00'))/86400000)-1));
   value=Number.isFinite(value)?Math.max(1,Math.min(maxLead,value)):30;
-  p.finishLeadDays=value;p.updatedAt=Date.now();event.target.value=value;saveStudyPlans();renderStudyPlan();
+  p.finishLeadDays=value;if(p.startDate>planFinishDate(p))p.startDate=dateKey();p.updatedAt=Date.now();event.target.value=value;saveStudyPlans();renderStudyPlan();
   toast(`CBTPASSを本番${value}日前に仕上げます`);
 });
 el('planDailyReview').addEventListener('change',event=>{
@@ -1745,6 +1800,7 @@ el('planDailyReview').addEventListener('change',event=>{
 });
 el('planToggleTodayBtn').addEventListener('click',()=>{
   const p=ensureStudyPlan(),today=dateKey();
+  if(today<p.startDate){toast(`ルート開始は ${formatPlanDate(p.startDate)} です`);return;}
   if(today>planFinishDate(p)){toast('CBTPASSの仕上げ目標日を過ぎています');return;}
   if(p.unavailable[today])delete p.unavailable[today];else p.unavailable[today]=true;
   p.updatedAt=Date.now();saveStudyPlans();renderStudyPlan();
@@ -1851,6 +1907,7 @@ function mergeStudyPlanBook(local,cloud){
   const merged=Object.assign({},local);
   merged.active=!!(local.active||cloud.active);
   if((cloud.updatedAt||0)>(local.updatedAt||0)){
+    merged.startDate=cloud.startDate;
     merged.examDate=cloud.examDate;
     merged.finishLeadDays=cloud.finishLeadDays;
     merged.unavailable=cloud.unavailable;
@@ -1861,6 +1918,13 @@ function mergeStudyPlanBook(local,cloud){
   merged.items=Object.assign({},local.items||{});
   Object.entries(cloud.items||{}).forEach(([uid,item])=>{
     if(!merged.items[uid]||(item.updatedAt||0)>(merged.items[uid].updatedAt||0))merged.items[uid]=item;
+  });
+  merged.assignments=Object.assign({},local.assignments||{});
+  Object.entries(cloud.assignments||{}).forEach(([key,assignment])=>{
+    const current=merged.assignments[key];if(!current){merged.assignments[key]=assignment;return;}
+    const uids=[...new Set([...(current.uids||[]),...(assignment.uids||[])])],completedUids=Object.assign({},current.completedUids||{},assignment.completedUids||{});
+    merged.assignments[key]=Object.assign({},(assignment.updatedAt||0)>(current.updatedAt||0)?assignment:current,{uids,completedUids,assigned:uids.length,completed:uids.filter(uid=>completedUids[uid]).length,updatedAt:Math.max(current.updatedAt||0,assignment.updatedAt||0)});
+    merged.assignments[key].done=merged.assignments[key].completed>=merged.assignments[key].assigned;
   });
   const ld=local.daily||{},cd=cloud.daily||{};
   if((cd.date||'')>(ld.date||''))merged.daily=cd;
