@@ -487,6 +487,7 @@
     <div class="hero"><h1 style="font-size:24px;">🛤️ 忘却曲線ルート</h1><p id="planBookTitle">—</p></div>
     <div class="plan-rule"><b>今日表示された課題だけを、順番どおりにこなします</b>終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
     <div class="plan-rule"><b>「仕上がった」の判定</b>5周目まで解き、正解でき、さらに各選択肢の誤りを説明できる問題を「習得済み」に数えます。間違えた問題は習得できるまで翌日に再出題します。</div>
+    <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、苦手科目を優先します。</span></div>
     <div class="plan-grid">
       <div class="plan-card"><b id="planDueCount">0</b><span id="planDueLabel">今日までの復習</span></div>
       <div class="plan-card"><b id="planNewCount">0</b><span>今日の新規問題</span></div>
@@ -716,6 +717,45 @@ function planQuestions(){return [...(DEFAULT_QUESTIONS_BY_BOOK.book1||[]),...(DE
 function planBookForUid(uid){return (DEFAULT_QUESTIONS_BY_BOOK.book1||[]).some(q=>qkey(q)===uid)?'book1':((DEFAULT_QUESTIONS_BY_BOOK.book2||[]).some(q=>qkey(q)===uid)?'book2':null);}
 function planQuestion(uid){return planQuestions().find(q=>qkey(q)===uid);}
 function planRecord(uid){const book=planBookForUid(uid);return book?(statsByBook[book].perQ||{})[uid]:null;}
+function planSubject(q){return String(q?.subject||q?.category||q?.section||'未分類').trim()||'未分類';}
+function planPersonalProfile(){
+  const questions=planQuestions(),book1Count=(DEFAULT_QUESTIONS_BY_BOOK.book1||[]).length,byUid=new Map(questions.map((q,index)=>[qkey(q),{q,index,book:index<book1Count?'book1':'book2',subject:planSubject(q)}])),subjects={};
+  const subjectFor=uid=>byUid.get(uid)?.subject||'未分類';
+  questions.forEach(q=>{const subject=planSubject(q);if(!subjects[subject])subjects[subject]={subject,attempts:0,correct:0,timeSum:0,timeCount:0,streak:0,score:1};});
+  Object.values(statsByBook).forEach(bookStats=>Object.entries(bookStats.perQ||{}).forEach(([uid,r])=>{
+    const a=subjects[subjectFor(uid)]||(subjects[subjectFor(uid)]={subject:subjectFor(uid),attempts:0,correct:0,timeSum:0,timeCount:0,streak:0,score:1});
+    a.attempts+=(r.correct||0)+(r.wrong||0);a.correct+=r.correct||0;
+  }));
+  const attempts=[];
+  Object.values(statsByBook).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>attempts.push(a)));
+  attempts.sort((a,b)=>(a.a||0)-(b.a||0)).forEach(attempt=>{
+    const a=subjects[subjectFor(attempt.u)];if(a&&Number.isFinite(+attempt.s)&&+attempt.s>0){a.timeSum+=+attempt.s;a.timeCount++;}
+  });
+  const streakOpen={};
+  attempts.slice().sort((a,b)=>(b.a||0)-(a.a||0)).forEach(attempt=>{
+    const subject=subjectFor(attempt.u),a=subjects[subject];if(!a||streakOpen[subject]===false)return;
+    if(attempt.c)a.streak++;else streakOpen[subject]=false;
+  });
+  const targetSeconds=Math.max(20,+settings.slowSec||60);
+  Object.values(subjects).forEach(a=>{
+    const accuracy=(a.correct+2)/(a.attempts+4),evidence=Math.min(1,a.attempts/10),avgTime=a.timeCount?a.timeSum/a.timeCount:targetSeconds;
+    const slow=Math.max(0,Math.min(1,(avgTime-targetSeconds)/(targetSeconds*1.5)));
+    a.accuracy=accuracy;a.avgTime=avgTime;
+    a.score=Math.max(.7,Math.min(1.4,1+evidence*((.72-accuracy)*.9+slow*.25-Math.min(5,a.streak)*.05)));
+  });
+  const scoreFor=uid=>subjects[subjectFor(uid)]?.score||1;
+  return {subjects,byUid,subjectFor,scoreFor};
+}
+function planOrderUnseen(questions,profile){
+  return questions.slice().sort((a,b)=>{
+    const ab=profile.byUid.get(qkey(a))?.book==='book1'?0:1,bb=profile.byUid.get(qkey(b))?.book==='book1'?0:1;
+    return ab-bb||(profile.scoreFor(qkey(b))-profile.scoreFor(qkey(a)))||(profile.byUid.get(qkey(a))?.index||0)-(profile.byUid.get(qkey(b))?.index||0);
+  });
+}
+function planPersonalInterval(uid,base){
+  const score=planPersonalProfile().scoreFor(uid),multiplier=Math.max(.7,Math.min(1.4,1/score));
+  return Math.max(1,Math.round(base*multiplier));
+}
 
 function guidePages(ref){
   return [...new Set((String(ref||'').match(/\d+/g)||[]).map(Number).filter(page=>page>=1&&page<=681))];
@@ -997,7 +1037,8 @@ function updateStudyPlan(uid,correct){
   }else{
     const round=Math.min(5,planItemRound(existing)+1),stage=correct?Math.min(round-1,PLAN_INTERVALS.length-1):0;
     const explained=correct&&!!existing.explained,completed=round>=5&&correct&&explained;
-    const nextDue=addPlanDays(today,correct?PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)]:1);
+    const baseInterval=PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)];
+    const nextDue=addPlanDays(today,correct?planPersonalInterval(uid,baseInterval):1);
     p.items[uid]={round,stage,due:completed?'9999-12-31':(nextDue>planFinishDate(p)?planFinishDate(p):nextDue),last:today,explained,completed,updatedAt:Date.now()};
   }
   p.updatedAt=Date.now();saveStudyPlans();
@@ -1013,15 +1054,16 @@ function setPlanExplanation(uid,explained){
 }
 function studyPlanSummary(){
   const p=ensureStudyPlan(),today=dateKey();
+  const personal=planPersonalProfile();
   const finishDate=planFinishDate(p);
   const beforeStart=today<p.startDate;
   const studyToday=isPlanStudyDay(today,p);
   const lightDay=planIsLightDay(today,p);
   const augustPrep=planIsAugustPrep(today);
   const studyDays=countPlanStudyDays(today,addPlanDays(finishDate,1),p);
-  const dueAll=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.completed&&item.due<=today).sort((a,b)=>a[1].due.localeCompare(b[1].due)).map(([uid])=>uid);
+  const dueAll=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.completed&&item.due<=today).sort((a,b)=>a[1].due.localeCompare(b[1].due)||personal.scoreFor(b[0])-personal.scoreFor(a[0])).map(([uid])=>uid);
   const due=studyToday?dueAll.slice(0,(lightDay||augustPrep)?30:p.dailyReview):[];
-  const all=planQuestions(),unseen=all.filter(q=>!p.items[qkey(q)]).map(qkey);
+  const all=planQuestions(),unseen=planOrderUnseen(all.filter(q=>!p.items[qkey(q)]),personal).map(qkey);
   const remainingEffort=all.reduce((sum,q)=>sum+(p.items[qkey(q)]?planRemainingEffort(p.items[qkey(q)]):PLAN_EFFORTS.reduce((a,b)=>a+b,0)),0);
   const capacity=Math.max(1,planCapacitySum(today,addPlanDays(finishDate,1),p));
   const baseEffort=remainingEffort/capacity,todayBudget=studyToday?Math.max(0,baseEffort*planDayFactor(today,p)-(p.daily.effort||0)):0;
@@ -1035,7 +1077,7 @@ function studyPlanSummary(){
   if(augustPrep)freshCount=studyToday?Math.min(unseen.length,Math.max(0,15-doneToday)):0;
   const fresh=unseen.slice(0,freshCount);
   const mastered=all.filter(q=>!!p.items[qkey(q)]?.completed).length;
-  return {p,today,finishDate,beforeStart,studyToday,studyDays,lightDay,lightReason:(p.lightDays||{})[today]||'',augustPrep,due,dueAll,unseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...due,...fresh])]};
+  return {p,today,finishDate,beforeStart,studyToday,studyDays,lightDay,lightReason:(p.lightDays||{})[today]||'',augustPrep,personal,due,dueAll,unseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...due,...fresh])]};
 }
 function formatPlanDate(key){
   const p=key.split('-').map(Number),d=new Date(p[0],p[1]-1,p[2]);
@@ -1043,17 +1085,17 @@ function formatPlanDate(key){
 }
 function planUpcomingRows(s){
   const p=s.p;
-  let queue=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.completed).map(([,item])=>({due:item.due,round:planItemRound(item)}));
+  let queue=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.completed).map(([uid,item])=>({due:item.due,round:planItemRound(item),score:s.personal.scoreFor(uid)}));
   let key=s.today,unseen=s.unseen.length,guard=0;
   const rows=[];
   while(key<=s.finishDate&&rows.length<10&&guard++<1000){
     if(isPlanStudyDay(key,p)){
-      const ready=queue.filter(item=>item.due<=key).sort((a,b)=>a.due.localeCompare(b.due));
+      const ready=queue.filter(item=>item.due<=key).sort((a,b)=>a.due.localeCompare(b.due)||(b.score||1)-(a.score||1));
       const light=planIsLightDay(key,p),augustPrep=planIsAugustPrep(key),future=queue.filter(item=>item.due>key),reviewed=ready.slice(0,(light||augustPrep)?30:p.dailyReview);
       queue=[...future,...ready.slice(reviewed.length)];
       reviewed.forEach(item=>{
         const round=Math.min(5,(item.round||0)+1);
-        if(round<5)queue.push({round,due:addPlanDays(key,PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)])});
+        if(round<5){const base=PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)],multiplier=Math.max(.7,Math.min(1.4,1/(item.score||1)));queue.push({round,score:item.score,due:addPlanDays(key,Math.max(1,Math.round(base*multiplier)))});}
       });
       const review=reviewed.length;
       const queueEffort=queue.reduce((sum,item)=>sum+(item.round>=5?PLAN_EFFORTS[4]:PLAN_EFFORTS.slice(item.round).reduce((a,b)=>a+b,0)),0);
@@ -1155,6 +1197,8 @@ function renderStudyPlan(){
   el('planMasteryText').textContent=`習得済み ${s.mastered} / ${s.total}問`;
   el('planMasteryPct').textContent=`${masteryPct}%`;
   el('planMasteryBar').style.width=`${masteryPct}%`;
+  const measured=Object.values(s.personal.subjects).filter(x=>x.attempts>=3).sort((a,b)=>b.score-a.score),weak=measured.filter(x=>x.score>1.04).slice(0,2),strong=measured.filter(x=>x.score<.9).sort((a,b)=>a.score-b.score).slice(0,1);
+  el('planPersonalNote').textContent=!measured.length?'回答が3問以上たまった科目から、正答率・回答時間・連続正解を使って自動調整します。':`${weak.length?'苦手優先：'+weak.map(x=>x.subject).join('・'):'大きな苦手科目はありません'}${strong.length?' ／ 定着：'+strong.map(x=>x.subject).join('・'):''}`;
   const backlog=savedPlanBacklog(),runnableBacklog=runnablePlanBacklog(backlog,s),todayAssignment=s.p.assignments[s.today],status=el('planTodayStatus');
   el('planStartInfo').textContent=s.beforeStart?`${formatPlanDate(s.p.startDate)}からルート開始`:(!s.studyToday?'今日は予定あり（休み）':(runnableBacklog.length?`前回の未完了から ${runnableBacklog.length}問を先に実施`:(s.pool.length?`${s.augustPrep?'8月軽め ・ ':(s.lightDay?s.lightReason+' ・ 新規なし ・ ':(s.highLoad?'多めの日 ・ ':''))}復習 ${s.due.length}問 ＋ 新規 ${s.fresh.length}問`:(s.lightDay&&backlog?'未達の新規問題は翌日に繰り越します':'今日の課題は完了しました'))));
   el('planStartBtn').disabled=!s.studyToday||(!runnableBacklog.length&&!s.pool.length);
