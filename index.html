@@ -163,9 +163,12 @@
   .plan-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow);}
   .plan-card b{display:block;color:var(--green);font-size:28px;line-height:1.15;}
   .plan-card span{display:block;color:var(--muted);font-size:11px;font-weight:700;margin-top:5px;}
-  .plan-upcoming{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);}
+  .plan-upcoming{display:flex;align-items:center;gap:12px;width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);font:inherit;color:inherit;text-align:left;cursor:pointer;}
+  .plan-upcoming:active{transform:scale(.99);background:#f2f8f5;}
+  .plan-upcoming.today{border-color:#83b9a2;box-shadow:0 0 0 1px #83b9a2,var(--shadow);}
   .plan-upcoming time{min-width:92px;color:var(--green-d);font-size:12px;font-weight:800;}
   .plan-upcoming b{margin-left:auto;font-size:14px;}
+  .plan-upcoming i{color:var(--green);font-style:normal;font-size:18px;font-weight:900;}
   .plan-calendar{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);}
   .plan-cal-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
   .plan-cal-head b{flex:1;text-align:center;font-size:15px;}
@@ -1146,7 +1149,7 @@ function renderStudyPlan(){
   else status.textContent='今日のノルマはまだ開始していません';
   el('planToggleTodayBtn').textContent=s.beforeStart?'ルート開始前':(s.studyToday?'今日を休みにする':'今日を勉強日に戻す');
   const rows=planUpcomingRows(s),upcoming=el('planUpcoming');
-  upcoming.innerHTML=rows.length?rows.map(row=>`<div class="plan-upcoming"><time>${formatPlanDate(row.key)}</time><span>${row.light?'軽め（'+escapeHtml(row.reason)+'）・ ':(row.highLoad?'多め ・ ':'')}復習 ${row.review}問 ＋ 新規 ${row.fresh}問</span><b>${row.review+row.fresh}問</b></div>`).join(''):'<div class="empty">仕上げ目標日までの勉強可能日がありません。</div>';
+  upcoming.innerHTML=rows.length?rows.map(row=>`<button type="button" class="plan-upcoming${row.key===s.today?' today':''}" data-plan-date="${row.key}"><time>${formatPlanDate(row.key)}</time><span>${row.light?'軽め（'+escapeHtml(row.reason)+'）・ ':(row.highLoad?'多め ・ ':'')}復習 ${row.review}問 ＋ 新規 ${row.fresh}問</span><b>${row.review+row.fresh}問</b><i>›</i></button>`).join(''):'<div class="empty">仕上げ目標日までの勉強可能日がありません。</div>';
   renderPlanCalendar(s.p);
 }
 function openStudyPlan(){
@@ -1791,6 +1794,12 @@ el('statsBtn').addEventListener('click',openStats);
 el('listBtn').addEventListener('click',openList);
 el('planModeBtn').addEventListener('click',openStudyPlan);
 el('planStartBtn').addEventListener('click',startStudyPlan);
+el('planUpcoming').addEventListener('click',event=>{
+  const row=event.target.closest('[data-plan-date]');if(!row)return;
+  const key=row.dataset.planDate,today=dateKey();
+  if(key===today){startStudyPlan();return;}
+  toast(`${formatPlanDate(key)}の課題は、当日の正誤状況から自動で決まります`);
+});
 el('planBackBtn').addEventListener('click',renderHome);
 el('planStartDate').addEventListener('change',event=>{
   const p=ensureStudyPlan(),value=event.target.value;
