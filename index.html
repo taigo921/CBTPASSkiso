@@ -438,7 +438,7 @@
 
     <div class="sec-h">出題モード</div>
     <div class="modes">
-      <button class="mode primary" id="planModeBtn"><div class="ic">🗓️</div><div class="t"><b>学習計画</b><span id="planHomeCount">忘却曲線で復習日を自動設定</span></div><div class="arr">›</div></button>
+      <button class="mode primary" id="planModeBtn"><div class="ic">🛤️</div><div class="t"><b>忘却曲線ルート</b><span id="planHomeCount">毎日の指定課題だけで問題集を仕上げる</span></div><div class="arr">›</div></button>
       <button class="mode primary" id="sectionModeBtn"><div class="ic">🗂️</div><div class="t"><b>セクションを選んで解く</b><span>科目・分野ごとに集中演習</span></div><div class="arr">›</div></button>
       <button class="mode" data-mode="order"><div class="ic">📖</div><div class="t"><b>順番に解く</b><span>セクション順に出題</span></div><div class="arr">›</div></button>
       <button class="mode" data-mode="review" id="reviewMode"><div class="ic">🔁</div><div class="t"><b>間違えた問題だけ復習</b><span id="reviewCount">対象なし</span></div><div class="arr">›</div></button>
@@ -471,7 +471,8 @@
 
   <!-- STUDY PLAN -->
   <section id="studyPlan" class="hidden">
-    <div class="hero"><h1 style="font-size:24px;">🗓️ 学習計画</h1><p id="planBookTitle">—</p></div>
+    <div class="hero"><h1 style="font-size:24px;">🛤️ 忘却曲線ルート</h1><p id="planBookTitle">—</p></div>
+    <div class="plan-rule"><b>今日表示された課題だけを、順番どおりにこなします</b>終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
     <div class="plan-rule"><b>「仕上がった」の判定</b>正解でき、さらに各選択肢の誤りを説明できると確認した問題を「習得済み」に数えます。復習は翌日 → 3日後 → 7日後 → 14日後 → 30日後です。</div>
     <div class="plan-grid">
       <div class="plan-card"><b id="planDueCount">0</b><span id="planDueLabel">今日までの復習</span></div>
@@ -479,7 +480,7 @@
       <div class="plan-card"><b id="planStudyDays">0</b><span>仕上げまでの勉強日</span></div>
     </div>
     <div class="plan-mastery"><div class="plan-mastery-head"><span id="planMasteryText">習得済み 0 / 0問</span><span id="planMasteryPct">0%</span></div><div class="plan-mastery-bar"><i id="planMasteryBar" style="width:0%"></i></div></div>
-    <button class="mode primary" id="planStartBtn"><div class="ic">▶️</div><div class="t"><b>今日の学習を始める</b><span id="planStartInfo">—</span></div><div class="arr">›</div></button>
+    <button class="mode primary" id="planStartBtn"><div class="ic">▶️</div><div class="t"><b>今日の指定課題を始める</b><span id="planStartInfo">—</span></div><div class="arr">›</div></button>
     <div class="setting">
       <label>CBT本番 <input type="date" id="planExamDate"></label>
       <div class="note">現在は2027年1月26日です。</div>
@@ -997,6 +998,12 @@ function planUpcomingRows(s){
   }
   return rows;
 }
+function savedPlanBacklog(){
+  const saved=safeGet(sharedPlanSessionKey());if(!saved||saved.mode!=='plan'||!Array.isArray(saved.uids))return null;
+  const idx=Number.isInteger(saved.resumeIdx)?saved.resumeIdx:(Number.isInteger(saved.idx)?saved.idx:0);
+  const remaining=saved.uids.slice(idx).filter(uid=>!!planQuestion(uid));
+  return remaining.length?{saved,idx,remaining}:null;
+}
 function renderPlanCalendar(p){
   const today=dateKey(),finish=planFinishDate(p);
   if(!planCalendarMonth)planCalendarMonth=planMonthKey(today);
@@ -1032,8 +1039,9 @@ function renderStudyPlan(){
   el('planMasteryText').textContent=`習得済み ${s.mastered} / ${s.total}問`;
   el('planMasteryPct').textContent=`${masteryPct}%`;
   el('planMasteryBar').style.width=`${masteryPct}%`;
-  el('planStartInfo').textContent=!s.studyToday?'今日は予定あり（休み）':(s.pool.length?`復習 ${s.due.length}問 ＋ 新規 ${s.fresh.length}問`:'今日の計画は完了しました');
-  el('planStartBtn').disabled=!s.pool.length;
+  const backlog=savedPlanBacklog();
+  el('planStartInfo').textContent=!s.studyToday?'今日は予定あり（休み）':(backlog?`前回の未完了 ${backlog.remaining.length}問を先に実施`:(s.pool.length?`復習 ${s.due.length}問 ＋ 新規 ${s.fresh.length}問`:'今日の課題は完了しました'));
+  el('planStartBtn').disabled=!s.studyToday||(!backlog&&!s.pool.length);
   el('planToggleTodayBtn').textContent=s.studyToday?'今日を休みにする':'今日を勉強日に戻す';
   const rows=planUpcomingRows(s),upcoming=el('planUpcoming');
   upcoming.innerHTML=rows.length?rows.map(row=>`<div class="plan-upcoming"><time>${formatPlanDate(row.key)}</time><span>復習 ${row.review}問 ＋ 新規 ${row.fresh}問</span><b>${row.review+row.fresh}問</b></div>`).join(''):'<div class="empty">仕上げ目標日までの勉強可能日がありません。</div>';
@@ -1046,7 +1054,13 @@ function openStudyPlan(){
   renderStudyPlan();showOnly('studyPlan');
 }
 function startStudyPlan(){
-  const s=studyPlanSummary();if(!s.pool.length){toast('今日の計画は完了しています');return;}
+  const s=studyPlanSummary();if(!s.studyToday){toast('今日はルートの休み日です');return;}
+  const backlog=savedPlanBacklog();
+  if(backlog){
+    session=backlog.saved;session.idx=backlog.idx;session.resumeIdx=backlog.idx;session.bookByUid=session.bookByUid||Object.fromEntries(session.uids.map(uid=>[uid,planBookForUid(uid)]));
+    saveSession();el('footer').classList.remove('hidden');toast(`前回の残り ${backlog.remaining.length}問から再開`);renderQuestion();return;
+  }
+  if(!s.pool.length){toast('今日の課題は完了しています');return;}
   session={mode:'plan',uids:s.pool,bookByUid:Object.fromEntries(s.pool.map(uid=>[uid,planBookForUid(uid)])),idx:0,records:[],sessionCorrect:0};
   saveSession();el('footer').classList.remove('hidden');renderQuestion();
 }
@@ -1200,10 +1214,10 @@ function renderHome(){
   renderGameCard();
   const hp=planFor();
   if(hp.active){
-    const ps=studyPlanSummary();
+    const ps=studyPlanSummary(),backlog=savedPlanBacklog();
     const masteryPct=ps.total?Math.round(ps.mastered/ps.total*100):0;
-    el('planHomeCount').textContent=(!ps.studyToday?'今日は予定あり（休み）':(ps.pool.length?`今日 ${ps.pool.length}問（復習${ps.due.length} ＋ 新規${ps.fresh.length}）`:'今日の計画は完了'))+` ・ 習得${masteryPct}%`;
-  }else el('planHomeCount').textContent='忘却曲線で復習日を自動設定';
+    el('planHomeCount').textContent=(!ps.studyToday?'今日は予定あり（休み）':(backlog?`未完了 ${backlog.remaining.length}問から再開`:(ps.pool.length?`今日 ${ps.pool.length}問（復習${ps.due.length} ＋ 新規${ps.fresh.length}）`:'今日の課題は完了')))+` ・ 習得${masteryPct}%`;
+  }else el('planHomeCount').textContent='毎日の指定課題だけで問題集を仕上げる';
   const wl=wrongList(); el('reviewCount').textContent=wl.length?`${wl.length} 問が対象`:'対象なし'; el('reviewMode').disabled=!wl.length;
   const fl=favList(); el('favCount').textContent=fl.length?`${fl.length} 問が対象`:'対象なし'; el('favMode').disabled=!fl.length;
   const il=imageList(); el('imageCount').textContent=il.length?`${il.length} 問が対象`:'対象なし'; el('imageMode').disabled=!il.length;
@@ -1260,6 +1274,7 @@ function startSession(mode){
 function resumeSession(){
   const ses=safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey());
   if(!ses){renderHome();return;}
+  if(ses.mode==='plan'&&!studyPlanSummary().studyToday){renderHome();toast('今日はルートの休み日です');return;}
   ses.uids=ses.uids.filter(byUid);
   // 開始問題を途中に指定したセッションでも、保存した位置をそのまま使う
   const savedIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0);
@@ -1320,6 +1335,7 @@ function renderQuestion(){
   });
 
   el('resultBlock').classList.add('hidden');
+  el('postConf').classList.toggle('hidden',session.mode!=='plan');
   document.querySelectorAll('#postConf button').forEach(b=>b.classList.remove('on'));
   el('nextBtn').textContent='回答する'; el('nextBtn').disabled=true;
   el('prevBtn').style.display=noback?'none':'';
@@ -1346,7 +1362,7 @@ document.querySelectorAll('#postConf button').forEach(b=>{
   b.addEventListener('click',()=>{
     document.querySelectorAll('#postConf button').forEach(x=>x.classList.toggle('on',x===b));
     const r=session.records[session.records.length-1];
-    if(r){r.post=b.dataset.oc; const pr=rec(r.uid); pr.post.push(b.dataset.oc);setPlanExplanation(r.uid,b.dataset.oc==='explained');saveStats();cloudSyncSoon();}
+    if(r&&session.mode==='plan'){r.post=b.dataset.oc; const pr=rec(r.uid); pr.post.push(b.dataset.oc);setPlanExplanation(r.uid,b.dataset.oc==='explained');saveStats();cloudSyncSoon();}
   });
 });
 
@@ -1380,7 +1396,7 @@ function submit(skip){
   updateStreak(correct);
   const xpGain=awardXp(r,correct,attemptsBefore,hadCorrect);
   addRankAttempt(activeBook,qkey(q),correct,t,null);
-  updateStudyPlan(qkey(q),correct);
+  if(session.mode==='plan')updateStudyPlan(qkey(q),correct);
   r.rankV=1;
   saveStats();
   cloudSyncSoon();
