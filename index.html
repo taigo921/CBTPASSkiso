@@ -504,10 +504,6 @@
     <div class="plan-today-status" id="planTodayStatus">今日のノルマはまだ開始していません</div>
     <div class="plan-extra hidden" id="planExtraBox"><b>🔥 まだ余裕がある人へ</b><p id="planExtraNote">追加した問題も正式な進捗になり、翌日以降のノルマを自動で軽くします。</p><div class="plan-extra-actions"><button type="button" data-extra-count="10">＋10問</button><button type="button" data-extra-count="25">＋25問</button><button type="button" data-extra-count="50">＋50問</button><button type="button" class="hidden" id="planExtraResume">追加学習の続き</button></div></div>
     <div class="setting">
-      <label>CBTPASS開始日 <input type="date" id="planStartDate"></label>
-      <div class="note">8月4日〜19日は新規15問の軽い先行期間、8月20日〜31日は試験対策・定期試験のため休止し、9月1日から本ルートです。</div>
-    </div>
-    <div class="setting">
       <label>CBT本番 <input type="date" id="planExamDate"></label>
       <div class="note">現在は2027年1月26日です。</div>
     </div>
@@ -516,10 +512,6 @@
       <div class="note" id="planFinishNote">仕上げ日以降は、他教材や総復習に使う期間です。</div>
     </div>
     <div class="plan-rule"><b>5周の労力から毎日の量を逆算</b>初回100・2周目80・3周目70・4周目60・5周目50として計算します。土日祝と学校がない日は、平日の1.5倍を目安に多めの課題を出します。</div>
-    <div class="setting">
-      <label>1日の復習上限 <input type="number" id="planDailyReview" min="5" max="200" step="5"> 問</label>
-      <div class="note">復習を優先して出題します。基本は最大200問までです。</div>
-    </div>
     <div class="row-btns"><button class="ghost-btn" id="planToggleTodayBtn">今日を休みにする</button></div>
     <div class="sec-h">勉強可能日（月単位で設定）</div>
     <div class="plan-calendar">
@@ -919,10 +911,6 @@ function load(){
     studyPlans.shared=mergeStudyPlanBook(studyPlans.book1,studyPlans.book2)||null;
     if(studyPlans.shared)safeSet(STORE_PLAN,studyPlans);
   }
-  if(studyPlans.shared&&!studyPlans.shared.reviewBoostV){
-    studyPlans.shared.dailyReview=Math.max(200,+studyPlans.shared.dailyReview||0);studyPlans.shared.reviewBoostV=1;
-    safeSet(STORE_PLAN,studyPlans);
-  }
 }
 const saveStats=()=>{statsByBook[activeBook]=stats;safeSet(STORE_S_BOOKS,statsByBook);};
 const saveGame=()=>safeSet(STORE_GAME,game);
@@ -977,7 +965,7 @@ function planMonthKey(key=dateKey()){return String(key).slice(0,7);}
 function planFinishDate(p){return addPlanDays(p.examDate,-Math.max(1,+p.finishLeadDays||30));}
 function planIsAugustPrep(key){return key>=AUGUST_PREP_START&&key<=AUGUST_PREP_END;}
 function planIsSystemOff(key){return CAMPUS_ROUTE_OFF.has(key);}
-function isPlanStudyDay(key,p){return key>=p.startDate&&key<=planFinishDate(p)&&!p.unavailable[key]&&!planIsSystemOff(key);}
+function isPlanStudyDay(key,p){return key<=planFinishDate(p)&&!p.unavailable[key]&&!planIsSystemOff(key);}
 function planIsLightDay(key,p){return !!(p.lightDays||{})[key];}
 function planIsHighLoadDay(key,p){
   if(planIsLightDay(key,p)||planIsAugustPrep(key))return false;
@@ -1002,13 +990,11 @@ function planRemainingEffort(item){
 }
 function planNextEffort(item){const round=planItemRound(item);return PLAN_EFFORTS[Math.min(round,PLAN_EFFORTS.length-1)];}
 function planFor(){
-  if(!studyPlans.shared)studyPlans.shared={active:false,startDate:AUGUST_PREP_START,examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},lightDays:{},dailyReview:200,reviewBoostV:1,augustPrepV:1,items:{},assignments:{},daily:{date:dateKey(),count:0},updatedAt:0};
+  if(!studyPlans.shared)studyPlans.shared={active:false,examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},lightDays:{},augustPrepV:1,items:{},assignments:{},daily:{date:dateKey(),count:0},updatedAt:0};
   const p=studyPlans.shared;
-  p.items=p.items||{};p.assignments=p.assignments||{};p.unavailable=p.unavailable||{};p.schoolOff=Object.assign(Object.fromEntries([...CAMPUS_SCHOOL_OFF].map(key=>[key,true])),p.schoolOff||{});p.lightDays=Object.assign({},CAMPUS_LIGHT_DAYS,p.lightDays||{});p.startDate=p.startDate||AUGUST_PREP_START;p.examDate=p.examDate||'2027-01-26';
-  if(!p.augustPrepV){if(p.startDate==='2026-09-01')p.startDate=AUGUST_PREP_START;p.augustPrepV=1;p.updatedAt=Date.now();}
+  p.items=p.items||{};p.assignments=p.assignments||{};p.unavailable=p.unavailable||{};p.schoolOff=Object.assign(Object.fromEntries([...CAMPUS_SCHOOL_OFF].map(key=>[key,true])),p.schoolOff||{});p.lightDays=Object.assign({},CAMPUS_LIGHT_DAYS,p.lightDays||{});p.examDate=p.examDate||'2027-01-26';
+  if(!p.augustPrepV){p.augustPrepV=1;p.updatedAt=Date.now();}
   p.finishLeadDays=Number.isFinite(+p.finishLeadDays)?Math.max(1,+p.finishLeadDays):30;
-  p.dailyReview=Number.isFinite(+p.dailyReview)?+p.dailyReview:200;
-  if(!p.reviewBoostV){p.dailyReview=Math.max(200,p.dailyReview);p.reviewBoostV=1;}
   const finish=planFinishDate(p);Object.values(p.items).forEach(item=>{if(!item.completed&&item.due>finish)item.due=finish;});
   if(!p.daily||p.daily.date!==dateKey())p.daily={date:dateKey(),count:0,effort:0};
   p.daily.effort=+p.daily.effort||0;
@@ -1021,7 +1007,7 @@ function saveStudyPlans(sync=true){
 function rebuildStudyPlan(showMessage=true){
   const old=planFor(),today=dateKey(),latest={};
   Object.values(statsByBook).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>{if(a&&a.u&&(!latest[a.u]||(a.a||0)>latest[a.u]))latest[a.u]=a.a||0;}));
-  const p={active:true,startDate:old.startDate,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,lightDays:old.lightDays,dailyReview:old.dailyReview,reviewBoostV:1,augustPrepV:1,items:{},assignments:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
+  const p={active:true,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,lightDays:old.lightDays,augustPrepV:1,items:{},assignments:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
   Object.values(statsByBook).forEach(bookStats=>Object.entries(bookStats.perQ||{}).forEach(([uid,r])=>{
     if(((r.correct||0)+(r.wrong||0))<1)return;
     const last=latest[uid]?dateKey(new Date(latest[uid])):today;
@@ -1063,13 +1049,12 @@ function studyPlanSummary(){
   const p=ensureStudyPlan(),today=dateKey();
   const personal=planPersonalProfile();
   const finishDate=planFinishDate(p);
-  const beforeStart=today<p.startDate;
   const studyToday=isPlanStudyDay(today,p);
   const lightDay=planIsLightDay(today,p);
   const augustPrep=planIsAugustPrep(today);
   const studyDays=countPlanStudyDays(today,addPlanDays(finishDate,1),p);
   const dueAll=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.completed&&item.due<=today).sort((a,b)=>a[1].due.localeCompare(b[1].due)||personal.scoreFor(b[0])-personal.scoreFor(a[0])).map(([uid])=>uid);
-  const due=studyToday?dueAll.slice(0,(lightDay||augustPrep)?30:p.dailyReview):[];
+  const due=studyToday?((lightDay||augustPrep)?dueAll.slice(0,30):dueAll):[];
   const all=planQuestions(),unseen=planOrderUnseen(all.filter(q=>!p.items[qkey(q)]),personal).map(qkey);
   const remainingEffort=all.reduce((sum,q)=>sum+(p.items[qkey(q)]?planRemainingEffort(p.items[qkey(q)]):PLAN_EFFORTS.reduce((a,b)=>a+b,0)),0);
   const capacity=Math.max(1,planCapacitySum(today,addPlanDays(finishDate,1),p));
@@ -1084,7 +1069,7 @@ function studyPlanSummary(){
   if(augustPrep)freshCount=studyToday?Math.min(unseen.length,Math.max(0,15-doneToday)):0;
   const fresh=unseen.slice(0,freshCount);
   const mastered=all.filter(q=>!!p.items[qkey(q)]?.completed).length;
-  return {p,today,finishDate,beforeStart,studyToday,studyDays,lightDay,lightReason:(p.lightDays||{})[today]||'',augustPrep,personal,due,dueAll,unseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...due,...fresh])]};
+  return {p,today,finishDate,studyToday,studyDays,lightDay,lightReason:(p.lightDays||{})[today]||'',augustPrep,personal,due,dueAll,unseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...due,...fresh])]};
 }
 function formatPlanDate(key){
   const p=key.split('-').map(Number),d=new Date(p[0],p[1]-1,p[2]);
@@ -1098,7 +1083,7 @@ function planUpcomingRows(s){
   while(key<=s.finishDate&&rows.length<10&&guard++<1000){
     if(isPlanStudyDay(key,p)){
       const ready=queue.filter(item=>item.due<=key).sort((a,b)=>a.due.localeCompare(b.due)||(b.score||1)-(a.score||1));
-      const light=planIsLightDay(key,p),augustPrep=planIsAugustPrep(key),future=queue.filter(item=>item.due>key),reviewed=ready.slice(0,(light||augustPrep)?30:p.dailyReview);
+      const light=planIsLightDay(key,p),augustPrep=planIsAugustPrep(key),future=queue.filter(item=>item.due>key),reviewed=(light||augustPrep)?ready.slice(0,30):ready;
       queue=[...future,...ready.slice(reviewed.length)];
       reviewed.forEach(item=>{
         const round=Math.min(5,(item.round||0)+1);
@@ -1177,11 +1162,11 @@ function renderPlanCalendar(p){
   for(let i=0;i<first.getDay();i++)cells.push('<button class="plan-day blank" disabled></button>');
   for(let day=1;day<=last;day++){
     const key=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const exam=key===p.examDate,finishDay=key===finish,past=key<today,beforeStart=key<p.startDate,after=key>p.examDate,other=key>finish&&key<p.examDate,systemOff=planIsSystemOff(key),off=!!p.unavailable[key]||systemOff,light=!off&&planIsLightDay(key,p),augustPrep=!off&&planIsAugustPrep(key),assignment=p.assignments[key],done=!!assignment?.done,missed=past&&!beforeStart&&!off&&!done&&key<=finish,high=!beforeStart&&!off&&planIsHighLoadDay(key,p);
+    const exam=key===p.examDate,finishDay=key===finish,past=key<today,after=key>p.examDate,other=key>finish&&key<p.examDate,systemOff=planIsSystemOff(key),off=!!p.unavailable[key]||systemOff,light=!off&&planIsLightDay(key,p),augustPrep=!off&&planIsAugustPrep(key),assignment=p.assignments[key],done=!!assignment?.done,missed=past&&!off&&!done&&key<=finish,high=!off&&planIsHighLoadDay(key,p);
     const cls=['plan-day',off?'off':'',done?'done':'',missed?'missed':'',light&&!done&&!missed?'light':'',high&&!done&&!missed?'high':'',key===today?'today':'',(exam||finishDay)?'exam':''].filter(Boolean).join(' ');
     let label=augustPrep?'軽15':(high?'多':'学');
-    if(light)label='軽';if(assignment)label='中';if(missed)label='未';if(done)label='済';if(off)label='休';if(beforeStart)label='試';if(other)label='他';if(finishDay)label='仕上';if(exam)label='本番';
-    cells.push(`<button class="${cls}" data-date="${key}" ${(past||beforeStart||finishDay||other||exam||after||systemOff)?'disabled':''}>${day}<small>${label}</small></button>`);
+    if(light)label='軽';if(assignment)label='中';if(missed)label='未';if(done)label='済';if(off)label='休';if(other)label='他';if(finishDay)label='仕上';if(exam)label='本番';
+    cells.push(`<button class="${cls}" data-date="${key}" ${(past||finishDay||other||exam||after||systemOff)?'disabled':''}>${day}<small>${label}</small></button>`);
   }
   el('planCalendarDays').innerHTML=cells.join('');
   el('planPrevMonth').disabled=planCalendarMonth<=planMonthKey(today);
@@ -1195,11 +1180,9 @@ function renderStudyPlan(){
   el('planDueLabel').textContent=s.dueAll.length>s.due.length?`今日の復習（待ち${s.dueAll.length}問）`:'今日までの復習';
   el('planNewCount').textContent=s.fresh.length;
   el('planStudyDays').textContent=s.studyDays;
-  el('planStartDate').value=s.p.startDate;
   el('planExamDate').value=s.p.examDate;
   el('planFinishLead').value=s.p.finishLeadDays;
   el('planFinishNote').textContent=`${formatPlanDate(s.finishDate)}に仕上げ、本番まで${bufferDays}日を他教材・総復習に使います。`;
-  el('planDailyReview').value=s.p.dailyReview;
   const masteryPct=s.total?Math.round(s.mastered/s.total*100):0;
   el('planMasteryText').textContent=`習得済み ${s.mastered} / ${s.total}問`;
   el('planMasteryPct').textContent=`${masteryPct}%`;
@@ -1214,18 +1197,17 @@ function renderStudyPlan(){
   el('planExtraResume').classList.toggle('hidden',!extraRemaining);
   el('planExtraResume').textContent=extraRemaining?`追加学習の続き ${extraRemaining}問`:'追加学習の続き';
   el('planExtraNote').textContent=extraRemaining?'追加学習が途中です。続きから再開できます。':'追加分も正式な進捗になり、翌日以降の新規ノルマを自動で軽くします。';
-  el('planStartInfo').textContent=s.beforeStart?`${formatPlanDate(s.p.startDate)}からルート開始`:(!s.studyToday?'今日は予定あり（休み）':(runnableBacklog.length?`前回の未完了から ${runnableBacklog.length}問を先に実施`:(s.pool.length?`${s.augustPrep?'8月軽め ・ ':(s.lightDay?s.lightReason+' ・ 新規なし ・ ':(s.highLoad?'多めの日 ・ ':''))}復習 ${s.due.length}問 ＋ 新規 ${s.fresh.length}問`:(s.lightDay&&backlog?'未達の新規問題は翌日に繰り越します':'今日の課題は完了しました'))));
+  el('planStartInfo').textContent=!s.studyToday?'今日は予定あり（休み）':(runnableBacklog.length?`前回の未完了から ${runnableBacklog.length}問を先に実施`:(s.pool.length?`${s.augustPrep?'8月軽め ・ ':(s.lightDay?s.lightReason+' ・ 新規なし ・ ':(s.highLoad?'多めの日 ・ ':''))}復習 ${s.due.length}問 ＋ 新規 ${s.fresh.length}問`:(s.lightDay&&backlog?'未達の新規問題は翌日に繰り越します':'今日の課題は完了しました')));
   el('planStartBtn').disabled=!s.studyToday||(!runnableBacklog.length&&!s.pool.length);
   if(extraRemaining){el('planStartInfo').textContent=`追加学習 ${extraRemaining}問が途中です`;el('planStartBtn').disabled=true;}
   status.classList.toggle('done',!!todayAssignment?.done);
-  if(s.beforeStart)status.textContent=`ルート開始は ${formatPlanDate(s.p.startDate)} です`;
-  else if(todayAssignment?.done)status.textContent=`✅ 今日のノルマ達成（${todayAssignment.completed}/${todayAssignment.assigned}問）`;
+  if(todayAssignment?.done)status.textContent=`✅ 今日のノルマ達成（${todayAssignment.completed}/${todayAssignment.assigned}問）`;
   else if(backlog&&backlog.assignmentDate&&backlog.assignmentDate<s.today)status.textContent=s.lightDay?`${s.lightReason}：未達の新規は翌日に回し、復習だけ行います`:`未達成分 ${backlog.remaining.length}問を完了後、今日の計画を再計算します`;
   else if(todayAssignment)status.textContent=`今日のノルマ ${todayAssignment.completed||0}/${todayAssignment.assigned}問 完了`;
   else if(s.lightDay)status.textContent=`${s.lightReason}：新規問題なし・復習最大30問の軽い日です`;
   else if(s.augustPrep)status.textContent='8月の先行期間：新規15問・復習最大30問の軽い日です';
   else status.textContent='今日のノルマはまだ開始していません';
-  el('planToggleTodayBtn').textContent=s.beforeStart?'ルート開始前':(s.studyToday?'今日を休みにする':'今日を勉強日に戻す');
+  el('planToggleTodayBtn').textContent=s.studyToday?'今日を休みにする':'今日を勉強日に戻す';
   const rows=planUpcomingRows(s),upcoming=el('planUpcoming');
   upcoming.innerHTML=rows.length?rows.map(row=>`<button type="button" class="plan-upcoming${row.key===s.today?' today':''}" data-plan-date="${row.key}"><time>${formatPlanDate(row.key)}</time><span>${row.augustPrep?'8月軽め ・ ':(row.light?'軽め（'+escapeHtml(row.reason)+'）・ ':(row.highLoad?'多め ・ ':''))}復習 ${row.review}問 ＋ 新規 ${row.fresh}問</span><b>${row.review+row.fresh}問</b><i>›</i></button>`).join(''):'<div class="empty">仕上げ目標日までの勉強可能日がありません。</div>';
   renderPlanCalendar(s.p);
@@ -1238,7 +1220,7 @@ function openStudyPlan(){
 }
 function startStudyPlan(){
   const savedExtra=safeGet(sharedPlanSessionKey());if(savedExtra?.extra){resumeSession();return;}
-  const s=studyPlanSummary();if(s.beforeStart){toast(`ルート開始は ${formatPlanDate(s.p.startDate)} です`);return;}if(!s.studyToday){toast('今日はルートの休み日です');return;}
+  const s=studyPlanSummary();if(!s.studyToday){toast('今日はルートの休み日です');return;}
   const backlog=savedPlanBacklog();
   if(backlog){
     const runnable=runnablePlanBacklog(backlog,s);
@@ -1419,7 +1401,7 @@ function renderHome(){
     const ps=studyPlanSummary(),backlog=savedPlanBacklog();
     const runnableBacklog=runnablePlanBacklog(backlog,ps);
     const masteryPct=ps.total?Math.round(ps.mastered/ps.total*100):0;
-    el('planHomeCount').textContent=(ps.beforeStart?`${formatPlanDate(ps.p.startDate)}から開始`:(!ps.studyToday?'今日は予定あり（休み）':(runnableBacklog.length?`未完了 ${runnableBacklog.length}問から再開`:(ps.pool.length?`${ps.augustPrep?'8月軽め':(ps.lightDay?'軽め・新規なし':'今日')} ${ps.pool.length}問（復習${ps.due.length} ＋ 新規${ps.fresh.length}）`:'今日の課題は完了'))))+` ・ 習得${masteryPct}%`;
+    el('planHomeCount').textContent=(!ps.studyToday?'今日は予定あり（休み）':(runnableBacklog.length?`未完了 ${runnableBacklog.length}問から再開`:(ps.pool.length?`${ps.augustPrep?'8月軽め':(ps.lightDay?'軽め・新規なし':'今日')} ${ps.pool.length}問（復習${ps.due.length} ＋ 新規${ps.fresh.length}）`:'今日の課題は完了')))+` ・ 習得${masteryPct}%`;
   }else el('planHomeCount').textContent='毎日の指定課題だけで問題集を仕上げる';
   const wl=wrongList(); el('reviewCount').textContent=wl.length?`${wl.length} 問が対象`:'対象なし'; el('reviewMode').disabled=!wl.length;
   const fl=favList(); el('favCount').textContent=fl.length?`${fl.length} 問が対象`:'対象なし'; el('favMode').disabled=!fl.length;
@@ -1477,7 +1459,7 @@ function startSession(mode){
 function resumeSession(){
   const ses=safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey());
   if(!ses){renderHome();return;}
-  if(ses.mode==='plan'){const ps=studyPlanSummary();if(!ps.studyToday){renderHome();toast(ps.beforeStart?`ルート開始は ${formatPlanDate(ps.p.startDate)} です`:'今日はルートの休み日です');return;}if(ses.extra&&ps.lightDay){renderHome();toast('模試・試験日のため追加学習は翌日に再開できます');return;}if(!ses.extra&&(ps.lightDay||ps.augustPrep)){openStudyPlan();startStudyPlan();return;}}
+  if(ses.mode==='plan'){const ps=studyPlanSummary();if(!ps.studyToday){renderHome();toast('今日はルートの休み日です');return;}if(ses.extra&&ps.lightDay){renderHome();toast('模試・試験日のため追加学習は翌日に再開できます');return;}if(!ses.extra&&(ps.lightDay||ps.augustPrep)){openStudyPlan();startStudyPlan();return;}}
   ses.uids=ses.uids.filter(byUid);
   // 開始問題を途中に指定したセッションでも、保存した位置をそのまま使う
   const savedIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0);
@@ -1896,33 +1878,22 @@ el('planUpcoming').addEventListener('click',event=>{
   toast(`${formatPlanDate(key)}の課題は、当日の正誤状況から自動で決まります`);
 });
 el('planBackBtn').addEventListener('click',renderHome);
-el('planStartDate').addEventListener('change',event=>{
-  const p=ensureStudyPlan(),value=event.target.value;
-  if(!value||value>planFinishDate(p)){event.target.value=p.startDate;toast('開始日は仕上げ目標日以前に設定してください');return;}
-  p.startDate=value;Object.keys(p.assignments||{}).forEach(key=>{if(key<value&&!p.assignments[key].done)delete p.assignments[key];});safeRemove(sharedPlanSessionKey());p.updatedAt=Date.now();saveStudyPlans();renderStudyPlan();toast(`ルート開始を ${formatPlanDate(value)} に設定`);
-});
 el('planExamDate').addEventListener('change',event=>{
   const p=ensureStudyPlan(),value=event.target.value;
   if(!value||value<=dateKey()){event.target.value=p.examDate;toast('本番日は明日以降に設定してください');return;}
   const maxLead=Math.max(1,Math.floor((new Date(value+'T12:00:00')-new Date(dateKey()+'T12:00:00'))/86400000)-1);
   p.finishLeadDays=Math.min(p.finishLeadDays,maxLead);
-  p.examDate=value;if(p.startDate>planFinishDate(p))p.startDate=dateKey();p.updatedAt=Date.now();saveStudyPlans();renderStudyPlan();toast(`CBT本番を ${formatPlanDate(value)} に設定`);
+  p.examDate=value;p.updatedAt=Date.now();saveStudyPlans();renderStudyPlan();toast(`CBT本番を ${formatPlanDate(value)} に設定`);
 });
 el('planFinishLead').addEventListener('change',event=>{
   const p=ensureStudyPlan();let value=parseInt(event.target.value,10);
   const maxLead=Math.max(1,Math.min(180,Math.floor((new Date(p.examDate+'T12:00:00')-new Date(dateKey()+'T12:00:00'))/86400000)-1));
   value=Number.isFinite(value)?Math.max(1,Math.min(maxLead,value)):30;
-  p.finishLeadDays=value;if(p.startDate>planFinishDate(p))p.startDate=dateKey();p.updatedAt=Date.now();event.target.value=value;saveStudyPlans();renderStudyPlan();
+  p.finishLeadDays=value;p.updatedAt=Date.now();event.target.value=value;saveStudyPlans();renderStudyPlan();
   toast(`CBTPASSを本番${value}日前に仕上げます`);
-});
-el('planDailyReview').addEventListener('change',event=>{
-  const p=ensureStudyPlan();let value=parseInt(event.target.value,10);
-  value=Number.isFinite(value)?Math.max(5,Math.min(200,value)):50;
-  p.dailyReview=value;p.updatedAt=Date.now();event.target.value=value;saveStudyPlans();renderStudyPlan();toast(`1日の復習上限を ${value}問 に設定`);
 });
 el('planToggleTodayBtn').addEventListener('click',()=>{
   const p=ensureStudyPlan(),today=dateKey();
-  if(today<p.startDate){toast(`ルート開始は ${formatPlanDate(p.startDate)} です`);return;}
   if(today>planFinishDate(p)){toast('CBTPASSの仕上げ目標日を過ぎています');return;}
   if(planIsSystemOff(today)){toast('試験対策・定期試験期間はCBT課題なしです');return;}
   if(p.unavailable[today])delete p.unavailable[today];else p.unavailable[today]=true;
@@ -2030,12 +2001,9 @@ function mergeStudyPlanBook(local,cloud){
   const merged=Object.assign({},local);
   merged.active=!!(local.active||cloud.active);
   if((cloud.updatedAt||0)>(local.updatedAt||0)){
-    merged.startDate=cloud.startDate;
     merged.examDate=cloud.examDate;
     merged.finishLeadDays=cloud.finishLeadDays;
     merged.unavailable=cloud.unavailable;
-    merged.dailyReview=cloud.dailyReview;
-    merged.reviewBoostV=cloud.reviewBoostV;
   }
   // 端末ごとに追加した学校予定・試験予定を、同期時に消さずに統合する
   merged.schoolOff=Object.assign({},local.schoolOff||{},cloud.schoolOff||{});
@@ -2080,7 +2048,6 @@ function cbtMergeCloud(cd){
   if(cd.studyPlans){
     const cloudShared=cd.studyPlans.shared||mergeStudyPlanBook(cd.studyPlans.book1,cd.studyPlans.book2);
     studyPlans.shared=mergeStudyPlanBook(studyPlans.shared,cloudShared);
-    if(studyPlans.shared&&!studyPlans.shared.reviewBoostV){studyPlans.shared.dailyReview=Math.max(200,+studyPlans.shared.dailyReview||0);studyPlans.shared.reviewBoostV=1;}
     saveStudyPlans(false);
   }
   stats=statsByBook[activeBook];
