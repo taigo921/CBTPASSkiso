@@ -507,9 +507,10 @@
   <!-- STUDY PLAN -->
   <section id="studyPlan" class="hidden">
     <div class="hero"><h1 style="font-size:24px;">🛤️ 忘却曲線ルート</h1><p id="planBookTitle">—</p></div>
+    <div class="plan-rule"><b>新規問題は、問題集1の最初から掲載順</b>問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
     <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
     <div class="plan-rule"><b>仕上がりの判定</b>問題を解き、正解でき、さらに各選択肢の誤りを説明できる問題を「習得済み」に数えます。間違えた問題は習得できるまで翌日に再出題します。</div>
-    <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、苦手科目を優先します。</span></div>
+    <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、復習の間隔と優先度を調整します。</span></div>
     <div class="plan-grid">
       <div class="plan-card"><b id="planDueCount">0</b><span id="planDueLabel">今日までの復習</span></div>
       <div class="plan-card"><b id="planNewCount">0</b><span>今日の新規問題</span></div>
@@ -762,10 +763,16 @@ function planPersonalProfile(){
   return {subjects,byUid,subjectFor,scoreFor};
 }
 function planOrderUnseen(questions,profile){
-  return questions.slice().sort((a,b)=>{
-    const ab=profile.byUid.get(qkey(a))?.book==='book1'?0:1,bb=profile.byUid.get(qkey(b))?.book==='book1'?0:1;
-    return ab-bb||(profile.scoreFor(qkey(b))-profile.scoreFor(qkey(a)))||(profile.byUid.get(qkey(a))?.index||0)-(profile.byUid.get(qkey(b))?.index||0);
-  });
+  // 新規問題は個別の得意・不得意で並べ替えず、原本の掲載順を守る。
+  // planQuestions() 自体が問題集1→問題集2の順なので、通し番号だけで安定ソートする。
+  return questions.slice().sort((a,b)=>(profile.byUid.get(qkey(a))?.index??Number.MAX_SAFE_INTEGER)-(profile.byUid.get(qkey(b))?.index??Number.MAX_SAFE_INTEGER));
+}
+function planRouteAllows(uid,summary){return summary.phaseBook!=='book1'||planBookForUid(uid)==='book1';}
+function planRouteOrder(uids,summary){
+  const unique=[...new Set(uids)].filter(uid=>planQuestion(uid)&&planRouteAllows(uid,summary));
+  const reviews=unique.filter(uid=>summary.p.items[uid]).sort((a,b)=>(summary.p.items[a]?.due||'').localeCompare(summary.p.items[b]?.due||'')||summary.personal.scoreFor(b)-summary.personal.scoreFor(a));
+  const fresh=unique.filter(uid=>!summary.p.items[uid]).sort((a,b)=>(summary.personal.byUid.get(a)?.index??Number.MAX_SAFE_INTEGER)-(summary.personal.byUid.get(b)?.index??Number.MAX_SAFE_INTEGER));
+  return [...reviews,...fresh];
 }
 function planPersonalInterval(uid,base){
   const score=planPersonalProfile().scoreFor(uid),multiplier=Math.max(.7,Math.min(1.4,1/score));
@@ -1069,9 +1076,26 @@ function studyPlanSummary(){
   const lightDay=planIsLightDay(today,p);
   const augustPrep=planIsAugustPrep(today);
   const studyDays=countPlanStudyDays(today,addPlanDays(finishDate,1),p);
-  const dueAll=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.completed&&item.due<=today).sort((a,b)=>a[1].due.localeCompare(b[1].due)||personal.scoreFor(b[0])-personal.scoreFor(a[0])).map(([uid])=>uid);
-  const due=studyToday?((lightDay||augustPrep)?dueAll.slice(0,30):dueAll):[];
   const all=planQuestions(),unseen=planOrderUnseen(all.filter(q=>!p.items[qkey(q)]),personal).map(qkey);
+  const unseenBook1=unseen.filter(uid=>planBookForUid(uid)==='book1'),unseenBook2=unseen.filter(uid=>planBookForUid(uid)==='book2');
+  // 問題集1の初回出題が残っている間は、過去に混入した問題集2の復習も保留する。
+  // 問題集2へ移行後は、忘れ頃になった問題集1の復習を並行してよい。
+  const phaseBook=unseenBook1.length?'book1':(unseenBook2.length?'book2':null),phaseUnseen=phaseBook==='book1'?unseenBook1:unseenBook2;
+  // 旧仕様で作成済みの未完了課題からも、混入した問題集2を一度だけ除去する。
+  if(phaseBook==='book1'){
+    let migrated=false;
+    Object.entries(p.assignments||{}).forEach(([key,assignment])=>{
+      if(!assignment||assignment.done||!Array.isArray(assignment.uids))return;
+      const kept=assignment.uids.filter(uid=>planBookForUid(uid)==='book1');
+      if(kept.length===assignment.uids.length)return;
+      if(!kept.length){delete p.assignments[key];migrated=true;return;}
+      assignment.uids=kept;assignment.completedUids=Object.fromEntries(Object.entries(assignment.completedUids||{}).filter(([uid])=>kept.includes(uid)));
+      assignment.assigned=kept.length;assignment.completed=kept.filter(uid=>assignment.completedUids[uid]).length;assignment.done=assignment.completed>=assignment.assigned;assignment.updatedAt=Date.now();migrated=true;
+    });
+    if(migrated){p.updatedAt=Date.now();saveStudyPlans();}
+  }
+  const dueAll=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.completed&&item.due<=today&&(phaseBook!=='book1'||planBookForUid(uid)==='book1')).sort((a,b)=>a[1].due.localeCompare(b[1].due)||personal.scoreFor(b[0])-personal.scoreFor(a[0])).map(([uid])=>uid);
+  const due=studyToday?((lightDay||augustPrep)?dueAll.slice(0,30):dueAll):[];
   const remainingEffort=all.reduce((sum,q)=>sum+(p.items[qkey(q)]?planRemainingEffort(p.items[qkey(q)]):PLAN_EFFORTS.reduce((a,b)=>a+b,0)),0);
   const capacity=Math.max(1,planCapacitySum(today,addPlanDays(finishDate,1),p));
   const baseEffort=remainingEffort/capacity,todayBudget=studyToday?Math.max(0,baseEffort*planDayFactor(today,p)-(p.daily.effort||0)):0;
@@ -1081,11 +1105,11 @@ function studyPlanSummary(){
   const introDays=Math.max(1,countPlanStudyDays(today,addPlanDays(introEnd<today?finishDate:introEnd,1),p));
   const doneToday=p.daily.date===today?(p.daily.count||0):0;
   const urgentFresh=unseen.length?Math.max(0,Math.ceil((unseen.length+doneToday)/introDays)-doneToday):0;
-  let freshCount=studyToday&&!lightDay?Math.min(unseen.length,Math.max(budgetFresh,urgentFresh)):0;
-  if(augustPrep)freshCount=studyToday?Math.min(unseen.length,Math.max(0,15-doneToday)):0;
-  const fresh=unseen.slice(0,freshCount);
+  let freshCount=studyToday&&!lightDay?Math.min(phaseUnseen.length,Math.max(budgetFresh,urgentFresh)):0;
+  if(augustPrep)freshCount=studyToday?Math.min(phaseUnseen.length,Math.max(0,15-doneToday)):0;
+  const fresh=phaseUnseen.slice(0,freshCount);
   const mastered=all.filter(q=>!!p.items[qkey(q)]?.completed).length;
-  return {p,today,finishDate,studyToday,studyDays,lightDay,lightReason:(p.lightDays||{})[today]||'',augustPrep,personal,due,dueAll,unseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...due,...fresh])]};
+  return {p,today,finishDate,studyToday,studyDays,lightDay,lightReason:(p.lightDays||{})[today]||'',augustPrep,personal,due,dueAll,unseen,unseenBook1:unseenBook1.length,unseenBook2:unseenBook2.length,phaseBook,phaseUnseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...due,...fresh])]};
 }
 function formatPlanDate(key){
   const p=key.split('-').map(Number),d=new Date(p[0],p[1]-1,p[2]);
@@ -1093,21 +1117,23 @@ function formatPlanDate(key){
 }
 function planUpcomingRows(s){
   const p=s.p;
-  let queue=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.completed).map(([uid,item])=>({due:item.due,round:planItemRound(item),score:s.personal.scoreFor(uid)}));
-  let key=s.today,unseen=s.unseen.length,guard=0;
+  let queue=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.completed).map(([uid,item])=>({due:item.due,round:planItemRound(item),score:s.personal.scoreFor(uid),book:planBookForUid(uid)}));
+  let key=s.today,unseenBook1=s.unseenBook1,unseenBook2=s.unseenBook2,guard=0;
   const rows=[];
   while(key<=s.finishDate&&rows.length<10&&guard++<1000){
     if(isPlanStudyDay(key,p)){
-      const ready=queue.filter(item=>item.due<=key).sort((a,b)=>a.due.localeCompare(b.due)||(b.score||1)-(a.score||1));
+      const activePhase=unseenBook1>0?'book1':'book2';
+      const ready=queue.filter(item=>item.due<=key&&(activePhase!=='book1'||item.book==='book1')).sort((a,b)=>a.due.localeCompare(b.due)||(b.score||1)-(a.score||1));
+      const deferred=queue.filter(item=>item.due<=key&&activePhase==='book1'&&item.book!=='book1');
       const light=planIsLightDay(key,p),augustPrep=planIsAugustPrep(key),future=queue.filter(item=>item.due>key),reviewed=(light||augustPrep)?ready.slice(0,30):ready;
-      queue=[...future,...ready.slice(reviewed.length)];
+      queue=[...future,...deferred,...ready.slice(reviewed.length)];
       reviewed.forEach(item=>{
         const round=Math.min(5,(item.round||0)+1);
-        if(round<5){const base=PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)],multiplier=Math.max(.7,Math.min(1.4,1/(item.score||1)));queue.push({round,score:item.score,due:addPlanDays(key,Math.max(1,Math.round(base*multiplier)))});}
+        if(round<5){const base=PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)],multiplier=Math.max(.7,Math.min(1.4,1/(item.score||1)));queue.push({round,score:item.score,book:item.book,due:addPlanDays(key,Math.max(1,Math.round(base*multiplier)))});}
       });
       const review=reviewed.length;
       const queueEffort=queue.reduce((sum,item)=>sum+(item.round>=5?PLAN_EFFORTS[4]:PLAN_EFFORTS.slice(item.round).reduce((a,b)=>a+b,0)),0);
-      const remainingEffort=queueEffort+unseen*PLAN_EFFORTS.reduce((a,b)=>a+b,0);
+      const unseen=unseenBook1+unseenBook2,remainingEffort=queueEffort+unseen*PLAN_EFFORTS.reduce((a,b)=>a+b,0);
       const capacity=Math.max(1,planCapacitySum(key,addPlanDays(s.finishDate,1),p));
       const budget=remainingEffort/capacity*planDayFactor(key,p);
       const reviewEffort=reviewed.reduce((sum,item)=>sum+PLAN_EFFORTS[Math.min(item.round,4)],0);
@@ -1118,8 +1144,10 @@ function planUpcomingRows(s){
       if(light)fresh=0;
       if(augustPrep)fresh=Math.min(15,unseen);
       if(key===s.today)fresh=s.fresh.length;
-      fresh=Math.min(fresh,unseen);unseen-=fresh;
-      for(let i=0;i<fresh;i++)queue.push({round:1,due:addPlanDays(key,1)});
+      const activeUnseen=unseenBook1>0?unseenBook1:unseenBook2;
+      fresh=Math.min(fresh,activeUnseen);
+      const freshBook=unseenBook1>0?'book1':'book2';if(freshBook==='book1')unseenBook1-=fresh;else unseenBook2-=fresh;
+      for(let i=0;i<fresh;i++)queue.push({round:1,book:freshBook,due:addPlanDays(key,1)});
       rows.push({key,review,fresh,light,augustPrep,reason:(p.lightDays||{})[key]||'',highLoad:planIsHighLoadDay(key,p)});
     }
     key=addPlanDays(key,1);
@@ -1161,13 +1189,14 @@ function savedPlanBacklog(){
 }
 function runnablePlanBacklog(backlog,s){
   if(!backlog)return [];
-  if(s.lightDay)return backlog.remaining.filter(uid=>s.p.items[uid]).slice(0,30);
+  const remaining=planRouteOrder(backlog.remaining,s);
+  if(s.lightDay)return remaining.filter(uid=>s.p.items[uid]).slice(0,30);
   if(s.augustPrep){
-    const reviews=backlog.remaining.filter(uid=>s.p.items[uid]).slice(0,30);
-    const fresh=backlog.remaining.filter(uid=>!s.p.items[uid]).slice(0,15);
+    const reviews=remaining.filter(uid=>s.p.items[uid]).slice(0,30);
+    const fresh=remaining.filter(uid=>!s.p.items[uid]).slice(0,15);
     return [...reviews,...fresh];
   }
-  return backlog.remaining;
+  return remaining;
 }
 function renderPlanCalendar(p){
   const today=dateKey(),finish=planFinishDate(p);
@@ -1204,7 +1233,7 @@ function renderStudyPlan(){
   el('planMasteryPct').textContent=`${masteryPct}%`;
   el('planMasteryBar').style.width=`${masteryPct}%`;
   const measured=Object.values(s.personal.subjects).filter(x=>x.attempts>=3).sort((a,b)=>b.score-a.score),weak=measured.filter(x=>x.score>1.04).slice(0,2),strong=measured.filter(x=>x.score<.9).sort((a,b)=>a.score-b.score).slice(0,1);
-  el('planPersonalNote').textContent=!measured.length?'回答が3問以上たまった科目から、正答率・回答時間・連続正解を使って自動調整します。':`${weak.length?'苦手優先：'+weak.map(x=>x.subject).join('・'):'大きな苦手科目はありません'}${strong.length?' ／ 定着：'+strong.map(x=>x.subject).join('・'):''}`;
+  el('planPersonalNote').textContent=!measured.length?'回答が3問以上たまった科目から、正答率・回答時間・連続正解を使って復習間隔を自動調整します。':`${weak.length?'復習優先：'+weak.map(x=>x.subject).join('・'):'大きな苦手科目はありません'}${strong.length?' ／ 定着：'+strong.map(x=>x.subject).join('・'):''}`;
   const backlog=savedPlanBacklog(),runnableBacklog=runnablePlanBacklog(backlog,s),todayAssignment=s.p.assignments[s.today],status=el('planTodayStatus');
   const savedExtra=safeGet(sharedPlanSessionKey()),extraAt=savedExtra?.extra?(Number.isInteger(savedExtra.resumeIdx)?savedExtra.resumeIdx:(savedExtra.idx||0)):0,extraRemaining=savedExtra?.extra?Math.max(0,(savedExtra.uids||[]).length-extraAt):0,extraBox=el('planExtraBox');
   const canExtra=!!todayAssignment?.done&&s.studyToday&&!s.lightDay&&s.unseen.length>0;
@@ -1241,8 +1270,7 @@ function startStudyPlan(){
   if(backlog){
     const runnable=runnablePlanBacklog(backlog,s);
     if(!runnable.length&&s.lightDay){if(!s.pool.length){toast(`${s.lightReason}のため新規問題は翌日に繰り越します`);return;}}
-    if(runnable.length&&(s.lightDay||s.augustPrep))session={mode:'plan',uids:runnable,bookByUid:Object.fromEntries(runnable.map(uid=>[uid,planBookForUid(uid)])),idx:0,resumeIdx:0,records:[],sessionCorrect:0,assignmentDate:backlog.assignmentDate||dateKey()};
-    else if(runnable.length){session=backlog.saved;session.idx=backlog.idx;session.resumeIdx=backlog.idx;session.assignmentDate=backlog.assignmentDate||session.assignmentDate||dateKey();session.bookByUid=session.bookByUid||Object.fromEntries(session.uids.map(uid=>[uid,planBookForUid(uid)]));}
+    if(runnable.length)session={mode:'plan',uids:runnable,bookByUid:Object.fromEntries(runnable.map(uid=>[uid,planBookForUid(uid)])),idx:0,resumeIdx:0,records:[],sessionCorrect:0,assignmentDate:backlog.assignmentDate||dateKey()};
     if(runnable.length){
     const assignment=createPlanAssignment(session.assignmentDate,session.uids);
     if(!backlog.assignmentDate&&backlog.idx>0){assignment.completedUids=assignment.completedUids||{};session.uids.slice(0,backlog.idx).forEach(uid=>assignment.completedUids[uid]=true);assignment.completed=Object.keys(assignment.completedUids).length;assignment.done=assignment.completed>=assignment.assigned;saveStudyPlans();}
@@ -1259,7 +1287,7 @@ function startExtraStudy(count){
   const s=studyPlanSummary(),assignment=s.p.assignments[s.today];
   if(!s.studyToday||s.lightDay){toast(s.lightDay?'模試・試験日は追加の新規問題なしです':'今日はルートの休み日です');return;}
   if(!assignment?.done){toast('先に今日の必須ノルマを達成してください');return;}
-  const limit=Math.max(1,Math.min(50,+count||10)),uids=s.unseen.slice(0,limit);
+  const limit=Math.max(1,Math.min(50,+count||10)),uids=s.phaseUnseen.slice(0,limit);
   if(!uids.length){toast('新規問題はすべて1周目を終えています');return;}
   session={mode:'plan',extra:true,uids,bookByUid:Object.fromEntries(uids.map(uid=>[uid,planBookForUid(uid)])),assignmentDate:s.today,idx:0,resumeIdx:0,records:[],sessionCorrect:0};
   saveSession();el('footer').classList.remove('hidden');toast(`追加学習 ${uids.length}問を開始`);renderQuestion();
@@ -1475,7 +1503,7 @@ function startSession(mode){
 function resumeSession(){
   const ses=safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey());
   if(!ses){renderHome();return;}
-  if(ses.mode==='plan'){const ps=studyPlanSummary();if(!ps.studyToday){renderHome();toast('今日はルートの休み日です');return;}if(ses.extra&&ps.lightDay){renderHome();toast('模試・試験日のため追加学習は翌日に再開できます');return;}if(!ses.extra&&(ps.lightDay||ps.augustPrep)){openStudyPlan();startStudyPlan();return;}}
+  if(ses.mode==='plan'){const ps=studyPlanSummary();if(!ps.studyToday){renderHome();toast('今日はルートの休み日です');return;}if(ses.extra&&ps.lightDay){renderHome();toast('模試・試験日のため追加学習は翌日に再開できます');return;}if(!ses.extra&&(ps.lightDay||ps.augustPrep)){openStudyPlan();startStudyPlan();return;}const oldIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0),done=ses.uids.slice(0,oldIdx).filter(uid=>planRouteAllows(uid,ps)),remaining=planRouteOrder(ses.uids.slice(oldIdx),ps);ses.uids=[...done,...remaining];ses.idx=done.length;ses.resumeIdx=done.length;ses.bookByUid=Object.fromEntries(ses.uids.map(uid=>[uid,planBookForUid(uid)]));}
   ses.uids=ses.uids.filter(byUid);
   // 開始問題を途中に指定したセッションでも、保存した位置をそのまま使う
   const savedIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0);
@@ -1655,8 +1683,9 @@ function finish(){
   const n=session.records.length,c=session.sessionCorrect;
   const nm=session.extra?'追加学習':({random:'ランダム出題',order:'順番に解く',review:'間違い復習',fav:'お気に入り',noback:'戻れない連問',plan:'今日の学習計画'}[session.mode]||'');
   const totT=session.records.reduce((s,r)=>s+r.time,0);
+  const totalSeconds=Math.max(0,Math.round(totT)),totalTime=`${Math.floor(totalSeconds/60)}分${String(totalSeconds%60).padStart(2,'0')}秒`;
   el('finScore').textContent=`${c} / ${n}`;
-  el('finDetail').textContent=`${nm} ・ 正答率 ${n?Math.round(c/n*100):0}% ・ 合計 ${totT.toFixed(0)}秒（平均 ${n?(totT/n).toFixed(1):0}秒/問）`;
+  el('finDetail').textContent=`${nm} ・ 正答率 ${n?Math.round(c/n*100):0}% ・ 合計 ${totalTime}（平均 ${n?(totT/n).toFixed(1):0}秒/問）`;
   const wrap=el('reviewList');wrap.innerHTML='';
   session.records.forEach(r=>{
     const q=byUid(r.uid);
