@@ -509,7 +509,7 @@
     <div class="hero"><h1 style="font-size:24px;">🛤️ 忘却曲線ルート</h1><p id="planBookTitle">—</p></div>
     <div class="plan-rule"><b>新規問題は、問題集1の最初から掲載順</b>問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
     <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
-    <div class="plan-rule"><b>仕上がりの判定</b>問題を解き、正解でき、さらに各選択肢の誤りを説明できる問題を「習得済み」に数えます。間違えた問題は習得できるまで翌日に再出題します。</div>
+    <div class="plan-rule"><b>仕上がりの判定</b>忘却曲線に沿った別日の復習で2回連続正解すると、自動で「習得済み」になります。同じ日の解き直しは連続回数に含めません。間違えた場合や「まだ説明できない」を選んだ場合は連続回数をリセットします。</div>
     <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、復習の間隔と優先度を調整します。</span></div>
     <div class="plan-grid">
       <div class="plan-card"><b id="planDueCount">0</b><span id="planDueLabel">今日までの復習</span></div>
@@ -1012,6 +1012,12 @@ function planRemainingEffort(item){
   const round=planItemRound(item);return round>=5?PLAN_EFFORTS[4]:PLAN_EFFORTS.slice(round).reduce((sum,value)=>sum+value,0);
 }
 function planNextEffort(item){const round=planItemRound(item);return PLAN_EFFORTS[Math.min(round,PLAN_EFFORTS.length-1)];}
+function advancePlanCorrectStreak(item,correct,today){
+  const streak=Math.max(0,Math.min(2,+item?.correctStreak||0));
+  if(!correct)return {correctStreak:0,correctStreakDate:null};
+  if(item?.correctStreakDate===today)return {correctStreak:Math.max(1,streak),correctStreakDate:today};
+  return {correctStreak:Math.min(2,streak+1),correctStreakDate:today};
+}
 function planFor(){
   if(!studyPlans.shared)studyPlans.shared={active:false,examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},lightDays:{},augustPrepV:1,items:{},assignments:{},daily:{date:dateKey(),count:0},updatedAt:0};
   const p=studyPlans.shared;
@@ -1035,7 +1041,7 @@ function rebuildStudyPlan(showMessage=true){
     if(((r.correct||0)+(r.wrong||0))<1)return;
     const last=latest[uid]?dateKey(new Date(latest[uid])):today;
     const round=Math.min(5,(r.correct||0)+(r.wrong||0));
-    p.items[uid]={round,stage:Math.max(0,round-1),due:addPlanDays(last,1),last,explained:false,completed:false,updatedAt:Date.now()};
+    p.items[uid]={round,stage:Math.max(0,round-1),due:addPlanDays(last,1),last,explained:false,correctStreak:0,correctStreakDate:null,completed:false,updatedAt:Date.now()};
   }));
   studyPlans.shared=p;saveStudyPlans();
   if(showMessage)toast('学習計画を作成しました');
@@ -1058,23 +1064,25 @@ function updateStudyPlan(uid,correct){
   p.daily.effort=(p.daily.effort||0)+(existing?planNextEffort(existing):PLAN_EFFORTS[0]);
   if(!existing){
     p.daily.count=(p.daily.count||0)+1;
-    p.items[uid]={round:1,stage:0,due:addPlanDays(today,1),last:today,explained:false,completed:false,updatedAt:Date.now()};
+    const streak=advancePlanCorrectStreak(null,correct,today);
+    p.items[uid]={round:1,stage:0,due:addPlanDays(today,1),last:today,explained:false,...streak,completed:false,updatedAt:Date.now()};
   }else{
     const round=Math.min(5,planItemRound(existing)+1),stage=correct?Math.min(round-1,PLAN_INTERVALS.length-1):0;
-    const explained=correct&&!!existing.explained,completed=round>=5&&correct&&explained;
+    const streak=advancePlanCorrectStreak(existing,correct,today);
+    const explained=correct&&!!existing.explained,completed=correct&&(explained||streak.correctStreak>=2);
     const baseInterval=PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)];
     const nextDue=addPlanDays(today,correct?planPersonalInterval(uid,baseInterval):1);
-    p.items[uid]={round,stage,due:completed?'9999-12-31':(nextDue>planFinishDate(p)?planFinishDate(p):nextDue),last:today,explained,completed,updatedAt:Date.now()};
+    p.items[uid]={round,stage,due:completed?'9999-12-31':(nextDue>planFinishDate(p)?planFinishDate(p):nextDue),last:today,explained,...streak,completed,updatedAt:Date.now()};
   }
   p.updatedAt=Date.now();saveStudyPlans();
 }
 function setPlanExplanation(uid,explained){
   const p=planFor();if(!p.active||!p.items[uid])return;
   p.items[uid].explained=!!explained;
-  const r=planRecord(uid),completed=!!explained&&planItemRound(p.items[uid])>=5&&r&&r.last==='correct';
+  const r=planRecord(uid),completed=!!explained&&r&&r.last==='correct';
   p.items[uid].completed=completed;
   if(completed)p.items[uid].due='9999-12-31';
-  else if(!explained){p.items[uid].stage=0;const nextDue=addPlanDays(dateKey(),1);p.items[uid].due=nextDue>planFinishDate(p)?planFinishDate(p):nextDue;}
+  else if(!explained){p.items[uid].stage=0;p.items[uid].correctStreak=0;p.items[uid].correctStreakDate=null;const nextDue=addPlanDays(dateKey(),1);p.items[uid].due=nextDue>planFinishDate(p)?planFinishDate(p):nextDue;}
   p.items[uid].updatedAt=Date.now();p.updatedAt=Date.now();saveStudyPlans();
 }
 function studyPlanSummary(){
