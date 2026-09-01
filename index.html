@@ -284,7 +284,18 @@
   .previous-answer .previous-result.ng{color:var(--wrong);}
   .previous-answer time{display:block;color:var(--muted);font-size:11px;margin-top:2px;}
   .xp-gain{font-size:12px;color:#986a00;background:#fff3cd;border-radius:999px;padding:4px 9px;animation:xpPop .4s ease both;}
+  .combo-pill{font-size:12px;color:#b74b00;background:linear-gradient(135deg,#fff0cf,#ffd58a);border:1px solid #f3bd57;border-radius:999px;padding:4px 9px;box-shadow:0 3px 10px rgba(221,132,19,.18);animation:comboPop .55s cubic-bezier(.18,.89,.32,1.35) both;}
+  .reward-line{width:100%;font-size:13px;font-weight:900;letter-spacing:.03em;color:#18835f;animation:rewardRise .5s ease both;}
+  #quiz .card.answer-correct{animation:correctGlow .58s ease both;}
+  .choice.correct{animation:choiceWin .5s ease both;}
+  .reward-burst{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden;}
+  .reward-particle{position:absolute;left:50%;top:43%;font-size:var(--size);opacity:0;animation:rewardParticle .85s cubic-bezier(.18,.78,.32,1) both;animation-delay:var(--delay);}
   @keyframes xpPop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes comboPop{0%{transform:scale(.55) rotate(-8deg);opacity:0}70%{transform:scale(1.12) rotate(2deg)}100%{transform:scale(1);opacity:1}}
+  @keyframes rewardRise{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @keyframes correctGlow{0%{box-shadow:var(--shadow)}45%{box-shadow:0 0 0 5px rgba(38,170,118,.14),0 16px 42px rgba(20,145,99,.2)}100%{box-shadow:var(--shadow)}}
+  @keyframes choiceWin{0%{transform:scale(1)}45%{transform:scale(1.018)}100%{transform:scale(1)}}
+  @keyframes rewardParticle{0%{transform:translate(-50%,-50%) scale(.3) rotate(0);opacity:0}18%{opacity:1}100%{transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1.05) rotate(var(--r));opacity:0}}
 
   .exp{margin-top:14px;border-top:1px dashed var(--line);padding-top:14px;}
   .exp h4{margin:0 0 10px;font-size:13px;color:var(--green);font-weight:800;}
@@ -407,9 +418,11 @@
     animation:levelPop .55s cubic-bezier(.18,.89,.32,1.28) both;}
   .level-up-card small{display:block;color:#c58b10;font-size:12px;font-weight:900;letter-spacing:.18em;}
   .level-up-card b{display:block;color:var(--green);font-size:68px;line-height:1.08;margin:5px 0;}
+  .level-up-card b.rank-value{font-size:38px;margin:14px 0 12px;word-break:keep-all;}
   .level-up-card span{font-size:14px;font-weight:800;color:var(--muted);}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
   @keyframes levelPop{from{transform:scale(.65) rotate(-3deg);opacity:0}to{transform:scale(1);opacity:1}}
+  @media(prefers-reduced-motion:reduce){.xp-gain,.combo-pill,.reward-line,#quiz .card.answer-correct,.choice.correct,.reward-particle,.level-up-card{animation:none!important}}
 </style>
 </head>
 <body>
@@ -753,7 +766,8 @@
   </div>
 </div>
 
-<div class="level-up" id="levelUp" aria-hidden="true"><div class="level-up-card"><small>LEVEL UP</small><b id="levelUpNum">2</b><span>新しいレベルに到達！</span></div></div>
+<div class="reward-burst" id="rewardBurst" aria-hidden="true"></div>
+<div class="level-up" id="levelUp" aria-hidden="true"><div class="level-up-card"><small id="levelUpLabel">LEVEL UP</small><b id="levelUpNum">2</b><span id="levelUpMessage">新しいレベルに到達！</span></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1537,11 +1551,34 @@ function renderGameCard(){
   el('levelGuideRows').innerHTML=Array.from({length:6},(_,index)=>{const level=index+1;return `<tr><td>レベル${level}</td><td>${levelThreshold(level).toLocaleString('ja-JP')} XP</td></tr>`;}).join('');
   el('rankGuideRows').innerHTML=rankStepsWithXp().map(step=>{const lap=step.laps===0?'開始時':`${Number.isInteger(step.laps)?step.laps:step.laps.toFixed(2).replace(/0$/,'')}周`;return `<tr><td>${escapeHtml(step.name)}</td><td>${lap}</td><td>${step.xp.toLocaleString('ja-JP')} XP</td></tr>`;}).join('');
 }
-function showLevelUp(level){
-  el('levelUpNum').textContent=level;
+function showAchievement(label,value,message,duration=1650){
+  el('levelUpLabel').textContent=label;el('levelUpNum').textContent=value;el('levelUpNum').classList.toggle('rank-value',label==='RANK UP');el('levelUpMessage').textContent=message;
   el('levelUp').classList.add('show');el('levelUp').setAttribute('aria-hidden','false');
   clearTimeout(el('levelUp')._t);
-  el('levelUp')._t=setTimeout(()=>{el('levelUp').classList.remove('show');el('levelUp').setAttribute('aria-hidden','true');},1500);
+  el('levelUp')._t=setTimeout(()=>{el('levelUp').classList.remove('show');el('levelUp').setAttribute('aria-hidden','true');},duration);
+}
+function showLevelUp(level){showAchievement('LEVEL UP',level,'新しいレベルに到達！');}
+function showRankUp(rank){showAchievement('RANK UP',rank,'ランク昇格！この調子で積み上げよう');}
+function rewardCopy(streak){
+  if(streak>=20)return '⚡ 完全にゾーン入ってる';
+  if(streak>=10)return '👑 無双中。そのまま突き進め！';
+  if(streak>=5)return '🔥 止まらん。知識がつながってる！';
+  if(streak>=3)return '✨ いい流れ！連続正解を伸ばそう';
+  return 'ナイス正解！次もいける';
+}
+function playCorrectReward(streak){
+  const card=el('quiz').querySelector('.card');card.classList.remove('answer-correct');void card.offsetWidth;card.classList.add('answer-correct');
+  const burst=el('rewardBurst'),marks=['✦','★','●','✧','◆'];burst.innerHTML='';
+  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    for(let i=0;i<16;i++){
+      const bit=document.createElement('i'),angle=(Math.PI*2*i/16)+(Math.random()-.5)*.3,distance=70+Math.random()*105;
+      bit.className='reward-particle';bit.textContent=marks[i%marks.length];bit.style.color=['#0e8b62','#f0ad28','#42b883','#ffcf57'][i%4];
+      bit.style.setProperty('--x',`${Math.cos(angle)*distance}px`);bit.style.setProperty('--y',`${Math.sin(angle)*distance}px`);bit.style.setProperty('--r',`${Math.round(Math.random()*300-150)}deg`);bit.style.setProperty('--size',`${10+Math.round(Math.random()*10)}px`);bit.style.setProperty('--delay',`${Math.random()*.08}s`);burst.appendChild(bit);
+    }
+    setTimeout(()=>{burst.innerHTML='';},1000);
+  }
+  try{if(navigator.vibrate)navigator.vibrate(streak>=5?[25,35,35]:25);}catch(_){ }
+  if(session.records.length%10===0)setTimeout(()=>toast(`🎯 ${session.records.length}問突破！積み上がってる！`),450);
 }
 function awardXp(r,correct,attemptsBefore,hadCorrect){
   const today=ymdNow();
@@ -1551,10 +1588,11 @@ function awardXp(r,correct,attemptsBefore,hadCorrect){
     game.lastBonusDay=today;
   }
   r.xpDay=today;r.xpV=1;
-  const old=levelInfo().level;
+  const old=levelInfo().level,oldRank=rankInfo().name;
   game.xp=(game.xp||0)+gain;saveGame();
-  const now=levelInfo().level;
+  const now=levelInfo().level,newRank=rankInfo().name;
   if(now>old)setTimeout(()=>showLevelUp(now),250);
+  if(newRank!==oldRank)setTimeout(()=>showRankUp(newRank),now>old?2050:250);
   return gain;
 }
 function addRankAttempt(book,uid,correct,seconds,pre,id,at){
@@ -1763,6 +1801,7 @@ function renderQuestion(){
     if(Array.isArray(declaredFresh))session.planFreshUids=declaredFresh;session.uids=[...done,...remaining];session.bookByUid=Object.fromEntries(session.uids.map(uid=>[uid,planBookForUid(uid)]));
   }
   showOnly('quiz');
+  el('quiz').querySelector('.card').classList.remove('answer-correct');el('rewardBurst').innerHTML='';
   activatePlanQuestion(session.uids[session.idx]);
   const q=byUid(session.uids[session.idx]);
   answered=false; picked=null;
@@ -1905,7 +1944,10 @@ function submit(skip){
   const v=el('qVerdict');v.className='verdict '+(correct?'ok':'ng');
   v.innerHTML=(skip?'⏭ スキップ':(correct?'⭕️ 正解！':'❌ 不正解'))
     +(xpGain?`<span class="xp-gain">+${xpGain} XP</span>`:'')
-    +`<span class="tm">⏱ ${t.toFixed(1)}s</span><span class="ans">正解 <b>${q.answer}</b></span>`;
+    +(correct&&stats.curStreak>=2?`<span class="combo-pill">🔥 ${stats.curStreak} COMBO</span>`:'')
+    +`<span class="tm">⏱ ${t.toFixed(1)}s</span><span class="ans">正解 <b>${q.answer}</b></span>`
+    +(correct?`<span class="reward-line">${rewardCopy(stats.curStreak||1)}</span>`:'');
+  if(correct)playCorrectReward(stats.curStreak||1);
   renderPreviousAnswer(q,previousAttempt);
   // explanation
   const intro=el('expIntro');
