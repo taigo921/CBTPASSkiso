@@ -338,6 +338,29 @@
   /* stats screen */
   .stat-sec{margin-top:18px;}
   .stat-sec h3{font-size:15px;font-weight:800;margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+  .study-time-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+  .study-time-card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px 5px;text-align:center;box-shadow:var(--shadow);}
+  .study-time-card b{display:block;color:var(--green);font-size:18px;line-height:1.2;font-variant-numeric:tabular-nums;}
+  .study-time-card span{display:block;color:var(--muted);font-size:10px;font-weight:700;margin-top:5px;}
+  .study-time-panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 12px;box-shadow:var(--shadow);}
+  .study-time-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .study-time-head b{font-size:12px;color:var(--green-d);}
+  .study-time-ranges{display:flex;gap:5px;margin-left:auto;}
+  .study-time-ranges button{border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;cursor:pointer;}
+  .study-time-ranges button.on{background:var(--green);border-color:var(--green);color:#fff;}
+  .study-chart-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 0 4px;}
+  .study-chart{height:174px;display:flex;align-items:stretch;gap:7px;min-width:100%;}
+  .study-chart-day{flex:1;min-width:34px;display:grid;grid-template-rows:20px 1fr 24px;align-items:end;text-align:center;}
+  .study-chart-day strong{font-size:9px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1;}
+  .study-chart-bar{height:100%;display:flex;align-items:flex-end;justify-content:center;border-bottom:1px solid #dfe7e3;}
+  .study-chart-bar i{display:block;width:min(24px,70%);min-height:0;border-radius:7px 7px 2px 2px;background:linear-gradient(180deg,#42b883,var(--green));}
+  .study-chart-day.today .study-chart-bar i{background:linear-gradient(180deg,#f0b94d,#d98a1f);}
+  .study-chart-day span{font-size:9px;color:var(--muted);line-height:1.2;padding-top:5px;white-space:nowrap;}
+  .study-time-books{display:flex;gap:8px;margin-top:10px;}
+  .study-time-books div{flex:1;background:#f1f7f4;border-radius:10px;padding:9px 10px;font-size:10px;color:var(--muted);}
+  .study-time-books b{display:block;color:var(--green-d);font-size:13px;font-variant-numeric:tabular-nums;}
+  .study-time-note{margin:8px 2px 0;color:var(--muted);font-size:10px;line-height:1.55;}
+  @media(max-width:390px){.study-time-card b{font-size:15px}.study-chart{gap:5px}}
   .rank{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);}
   .rank-head{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;margin-bottom:8px;}
   .rank-head .nm{flex:1;}
@@ -527,7 +550,7 @@
     <div class="sec-h">分析・設定</div>
     <div class="modes">
       <button class="mode" id="listBtn"><div class="ic">📋</div><div class="t"><b>問題一覧から選ぶ</b><span>状態を見ながら1問ずつ解く</span></div><div class="arr">›</div></button>
-      <button class="mode" id="statsBtn"><div class="ic">📊</div><div class="t"><b>苦手分野ランキング・時間分析</b><span>正答率／解答時間から弱点を表示</span></div><div class="arr">›</div></button>
+      <button class="mode" id="statsBtn"><div class="ic">📊</div><div class="t"><b>学習分析・勉強時間</b><span id="studyTimeHome">今日の勉強時間 0分</span></div><div class="arr">›</div></button>
       <button class="mode" id="rankBtn"><div class="ic">🏆</div><div class="t"><b>みんなでランキング</b><span id="rankSub">友達と正答率・正解数・連続正解で競う</span></div><div class="arr">›</div></button>
     </div>
 
@@ -641,7 +664,21 @@
 
   <!-- STATS -->
   <section id="stats" class="hidden">
-    <div class="hero"><h1 style="font-size:22px;">📊 苦手分析</h1><p>これまでの全成績から集計</p></div>
+    <div class="hero"><h1 style="font-size:22px;">📊 学習分析</h1><p>問題集1・2の学習記録をまとめて表示</p></div>
+    <div class="stat-sec">
+      <h3>⏱ 勉強時間</h3>
+      <div class="study-time-summary">
+        <div class="study-time-card"><b id="studyTimeToday">0分</b><span>今日</span></div>
+        <div class="study-time-card"><b id="studyTimeWeek">0分</b><span>直近7日</span></div>
+        <div class="study-time-card"><b id="studyTimeTotal">0分</b><span>累計</span></div>
+      </div>
+      <div class="study-time-panel">
+        <div class="study-time-head"><b id="studyTimeChartTitle">直近7日の日別時間</b><div class="study-time-ranges"><button type="button" class="on" data-study-range="7">7日</button><button type="button" data-study-range="30">30日</button></div></div>
+        <div class="study-chart-scroll"><div class="study-chart" id="studyTimeChart"></div></div>
+        <div class="study-time-books"><div>問題集1<b id="studyTimeBook1">0分</b></div><div>問題集2<b id="studyTimeBook2">0分</b></div></div>
+      </div>
+      <p class="study-time-note">回答画面で計測した時間を集計します。過去分は端末・クラウドに残っている回答ログから復元できた範囲を表示します。</p>
+    </div>
     <div class="stat-sec">
       <h3>🔥 苦手分野ランキング</h3>
       <div id="rankList"></div>
@@ -756,13 +793,15 @@ async function loadDefaultQuestions() {
 }
 
 /* ============ ストレージ ============ */
-const STORE_Q='cbt_questions_v1', STORE_S='cbt_stats_v2', STORE_S_BOOKS='cbt_stats_books_v1', STORE_SET='cbt_settings_v2', STORE_SES='cbt_session_v2', STORE_SES_PREFIX='cbt_session_v3_', STORE_SECTION_PROGRESS='cbt_section_progress_v1', STORE_PLAN='cbt_study_plan_v1', STORE_GAME='cbt_game_v1';
+const STORE_Q='cbt_questions_v1', STORE_S='cbt_stats_v2', STORE_S_BOOKS='cbt_stats_books_v1', STORE_SET='cbt_settings_v2', STORE_SES='cbt_session_v2', STORE_SES_PREFIX='cbt_session_v3_', STORE_SECTION_PROGRESS='cbt_section_progress_v1', STORE_PLAN='cbt_study_plan_v1', STORE_GAME='cbt_game_v1', STORE_TIME='cbt_study_time_v1';
 let QUESTIONS=[];
 const emptyStats=()=>({perQ:{},rankAttempts:[],answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null});
 let statsByBook={book1:emptyStats(),book2:emptyStats()};
 let stats=statsByBook.book1;
 let game={xp:0,lastBonusDay:null};
+let studyTime={days:{},migratedV:0};
 let studyPlans={shared:null,book1:null,book2:null};
+let studyChartRange=7;
 let planCalendarMonth=null;
 let settings={slowSec:60,activeBook:'book1'};
 let activeBook='book1';
@@ -973,6 +1012,7 @@ function load(){
   }
   stats=statsByBook[activeBook];
   game=Object.assign(game,safeGet(STORE_GAME)||{});
+  studyTime=Object.assign(studyTime,safeGet(STORE_TIME)||{});studyTime.days=studyTime.days||{};
   studyPlans=Object.assign(studyPlans,safeGet(STORE_PLAN)||{});
   if(!studyPlans.shared){
     studyPlans.shared=mergeStudyPlanBook(studyPlans.book1,studyPlans.book2)||null;
@@ -1027,6 +1067,45 @@ function addPlanDays(key,days){
   const d=new Date(parts[0],parts[1]-1,parts[2],12);
   d.setDate(d.getDate()+days);
   return dateKey(d);
+}
+function addStudyTime(seconds,book,at=Date.now(),persist=true){
+  const value=Math.max(0,+seconds||0);if(!value)return;
+  const key=dateKey(new Date(at)),day=studyTime.days[key]||(studyTime.days[key]={seconds:0,questions:0,book1:0,book2:0});
+  day.seconds=(day.seconds||0)+value;day.questions=(day.questions||0)+1;
+  if(book==='book1'||book==='book2')day[book]=(day[book]||0)+value;
+  if(persist)safeSet(STORE_TIME,studyTime);
+}
+function migrateStudyTimeData(){
+  if(studyTime.migratedV)return;
+  const seen=new Set();
+  Object.entries(statsByBook).forEach(([book,bookStats])=>(bookStats.rankAttempts||[]).forEach(attempt=>{
+    if(!attempt||!attempt.a||!(+attempt.s>0))return;
+    const id=attempt.i||`${book}-${attempt.u||''}-${attempt.a}-${attempt.s}`;if(seen.has(id))return;seen.add(id);
+    addStudyTime(+attempt.s,book,+attempt.a,false);
+  }));
+  studyTime.migratedV=1;safeSet(STORE_TIME,studyTime);
+}
+function formatStudyDuration(seconds){
+  const total=Math.max(0,Math.round(+seconds||0));
+  if(total<60)return total?`${total}秒`:'0分';
+  const minutes=Math.round(total/60);if(minutes<60)return `${minutes}分`;
+  const hours=Math.floor(minutes/60),rest=minutes%60;return rest?`${hours}時間${rest}分`:`${hours}時間`;
+}
+function studyTimeTotal(fromKey=null){
+  return Object.entries(studyTime.days||{}).reduce((sum,[key,day])=>sum+(!fromKey||key>=fromKey?(+day.seconds||0):0),0);
+}
+function compactStudyTimePayload(){
+  const keys=Object.keys(studyTime.days||{}).sort().slice(-400),days={};keys.forEach(key=>days[key]=studyTime.days[key]);return {days};
+}
+function mergeStudyTime(cloud){
+  if(!cloud?.days)return;
+  Object.entries(cloud.days).forEach(([key,remote])=>{
+    const local=studyTime.days[key]||{};studyTime.days[key]={
+      seconds:Math.max(+local.seconds||0,+remote.seconds||0),questions:Math.max(+local.questions||0,+remote.questions||0),
+      book1:Math.max(+local.book1||0,+remote.book1||0),book2:Math.max(+local.book2||0,+remote.book2||0)
+    };
+  });
+  safeSet(STORE_TIME,studyTime);
 }
 function planMonthKey(key=dateKey()){return String(key).slice(0,7);}
 function planFinishDate(p){return addPlanDays(p.examDate,-Math.max(1,+p.finishLeadDays||30));}
@@ -1549,6 +1628,7 @@ function renderHome(){
   el('sAnswered').textContent=stats.answered;
   el('sAcc').textContent=stats.answered?Math.round(stats.correct/stats.answered*100)+'%':'—';
   el('sFav').textContent=favList().length;
+  el('studyTimeHome').textContent=`今日の勉強時間 ${formatStudyDuration(studyTime.days[dateKey()]?.seconds||0)}`;
   renderGameCard();
   const hp=planFor();
   if(hp.active){
@@ -1740,6 +1820,7 @@ function submit(skip){
   updateStreak(correct);
   const xpGain=awardXp(r,correct,attemptsBefore,hadCorrect);
   addRankAttempt(activeBook,qkey(q),correct,t,null);
+  addStudyTime(t,activeBook);
   r.history=Array.isArray(r.history)?r.history:[];
   r.history.push({picked:skip?null:picked,answer:q.answer,correct,skip:!!skip,time:+t.toFixed(1),at:Date.now()});
   r.history=r.history.slice(-20);
@@ -1830,9 +1911,28 @@ function finish(){
   });
 }
 
-/* ============ 苦手分析 ============ */
+/* ============ 学習時間・苦手分析 ============ */
+function renderStudyTime(){
+  const today=dateKey(),weekStart=addPlanDays(today,-6),days=studyTime.days||{};
+  el('studyTimeToday').textContent=formatStudyDuration(days[today]?.seconds||0);
+  el('studyTimeWeek').textContent=formatStudyDuration(studyTimeTotal(weekStart));
+  el('studyTimeTotal').textContent=formatStudyDuration(studyTimeTotal());
+  let book1=0,book2=0;Object.values(days).forEach(day=>{book1+=+day.book1||0;book2+=+day.book2||0;});
+  el('studyTimeBook1').textContent=formatStudyDuration(book1);el('studyTimeBook2').textContent=formatStudyDuration(book2);
+  const keys=Array.from({length:studyChartRange},(_,index)=>addPlanDays(today,index-studyChartRange+1));
+  const maxSeconds=Math.max(1,...keys.map(key=>+days[key]?.seconds||0)),chart=el('studyTimeChart');
+  chart.style.minWidth=studyChartRange>7?`${studyChartRange*41}px`:'100%';
+  chart.innerHTML=keys.map(key=>{
+    const value=+days[key]?.seconds||0,height=value?Math.max(4,value/maxSeconds*100):0,parts=key.split('-').map(Number),d=new Date(parts[0],parts[1]-1,parts[2]),label=studyChartRange===7?['日','月','火','水','木','金','土'][d.getDay()]:`${parts[1]}/${parts[2]}`;
+    const amount=value?(value<60?'&lt;1':String(Math.round(value/60))):'0',questions=days[key]?.questions||0;
+    return `<div class="study-chart-day${key===today?' today':''}" title="${parts[1]}/${parts[2]} ${formatStudyDuration(value)}・${questions}問"><strong>${amount}分</strong><div class="study-chart-bar"><i style="height:${height}%"></i></div><span>${label}${key===today?'<br>今日':''}</span></div>`;
+  }).join('');
+  el('studyTimeChartTitle').textContent=`直近${studyChartRange}日の日別時間`;
+  document.querySelectorAll('[data-study-range]').forEach(button=>button.classList.toggle('on',+button.dataset.studyRange===studyChartRange));
+}
 function openStats(){
   showOnly('stats');el('footer').classList.add('hidden');setProgress(0);el('timerChip').classList.remove('show');
+  renderStudyTime();
   // セクション集計
   const secs={};
   QUESTIONS.forEach(q=>{const r=stats.perQ[qkey(q)];if(!r||(r.correct+r.wrong)===0)return;
@@ -2032,6 +2132,7 @@ el('fileInput').addEventListener('change',e=>{
 document.querySelectorAll('.mode[data-mode]').forEach(b=>b.addEventListener('click',()=>{if(!b.disabled)startSession(b.dataset.mode);}));
 document.querySelectorAll('.book-tab').forEach(b=>b.addEventListener('click',()=>switchBook(b.dataset.book)));
 el('statsBtn').addEventListener('click',openStats);
+document.querySelectorAll('[data-study-range]').forEach(button=>button.addEventListener('click',()=>{studyChartRange=+button.dataset.studyRange||7;renderStudyTime();}));
 el('listBtn').addEventListener('click',openList);
 el('planModeBtn').addEventListener('click',openStudyPlan);
 el('planStartBtn').addEventListener('click',startStudyPlan);
@@ -2131,6 +2232,7 @@ function fullStatsPayload(){
   return Object.assign({
     activeBook,
     game:{xp:game.xp||0,lastBonusDay:game.lastBonusDay||null},
+    studyTime:compactStudyTimePayload(),
     studyPlans,
     books:{book1:compactStatsPayload(statsByBook.book1),book2:compactStatsPayload(statsByBook.book2)}
   },statsSummary());
@@ -2198,6 +2300,7 @@ function mergeStudyPlanBook(local,cloud){
 }
 function cbtMergeCloud(cd){
   if(!cd)return;
+  if(cd.studyTime)mergeStudyTime(cd.studyTime);
   if(cd.game){
     game.xp=Math.max(game.xp||0,cd.game.xp||0);
     if(cd.game.lastBonusDay&&(!game.lastBonusDay||cd.game.lastBonusDay>game.lastBonusDay))game.lastBonusDay=cd.game.lastBonusDay;
@@ -2301,6 +2404,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   safeRemove(STORE_Q); // 古い手動読み込みデータを起動時に必ず消す
   await loadDefaultQuestions();
   load();
+  migrateStudyTimeData();
   migrateGameData();
   QUESTIONS = resolveQuestions();
   const legacySession=safeGet(STORE_SES);
