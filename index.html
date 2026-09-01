@@ -559,6 +559,7 @@
         <span class="tag" id="qSection">—</span>
         <span class="tag" id="qCat">—</span>
         <span class="tag sub" id="qSub">—</span>
+        <span class="tag sub hidden" id="qPlanRemaining">残り—問</span>
       </div>
       <button class="fav-btn" id="favBtn" title="お気に入り">☆</button>
     </div>
@@ -1189,13 +1190,21 @@ function createPlanAssignment(key,uids){
   }
   p.updatedAt=Date.now();saveStudyPlans();return p.assignments[key];
 }
+function planAssignmentProgress(assignment){
+  if(!assignment)return {assigned:0,completed:0,remaining:0,done:false};
+  const uids=[...new Set(assignment.uids||[])],completedUids=assignment.completedUids||{};
+  const assigned=Math.max(uids.length,+assignment.assigned||0);
+  const completed=Math.min(assigned,Math.max(uids.filter(uid=>completedUids[uid]).length,+assignment.completed||0));
+  return {assigned,completed,remaining:Math.max(0,assigned-completed),done:assigned>0&&completed>=assigned};
+}
 function markPlanAssignment(uid){
-  if(!session||session.mode!=='plan'||session.extra)return;
+  if(!session||session.mode!=='plan'||session.extra)return null;
   const p=ensureStudyPlan(),key=session.assignmentDate||dateKey(),assignment=p.assignments[key]||createPlanAssignment(key,session.uids);
   assignment.completedUids=assignment.completedUids||{};assignment.completedUids[uid]=true;
   assignment.completed=assignment.uids.filter(id=>assignment.completedUids[id]).length;
   assignment.assigned=assignment.uids.length;assignment.done=assignment.completed>=assignment.assigned;if(assignment.done)assignment.completedAt=Date.now();assignment.updatedAt=Date.now();
   p.updatedAt=Date.now();saveStudyPlans();
+  return planAssignmentProgress(assignment);
 }
 function pendingPlanAssignment(){
   const p=planFor(),today=dateKey();
@@ -1234,7 +1243,7 @@ function renderPlanCalendar(p){
   for(let day=1;day<=last;day++){
     const key=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const exam=key===p.examDate,finishDay=key===finish,past=key<today,after=key>p.examDate,other=key>finish&&key<p.examDate,systemOff=planIsSystemOff(key),off=!!p.unavailable[key]||systemOff,light=!off&&planIsLightDay(key,p),augustPrep=!off&&planIsAugustPrep(key),assignment=p.assignments[key],done=!!assignment?.done,missed=past&&!off&&!done&&key<=finish,high=!off&&planIsHighLoadDay(key,p);
-    const assigned=assignment?Math.max(0,+assignment.assigned||(assignment.uids||[]).length):0,completed=assignment?Math.max(0,+assignment.completed||0):0,remaining=Math.max(0,assigned-completed);
+    const progress=planAssignmentProgress(assignment),remaining=progress.remaining;
     const cls=['plan-day',off?'off':'',done?'done':'',missed?'missed':'',light&&!done&&!missed?'light':'',high&&!done&&!missed?'high':'',key===today?'today':'',(exam||finishDay)?'exam':''].filter(Boolean).join(' ');
     let label=augustPrep?'軽15':(high?'多':'学');
     if(light)label='軽';if(assignment)label=`残${remaining}`;if(missed&&!assignment)label='未';if(done)label='済';if(off)label='休';if(other)label='他';if(finishDay)label='仕上';if(exam)label='本番';
@@ -1277,7 +1286,7 @@ function renderStudyPlan(){
   status.classList.toggle('done',!!todayAssignment?.done);
   if(todayAssignment?.done)status.textContent=`✅ 今日のノルマ達成（${todayAssignment.completed}/${todayAssignment.assigned}問）`;
   else if(backlog&&backlog.assignmentDate&&backlog.assignmentDate<s.today)status.textContent=s.lightDay?`${s.lightReason}：未達の新規は翌日に回し、復習だけ行います`:`未達成分 ${backlog.remaining.length}問を完了後、今日の計画を再計算します`;
-  else if(todayAssignment){const completed=Math.max(0,+todayAssignment.completed||0),assigned=Math.max(0,+todayAssignment.assigned||(todayAssignment.uids||[]).length),remaining=Math.max(0,assigned-completed);status.textContent=`今日のノルマ 残り${remaining}問（${completed}/${assigned}問 完了）`;}
+  else if(todayAssignment){const progress=planAssignmentProgress(todayAssignment);status.textContent=`今日のノルマ 残り${progress.remaining}問（${progress.completed}/${progress.assigned}問 完了）`;}
   else if(s.lightDay)status.textContent=`${s.lightReason}：新規問題なし・復習最大30問の軽い日です`;
   else if(s.augustPrep)status.textContent='8月の先行期間：新規15問・復習最大30問の軽い日です';
   else status.textContent='今日のノルマはまだ開始していません';
@@ -1581,6 +1590,8 @@ function renderQuestion(){
   el('qSection').textContent=q.section||'—';
   el('qCat').textContent=q.category||'';
   el('qSub').textContent=q.subject?'科目: '+q.subject:''; el('qSub').classList.toggle('hidden',!q.subject);
+  const planRemaining=el('qPlanRemaining'),assignment=session.mode==='plan'&&!session.extra?planFor().assignments[session.assignmentDate||dateKey()]:null,assignmentProgress=planAssignmentProgress(assignment);
+  planRemaining.textContent=`残り ${assignmentProgress.remaining}問`;planRemaining.classList.toggle('hidden',!assignment);
   el('qText').textContent=q.question;
 
   const fig=el('qFig'),img=el('qImg');
@@ -1682,7 +1693,11 @@ function submit(skip){
   r.history=Array.isArray(r.history)?r.history:[];
   r.history.push({picked:skip?null:picked,answer:q.answer,correct,skip:!!skip,time:+t.toFixed(1),at:Date.now()});
   r.history=r.history.slice(-20);
-  if(session.mode==='plan'){updateStudyPlan(qkey(q),correct);markPlanAssignment(qkey(q));}
+  if(session.mode==='plan'){
+    updateStudyPlan(qkey(q),correct);
+    const progress=markPlanAssignment(qkey(q));
+    if(progress){el('qPlanRemaining').textContent=`残り ${progress.remaining}問`;}
+  }
   r.rankV=1;
   saveStats();
   cloudSyncSoon();
