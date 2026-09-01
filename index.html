@@ -1841,7 +1841,9 @@ function renderQuestion(){
 
   // choices
   const wrap=el('qChoices');wrap.innerHTML='';
-  Object.keys(q.choices).forEach(k=>{
+  // 正解の記号や回答ログはそのまま保ち、表示位置だけ毎回入れ替える。
+  // これにより、選択肢の場所を覚えて正解できてしまうのを防ぐ。
+  shuffle(Object.keys(q.choices)).forEach(k=>{
     const b=document.createElement('button');b.className='choice';b.dataset.key=k;
     b.innerHTML=`<span class="key">${k}</span><span class="ctext">${escapeHtml(q.choices[k])}</span>`;
     b.addEventListener('click',()=>pick(k));
