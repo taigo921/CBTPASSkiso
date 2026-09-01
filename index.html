@@ -1234,9 +1234,10 @@ function renderPlanCalendar(p){
   for(let day=1;day<=last;day++){
     const key=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const exam=key===p.examDate,finishDay=key===finish,past=key<today,after=key>p.examDate,other=key>finish&&key<p.examDate,systemOff=planIsSystemOff(key),off=!!p.unavailable[key]||systemOff,light=!off&&planIsLightDay(key,p),augustPrep=!off&&planIsAugustPrep(key),assignment=p.assignments[key],done=!!assignment?.done,missed=past&&!off&&!done&&key<=finish,high=!off&&planIsHighLoadDay(key,p);
+    const assigned=assignment?Math.max(0,+assignment.assigned||(assignment.uids||[]).length):0,completed=assignment?Math.max(0,+assignment.completed||0):0,remaining=Math.max(0,assigned-completed);
     const cls=['plan-day',off?'off':'',done?'done':'',missed?'missed':'',light&&!done&&!missed?'light':'',high&&!done&&!missed?'high':'',key===today?'today':'',(exam||finishDay)?'exam':''].filter(Boolean).join(' ');
     let label=augustPrep?'軽15':(high?'多':'学');
-    if(light)label='軽';if(assignment)label='中';if(missed)label='未';if(done)label='済';if(off)label='休';if(other)label='他';if(finishDay)label='仕上';if(exam)label='本番';
+    if(light)label='軽';if(assignment)label=`残${remaining}`;if(missed&&!assignment)label='未';if(done)label='済';if(off)label='休';if(other)label='他';if(finishDay)label='仕上';if(exam)label='本番';
     cells.push(`<button class="${cls}" data-date="${key}" ${(past||finishDay||other||exam||after||systemOff)?'disabled':''}>${day}<small>${label}</small></button>`);
   }
   el('planCalendarDays').innerHTML=cells.join('');
@@ -1276,7 +1277,7 @@ function renderStudyPlan(){
   status.classList.toggle('done',!!todayAssignment?.done);
   if(todayAssignment?.done)status.textContent=`✅ 今日のノルマ達成（${todayAssignment.completed}/${todayAssignment.assigned}問）`;
   else if(backlog&&backlog.assignmentDate&&backlog.assignmentDate<s.today)status.textContent=s.lightDay?`${s.lightReason}：未達の新規は翌日に回し、復習だけ行います`:`未達成分 ${backlog.remaining.length}問を完了後、今日の計画を再計算します`;
-  else if(todayAssignment)status.textContent=`今日のノルマ ${todayAssignment.completed||0}/${todayAssignment.assigned}問 完了`;
+  else if(todayAssignment){const completed=Math.max(0,+todayAssignment.completed||0),assigned=Math.max(0,+todayAssignment.assigned||(todayAssignment.uids||[]).length),remaining=Math.max(0,assigned-completed);status.textContent=`今日のノルマ 残り${remaining}問（${completed}/${assigned}問 完了）`;}
   else if(s.lightDay)status.textContent=`${s.lightReason}：新規問題なし・復習最大30問の軽い日です`;
   else if(s.augustPrep)status.textContent='8月の先行期間：新規15問・復習最大30問の軽い日です';
   else status.textContent='今日のノルマはまだ開始していません';
