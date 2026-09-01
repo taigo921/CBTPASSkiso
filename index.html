@@ -851,10 +851,12 @@ function planOrderUnseen(questions,profile){
   return questions.slice().sort((a,b)=>(profile.byUid.get(qkey(a))?.index??Number.MAX_SAFE_INTEGER)-(profile.byUid.get(qkey(b))?.index??Number.MAX_SAFE_INTEGER));
 }
 function planRouteAllows(uid,summary){return summary.phaseBook!=='book1'||planBookForUid(uid)==='book1';}
-function planRouteOrder(uids,summary){
+function planRouteOrder(uids,summary,declaredFresh=null){
   const unique=[...new Set(uids)].filter(uid=>planQuestion(uid)&&planRouteAllows(uid,summary));
-  const reviews=unique.filter(uid=>summary.p.items[uid]).sort((a,b)=>(summary.p.items[a]?.due||'').localeCompare(summary.p.items[b]?.due||'')||summary.personal.scoreFor(b)-summary.personal.scoreFor(a));
-  const fresh=unique.filter(uid=>!summary.p.items[uid]).sort((a,b)=>(summary.personal.byUid.get(a)?.index??Number.MAX_SAFE_INTEGER)-(summary.personal.byUid.get(b)?.index??Number.MAX_SAFE_INTEGER));
+  const freshSet=Array.isArray(declaredFresh)?new Set(declaredFresh):null;
+  const isFresh=uid=>freshSet?freshSet.has(uid):!summary.p.items[uid];
+  const reviews=unique.filter(uid=>!isFresh(uid)).sort((a,b)=>(summary.p.items[a]?.due||'').localeCompare(summary.p.items[b]?.due||'')||summary.personal.scoreFor(b)-summary.personal.scoreFor(a));
+  const fresh=unique.filter(isFresh).sort((a,b)=>(summary.personal.byUid.get(a)?.index??Number.MAX_SAFE_INTEGER)-(summary.personal.byUid.get(b)?.index??Number.MAX_SAFE_INTEGER));
   // ルート課題は新規を掲載順で終えてから、その日の復習へ進む。
   return [...fresh,...reviews];
 }
@@ -1236,6 +1238,7 @@ function studyPlanSummary(){
       if(kept.length===assignment.uids.length)return;
       if(!kept.length){delete p.assignments[key];migrated=true;return;}
       assignment.uids=kept;assignment.completedUids=Object.fromEntries(Object.entries(assignment.completedUids||{}).filter(([uid])=>kept.includes(uid)));
+      assignment.freshUids=(assignment.freshUids||[]).filter(uid=>kept.includes(uid));
       assignment.assigned=kept.length;assignment.completed=kept.filter(uid=>assignment.completedUids[uid]).length;assignment.done=assignment.completed>=assignment.assigned;assignment.updatedAt=Date.now();migrated=true;
     });
     if(migrated){p.updatedAt=Date.now();saveStudyPlans();}
@@ -1301,11 +1304,12 @@ function planUpcomingRows(s){
   }
   return rows;
 }
-function createPlanAssignment(key,uids){
+function createPlanAssignment(key,uids,freshUids=null){
   const p=ensureStudyPlan(),unique=[...new Set(uids)];
-  if(!p.assignments[key])p.assignments[key]={date:key,uids:unique,completedUids:{},assigned:unique.length,completed:0,done:false,updatedAt:Date.now()};
+  const hasFresh=Array.isArray(freshUids),fresh=hasFresh?[...new Set(freshUids)].filter(uid=>unique.includes(uid)):[];
+  if(!p.assignments[key])p.assignments[key]={date:key,uids:unique,...(hasFresh?{freshUids:fresh}:{}),completedUids:{},assigned:unique.length,completed:0,done:false,updatedAt:Date.now()};
   else{
-    const assignment=p.assignments[key];if(assignment.done)return assignment;assignment.uids=[...new Set([...(assignment.uids||[]),...unique])];assignment.completedUids=assignment.completedUids||{};
+    const assignment=p.assignments[key];if(assignment.done)return assignment;assignment.uids=[...new Set([...(assignment.uids||[]),...unique])];if(hasFresh)assignment.freshUids=[...new Set([...(assignment.freshUids||[]),...fresh])];assignment.completedUids=assignment.completedUids||{};
     assignment.assigned=assignment.uids.length;assignment.completed=assignment.uids.filter(uid=>assignment.completedUids[uid]).length;assignment.done=assignment.completed>=assignment.assigned;assignment.updatedAt=Date.now();
   }
   p.updatedAt=Date.now();saveStudyPlans();return p.assignments[key];
@@ -1343,21 +1347,23 @@ function savedPlanBacklog(){
     const idx=Number.isInteger(saved.resumeIdx)?saved.resumeIdx:(Number.isInteger(saved.idx)?saved.idx:0);
     const completedUids=assignment?.completedUids||{};
     const remaining=saved.uids.slice(idx).filter(uid=>!completedUids[uid]&&!!planQuestion(uid));
-    if(remaining.length)return {saved,idx,remaining,assignmentDate:saved.assignmentDate||null};
+    if(remaining.length)return {saved,idx,remaining,freshUids:Array.isArray(saved.planFreshUids)?saved.planFreshUids:assignment?.freshUids,assignmentDate:saved.assignmentDate||null};
     }
   }
   const pending=pendingPlanAssignment();if(!pending)return null;
   const completed=pending.completedUids||{},pendingUids=pending.uids.filter(uid=>!completed[uid]&&planQuestion(uid));
   if(!pendingUids.length)return null;
-  return {saved:{mode:'plan',uids:pendingUids,bookByUid:Object.fromEntries(pendingUids.map(uid=>[uid,planBookForUid(uid)])),idx:0,resumeIdx:0,records:[],sessionCorrect:0,assignmentDate:pending.date},idx:0,remaining:pendingUids,assignmentDate:pending.date};
+  return {saved:{mode:'plan',uids:pendingUids,planFreshUids:pending.freshUids,bookByUid:Object.fromEntries(pendingUids.map(uid=>[uid,planBookForUid(uid)])),idx:0,resumeIdx:0,records:[],sessionCorrect:0,assignmentDate:pending.date},idx:0,remaining:pendingUids,freshUids:pending.freshUids,assignmentDate:pending.date};
 }
 function runnablePlanBacklog(backlog,s){
   if(!backlog)return [];
-  const remaining=planRouteOrder(backlog.remaining,s);
-  if(s.lightDay)return remaining.filter(uid=>s.p.items[uid]).slice(0,30);
+  const declaredFresh=Array.isArray(backlog.freshUids)?backlog.freshUids:(Array.isArray(backlog.saved?.planFreshUids)?backlog.saved.planFreshUids:null);
+  const remaining=planRouteOrder(backlog.remaining,s,declaredFresh);
+  const freshSet=Array.isArray(declaredFresh)?new Set(declaredFresh):null,isFresh=uid=>freshSet?freshSet.has(uid):!s.p.items[uid];
+  if(s.lightDay)return remaining.filter(uid=>!isFresh(uid)).slice(0,30);
   if(s.augustPrep){
-    const reviews=remaining.filter(uid=>s.p.items[uid]).slice(0,30);
-    const fresh=remaining.filter(uid=>!s.p.items[uid]).slice(0,15);
+    const reviews=remaining.filter(uid=>!isFresh(uid)).slice(0,30);
+    const fresh=remaining.filter(isFresh).slice(0,15);
     return [...fresh,...reviews];
   }
   return remaining;
@@ -1438,15 +1444,15 @@ function startStudyPlan(){
   if(backlog){
     const runnable=runnablePlanBacklog(backlog,s);
     if(!runnable.length&&s.lightDay){if(!s.pool.length){toast(`${s.lightReason}のため新規問題は翌日に繰り越します`);return;}}
-    if(runnable.length)session={mode:'plan',uids:runnable,bookByUid:Object.fromEntries(runnable.map(uid=>[uid,planBookForUid(uid)])),idx:0,resumeIdx:0,records:[],sessionCorrect:0,assignmentDate:backlog.assignmentDate||dateKey()};
+    if(runnable.length)session={mode:'plan',uids:runnable,planFreshUids:Array.isArray(backlog.freshUids)?backlog.freshUids.filter(uid=>runnable.includes(uid)):undefined,bookByUid:Object.fromEntries(runnable.map(uid=>[uid,planBookForUid(uid)])),idx:0,resumeIdx:0,records:[],sessionCorrect:0,assignmentDate:backlog.assignmentDate||dateKey()};
     if(runnable.length){
-    const assignment=createPlanAssignment(session.assignmentDate,session.uids);
+    const assignment=createPlanAssignment(session.assignmentDate,session.uids,session.planFreshUids);
     if(!backlog.assignmentDate&&backlog.idx>0){assignment.completedUids=assignment.completedUids||{};session.uids.slice(0,backlog.idx).forEach(uid=>assignment.completedUids[uid]=true);assignment.completed=Object.keys(assignment.completedUids).length;assignment.done=assignment.completed>=assignment.assigned;saveStudyPlans();}
     saveSession();el('footer').classList.remove('hidden');toast(`前回の残りから ${runnable.length}問を実施`);renderQuestion();return;}
   }
   if(!s.pool.length){toast('今日の課題は完了しています');return;}
-  const assignmentDate=dateKey();createPlanAssignment(assignmentDate,s.pool);
-  session={mode:'plan',uids:s.pool,bookByUid:Object.fromEntries(s.pool.map(uid=>[uid,planBookForUid(uid)])),assignmentDate,idx:0,records:[],sessionCorrect:0};
+  const assignmentDate=dateKey();createPlanAssignment(assignmentDate,s.pool,s.fresh);
+  session={mode:'plan',uids:s.pool,planFreshUids:s.fresh.slice(),bookByUid:Object.fromEntries(s.pool.map(uid=>[uid,planBookForUid(uid)])),assignmentDate,idx:0,records:[],sessionCorrect:0};
   saveSession();el('footer').classList.remove('hidden');renderQuestion();
 }
 function startExtraStudy(count){
@@ -1457,7 +1463,7 @@ function startExtraStudy(count){
   if(!assignment?.done){toast('先に今日の必須ノルマを達成してください');return;}
   const limit=Math.max(1,Math.min(50,+count||10)),uids=s.phaseUnseen.slice(0,limit);
   if(!uids.length){toast('新規問題はすべて1周目を終えています');return;}
-  session={mode:'plan',extra:true,uids,bookByUid:Object.fromEntries(uids.map(uid=>[uid,planBookForUid(uid)])),assignmentDate:s.today,idx:0,resumeIdx:0,records:[],sessionCorrect:0};
+  session={mode:'plan',extra:true,uids,planFreshUids:uids.slice(),bookByUid:Object.fromEntries(uids.map(uid=>[uid,planBookForUid(uid)])),assignmentDate:s.today,idx:0,resumeIdx:0,records:[],sessionCorrect:0};
   saveSession();el('footer').classList.remove('hidden');toast(`追加学習 ${uids.length}問を開始`);renderQuestion();
 }
 
@@ -1735,7 +1741,7 @@ function startSession(mode){
 function resumeSession(){
   const ses=safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey());
   if(!ses){renderHome();return;}
-  if(ses.mode==='plan'){const ps=studyPlanSummary();const assignment=!ses.extra?ps.p.assignments?.[ses.assignmentDate||ps.today]:null;if(assignment&&planAssignmentProgress(assignment).done){safeRemove(sharedPlanSessionKey());renderHome();toast('今日のノルマは達成済みです');return;}if(!ps.studyToday){renderHome();toast('今日はルートの休み日です');return;}if(ses.extra&&ps.lightDay){renderHome();toast('模試・試験日のため追加学習は翌日に再開できます');return;}if(!ses.extra&&(ps.lightDay||ps.augustPrep)){openStudyPlan();startStudyPlan();return;}const oldIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0),done=ses.uids.slice(0,oldIdx).filter(uid=>planRouteAllows(uid,ps)),completedUids=assignment?.completedUids||{},remaining=planRouteOrder(ses.uids.slice(oldIdx).filter(uid=>!completedUids[uid]),ps);ses.uids=[...done,...remaining];ses.idx=done.length;ses.resumeIdx=done.length;ses.bookByUid=Object.fromEntries(ses.uids.map(uid=>[uid,planBookForUid(uid)]));}
+  if(ses.mode==='plan'){const ps=studyPlanSummary();const assignment=!ses.extra?ps.p.assignments?.[ses.assignmentDate||ps.today]:null;if(assignment&&planAssignmentProgress(assignment).done){safeRemove(sharedPlanSessionKey());renderHome();toast('今日のノルマは達成済みです');return;}if(!ps.studyToday){renderHome();toast('今日はルートの休み日です');return;}if(ses.extra&&ps.lightDay){renderHome();toast('模試・試験日のため追加学習は翌日に再開できます');return;}if(!ses.extra&&(ps.lightDay||ps.augustPrep)){openStudyPlan();startStudyPlan();return;}const oldIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0),done=ses.uids.slice(0,oldIdx).filter(uid=>planRouteAllows(uid,ps)),completedUids=assignment?.completedUids||{},declaredFresh=Array.isArray(ses.planFreshUids)?ses.planFreshUids:(Array.isArray(assignment?.freshUids)?assignment.freshUids:null),remaining=planRouteOrder(ses.uids.slice(oldIdx).filter(uid=>!completedUids[uid]),ps,declaredFresh);if(Array.isArray(declaredFresh))ses.planFreshUids=declaredFresh;ses.uids=[...done,...remaining];ses.idx=done.length;ses.resumeIdx=done.length;ses.bookByUid=Object.fromEntries(ses.uids.map(uid=>[uid,planBookForUid(uid)]));}
   ses.uids=ses.uids.filter(byUid);
   // 開始問題を途中に指定したセッションでも、保存した位置をそのまま使う
   const savedIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0);
@@ -1751,6 +1757,11 @@ function resumeSession(){
 let answered=false, picked=null;
 function renderQuestion(){
   commitExplanationTime();
+  if(session.mode==='plan'){
+    const ps=studyPlanSummary(),assignment=!session.extra?ps.p.assignments?.[session.assignmentDate||ps.today]:null;
+    const declaredFresh=Array.isArray(session.planFreshUids)?session.planFreshUids:(Array.isArray(assignment?.freshUids)?assignment.freshUids:null),done=session.uids.slice(0,session.idx),remaining=planRouteOrder(session.uids.slice(session.idx),ps,declaredFresh);
+    if(Array.isArray(declaredFresh))session.planFreshUids=declaredFresh;session.uids=[...done,...remaining];session.bookByUid=Object.fromEntries(session.uids.map(uid=>[uid,planBookForUid(uid)]));
+  }
   showOnly('quiz');
   activatePlanQuestion(session.uids[session.idx]);
   const q=byUid(session.uids[session.idx]);
