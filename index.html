@@ -129,6 +129,21 @@
   .xp-bar{height:8px;background:#dfe9e4;border-radius:999px;overflow:hidden;}
   .xp-bar i{display:block;width:0;height:100%;background:linear-gradient(90deg,#24a878,#f0b94d);border-radius:inherit;transition:width .6s ease;}
   .xp-note{font-size:10.5px;color:var(--muted);font-weight:700;margin-top:6px;}
+  .game-guide{margin:8px 0 16px;border:1px solid #d6e5de;border-radius:14px;background:#fff;box-shadow:var(--shadow);overflow:hidden;}
+  .game-guide summary{list-style:none;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;color:var(--green-d);font-size:13px;font-weight:800;cursor:pointer;}
+  .game-guide summary::-webkit-details-marker{display:none;}
+  .game-guide summary::after{content:'＋';font-size:17px;line-height:1;}
+  .game-guide[open] summary::after{content:'−';}
+  .game-guide-body{border-top:1px solid var(--line);padding:14px;font-size:12px;color:var(--muted);}
+  .game-guide-body h3{margin:0 0 7px;color:var(--ink);font-size:14px;}
+  .game-guide-body h3:not(:first-child){margin-top:18px;}
+  .game-guide-body ul{margin:0;padding-left:20px;}
+  .game-guide-body li{margin:3px 0;}
+  .game-guide-note{margin:8px 0 0;font-size:11px;line-height:1.6;}
+  .game-guide-table{width:100%;margin-top:8px;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums;}
+  .game-guide-table th,.game-guide-table td{padding:6px 5px;border-bottom:1px solid var(--line);text-align:left;}
+  .game-guide-table th{color:var(--green-d);font-size:10px;}
+  .game-guide-table td:last-child,.game-guide-table th:last-child{text-align:right;}
 
   .resume{margin:16px 0 4px;background:linear-gradient(135deg,var(--green),var(--green-l));color:#fff;border-radius:var(--radius);
     padding:16px 18px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);cursor:pointer;}
@@ -464,6 +479,26 @@
         <div class="xp-note" id="xpNote">最初の問題に挑戦しよう</div>
       </div>
     </div>
+
+    <details class="game-guide">
+      <summary>レベル・ランクの仕組み</summary>
+      <div class="game-guide-body">
+        <h3>XPの獲得</h3>
+        <ul>
+          <li>初めて解いて正解：＋15 XP</li>
+          <li>以前間違えた問題を初めて正解：＋10 XP</li>
+          <li>正解済みの問題を復習して正解：＋5 XP</li>
+          <li>その日の初回学習：＋20 XP</li>
+          <li>連続学習：最大＋5 XP</li>
+        </ul>
+        <h3>レベル</h3>
+        <p class="game-guide-note">レベル2は100 XP。次のレベルまでの必要XPは、100・125・150…と25 XPずつ増えます。</p>
+        <table class="game-guide-table"><thead><tr><th>レベル</th><th>累計XP</th></tr></thead><tbody id="levelGuideRows"></tbody></table>
+        <h3>ランク</h3>
+        <p class="game-guide-note">ランクは累計XPで決まり、周回数は目安です。初回学習・連続学習ボーナスにより到達時期は前後します。</p>
+        <table class="game-guide-table"><thead><tr><th>ランク</th><th>周回目安</th><th>必要XP</th></tr></thead><tbody id="rankGuideRows"></tbody></table>
+      </div>
+    </details>
 
     <div class="resume hidden" id="resumeCard">
       <div class="ic">▶️</div>
@@ -1372,17 +1407,20 @@ const RANK_STEPS=[
 ];
 function rankInfo(){
   const xp=game.xp||0;
-  const total=DEFAULT_QUESTIONS_BY_BOOK.book1.length||QUESTIONS.length||1;
-  const steps=RANK_STEPS.map(step=>{
-    const perQuestion=step.laps<=1?15*step.laps:15+5*(step.laps-1);
-    return Object.assign({},step,{xp:Math.round(total*perQuestion)});
-  });
+  const steps=rankStepsWithXp();
   let tier=0;
   steps.forEach((step,index)=>{
     if(xp>=step.xp)tier=index;
   });
   const next=steps[tier+1]||null;
   return {name:steps[tier].name,xp,next,remaining:next?Math.max(0,next.xp-xp):0};
+}
+function rankStepsWithXp(){
+  const total=DEFAULT_QUESTIONS_BY_BOOK.book1.length||QUESTIONS.length||1;
+  return RANK_STEPS.map(step=>{
+    const perQuestion=step.laps<=1?15*step.laps:15+5*(step.laps-1);
+    return Object.assign({},step,{xp:Math.round(total*perQuestion)});
+  });
 }
 function renderGameCard(){
   const lv=levelInfo(),rank=rankInfo();
@@ -1396,6 +1434,8 @@ function renderGameCard(){
     const lapLabel=Number.isInteger(rank.next.laps)?rank.next.laps:rank.next.laps.toFixed(2).replace(/0$/,'');
     el('xpNote').textContent=`${rank.next.name}まであと ${rank.remaining} XP（目安 ${lapLabel}周）`;
   }
+  el('levelGuideRows').innerHTML=Array.from({length:6},(_,index)=>{const level=index+1;return `<tr><td>レベル${level}</td><td>${levelThreshold(level).toLocaleString('ja-JP')} XP</td></tr>`;}).join('');
+  el('rankGuideRows').innerHTML=rankStepsWithXp().map(step=>{const lap=step.laps===0?'開始時':`${Number.isInteger(step.laps)?step.laps:step.laps.toFixed(2).replace(/0$/,'')}周`;return `<tr><td>${escapeHtml(step.name)}</td><td>${lap}</td><td>${step.xp.toLocaleString('ja-JP')} XP</td></tr>`;}).join('');
 }
 function showLevelUp(level){
   el('levelUpNum').textContent=level;
