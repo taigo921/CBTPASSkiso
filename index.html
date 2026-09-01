@@ -1616,7 +1616,8 @@ function renderPreviousAnswer(q,attempt){
   if(attempt.skip)answerText='スキップ';
   else if(attempt.picked){
     const choice=q.choices?.[attempt.picked];
-    answerText=`${escapeHtml(attempt.picked)}${choice?' '+escapeHtml(choice):''}`;
+    const shownKey=attempt.pickedDisplay||attempt.picked;
+    answerText=`${escapeHtml(shownKey)}${choice?' '+escapeHtml(choice):''}`;
   }
   const when=attempt.at?new Date(attempt.at).toLocaleString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
   box.innerHTML=`<b>前回の回答</b>${answerText}<span class="previous-result ${attempt.correct?'ok':'ng'}">${result}</span>${when?`<time>${escapeHtml(when)}</time>`:''}`;
@@ -1792,7 +1793,20 @@ function resumeSession(){
 }
 
 /* ============ 問題描画 ============ */
-let answered=false, picked=null;
+let answered=false, picked=null, choiceCanonicalToDisplay={};
+function shuffledChoices(q){
+  const displayKeys=Object.keys(q.choices);
+  const canonicalKeys=shuffle(displayKeys.slice());
+  choiceCanonicalToDisplay={};
+  return canonicalKeys.map((canonicalKey,index)=>{
+    const displayKey=displayKeys[index];
+    choiceCanonicalToDisplay[canonicalKey]=displayKey;
+    return {canonicalKey,displayKey,text:q.choices[canonicalKey]};
+  });
+}
+function displayedExplanationLabels(labels,map=choiceCanonicalToDisplay){
+  return String(labels||'').replace(/[A-E]/g,key=>map[key]||key);
+}
 function renderQuestion(){
   commitExplanationTime();
   if(session.mode==='plan'){
@@ -1841,12 +1855,11 @@ function renderQuestion(){
 
   // choices
   const wrap=el('qChoices');wrap.innerHTML='';
-  // 正解の記号や回答ログはそのまま保ち、表示位置だけ毎回入れ替える。
-  // これにより、選択肢の場所を覚えて正解できてしまうのを防ぐ。
-  shuffle(Object.keys(q.choices)).forEach(k=>{
-    const b=document.createElement('button');b.className='choice';b.dataset.key=k;
-    b.innerHTML=`<span class="key">${k}</span><span class="ctext">${escapeHtml(q.choices[k])}</span>`;
-    b.addEventListener('click',()=>pick(k));
+  // 内容を毎回並べ替え、画面上のA〜Eも振り直す。採点と保存は元の選択肢キーで行う。
+  shuffledChoices(q).forEach(choice=>{
+    const b=document.createElement('button');b.className='choice';b.dataset.key=choice.canonicalKey;
+    b.innerHTML=`<span class="key">${choice.displayKey}</span><span class="ctext">${escapeHtml(choice.text)}</span>`;
+    b.addEventListener('click',()=>pick(choice.canonicalKey));
     wrap.appendChild(b);
   });
 
@@ -1889,6 +1902,8 @@ function submit(skip){
   const q=byUid(session.uids[session.idx]);
   const t=stopTimer();
   const correct = !skip && picked===q.answer;
+  const pickedDisplay=picked?(choiceCanonicalToDisplay[picked]||picked):null;
+  const answerDisplay=choiceCanonicalToDisplay[q.answer]||q.answer;
   answered=true;
   const noback=session.mode==='noback';
 
@@ -1917,7 +1932,7 @@ function submit(skip){
   addRankAttempt(activeBook,qkey(q),correct,t,null);
   addStudyTime(t,activeBook);
   r.history=Array.isArray(r.history)?r.history:[];
-  r.history.push({picked:skip?null:picked,answer:q.answer,correct,skip:!!skip,time:+t.toFixed(1),at:Date.now()});
+  r.history.push({picked:skip?null:picked,pickedDisplay:skip?null:pickedDisplay,answer:q.answer,answerDisplay,correct,skip:!!skip,time:+t.toFixed(1),at:Date.now()});
   r.history=r.history.slice(-20);
   if(session.mode==='plan'){
     updateStudyPlan(qkey(q),correct);
@@ -1927,7 +1942,7 @@ function submit(skip){
   r.rankV=1;
   saveStats();
   cloudSyncSoon();
-  session.records.push({uid:qkey(q),no:qno(q),section:q.section,picked:skip?null:picked,answer:q.answer,correct,skip:!!skip,time:+t.toFixed(1),pre:null,post:null});
+  session.records.push({uid:qkey(q),no:qno(q),section:q.section,picked:skip?null:picked,pickedDisplay:skip?null:pickedDisplay,answer:q.answer,answerDisplay,choiceMap:{...choiceCanonicalToDisplay},correct,skip:!!skip,time:+t.toFixed(1),pre:null,post:null});
   session.resumeIdx=Math.min(session.idx+1,session.uids.length);
   if(session.sectionKey&&session.mode==='order'){
     saveSectionUid(session.sectionKey,session.uids[session.idx+1]||null);
@@ -1947,7 +1962,7 @@ function submit(skip){
   v.innerHTML=(skip?'⏭ スキップ':(correct?'⭕️ 正解！':'❌ 不正解'))
     +(xpGain?`<span class="xp-gain">+${xpGain} XP</span>`:'')
     +(correct&&stats.curStreak>=2?`<span class="combo-pill">🔥 ${stats.curStreak} COMBO</span>`:'')
-    +`<span class="tm">⏱ ${t.toFixed(1)}s</span><span class="ans">正解 <b>${q.answer}</b></span>`
+    +`<span class="tm">⏱ ${t.toFixed(1)}s</span><span class="ans">正解 <b>${answerDisplay}</b></span>`
     +(correct?`<span class="reward-line">${rewardCopy(stats.curStreak||1)}</span>`:'');
   if(correct)playCorrectReward(stats.curStreak||1);
   renderPreviousAnswer(q,previousAttempt);
@@ -1958,7 +1973,7 @@ function submit(skip){
   (q.explanation||[]).forEach(it=>{
     const mk=it.mark||'';const cls=(mk.includes('✗')&&mk.includes('○'))?'':(mk.includes('○')?'o':(mk.includes('✗')?'x':''));
     const d=document.createElement('div');d.className='exp-item';
-    d.innerHTML=`<span class="m ${cls}">${escapeHtml(mk)}</span><span><span class="lab">${escapeHtml(it.labels||'')}：</span>${escapeHtml(it.text||'')}</span>`;
+    d.innerHTML=`<span class="m ${cls}">${escapeHtml(mk)}</span><span><span class="lab">${escapeHtml(displayedExplanationLabels(it.labels))}：</span>${escapeHtml(it.text||'')}</span>`;
     list.appendChild(d);
   });
   renderGuideLinks(q);
@@ -2003,9 +2018,11 @@ function finish(){
         <span class="rev-meta">回答 ${r.time}s${r.explanationTime?`・解説 ${formatStudyDuration(r.explanationTime)}`:''}</span>
       </div><div class="rev-body"></div>`;
     const body=item.querySelector('.rev-body');
-    let h=`<div style="margin-bottom:6px;"><b>あなたの解答:</b> ${r.skip?'（スキップ）':escapeHtml(r.picked||'—')}　/　<b>正解:</b> ${escapeHtml(r.answer)}</div>`;
+    const pickedText=r.picked&&q.choices?.[r.picked]?`${r.pickedDisplay||r.picked} ${q.choices[r.picked]}`:(r.pickedDisplay||r.picked||'—');
+    const answerText=r.answer&&q.choices?.[r.answer]?`${r.answerDisplay||r.answer} ${q.choices[r.answer]}`:(r.answerDisplay||r.answer||'—');
+    let h=`<div style="margin-bottom:6px;"><b>あなたの解答:</b> ${r.skip?'（スキップ）':escapeHtml(pickedText)}　/　<b>正解:</b> ${escapeHtml(answerText)}</div>`;
     if(q.explanation_intro)h+=`<div style="margin-bottom:6px;">${escapeHtml(q.explanation_intro)}</div>`;
-    (q.explanation||[]).forEach(it=>{h+=`<div style="margin-bottom:5px;"><b>${escapeHtml(it.mark||'')} ${escapeHtml(it.labels||'')}：</b>${escapeHtml(it.text||'')}</div>`;});
+    (q.explanation||[]).forEach(it=>{h+=`<div style="margin-bottom:5px;"><b>${escapeHtml(it.mark||'')} ${escapeHtml(displayedExplanationLabels(it.labels,r.choiceMap||{}))}：</b>${escapeHtml(it.text||'')}</div>`;});
     body.innerHTML=h;
     item.querySelector('.rev-top').addEventListener('click',()=>item.classList.toggle('open'));
     wrap.appendChild(item);
