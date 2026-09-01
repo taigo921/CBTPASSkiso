@@ -677,7 +677,7 @@
         <div class="study-chart-scroll"><div class="study-chart" id="studyTimeChart"></div></div>
         <div class="study-time-books"><div>問題集1<b id="studyTimeBook1">0分</b></div><div>問題集2<b id="studyTimeBook2">0分</b></div></div>
       </div>
-      <p class="study-time-note">回答画面で計測した時間を集計します。過去分は端末・クラウドに残っている回答ログから復元できた範囲を表示します。</p>
+      <p class="study-time-note">問題を解いている時間と解説を読んでいる時間を集計します。アプリを閉じたり、バックグラウンドにしている時間は含みません。過去分は端末・クラウドに残っている回答ログから復元できた範囲を表示します。</p>
     </div>
     <div class="stat-sec">
       <h3>🔥 苦手分野ランキング</h3>
@@ -806,7 +806,8 @@ let planCalendarMonth=null;
 let settings={slowSec:60,activeBook:'book1'};
 let activeBook='book1';
 let session=null;       // {mode,uids,idx,records,sessionCorrect}
-let timer={start:0,iv:null};
+let timer={start:0,iv:null,elapsedMs:0,running:false,active:false};
+let explanationTimer=null;
 
 const el=id=>document.getElementById(id);
 const qkey=q=>q.uid||q.id;
@@ -1068,10 +1069,10 @@ function addPlanDays(key,days){
   d.setDate(d.getDate()+days);
   return dateKey(d);
 }
-function addStudyTime(seconds,book,at=Date.now(),persist=true){
+function addStudyTime(seconds,book,at=Date.now(),persist=true,countQuestion=true){
   const value=Math.max(0,+seconds||0);if(!value)return;
   const key=dateKey(new Date(at)),day=studyTime.days[key]||(studyTime.days[key]={seconds:0,questions:0,book1:0,book2:0});
-  day.seconds=(day.seconds||0)+value;day.questions=(day.questions||0)+1;
+  day.seconds=(day.seconds||0)+value;if(countQuestion)day.questions=(day.questions||0)+1;
   if(book==='book1'||book==='book2')day[book]=(day[book]||0)+value;
   if(persist)safeSet(STORE_TIME,studyTime);
 }
@@ -1090,6 +1091,10 @@ function formatStudyDuration(seconds){
   if(total<60)return total?`${total}秒`:'0分';
   const minutes=Math.round(total/60);if(minutes<60)return `${minutes}分`;
   const hours=Math.floor(minutes/60),rest=minutes%60;return rest?`${hours}時間${rest}分`:`${hours}時間`;
+}
+function formatMinutesSeconds(seconds){
+  const total=Math.max(0,Math.round(+seconds||0));
+  return `${Math.floor(total/60)}分${String(total%60).padStart(2,'0')}秒`;
 }
 function studyTimeTotal(fromKey=null){
   return Object.entries(studyTime.days||{}).reduce((sum,[key,day])=>sum+(!fromKey||key>=fromKey?(+day.seconds||0):0),0);
@@ -1600,12 +1605,48 @@ function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 
 /* ============ タイマー ============ */
 function startTimer(){
-  timer.start=Date.now();
-  el('timerChip').classList.add('show');
   clearInterval(timer.iv);
-  timer.iv=setInterval(()=>{ el('timerVal').textContent=((Date.now()-timer.start)/1000).toFixed(1); },100);
+  timer.start=Date.now();timer.elapsedMs=0;timer.running=true;timer.active=true;
+  el('timerChip').classList.add('show');
+  timer.iv=setInterval(()=>{const ms=timer.elapsedMs+(timer.running?Date.now()-timer.start:0);el('timerVal').textContent=(ms/1000).toFixed(1);},100);
 }
-function stopTimer(){ clearInterval(timer.iv); return (Date.now()-timer.start)/1000; }
+function pauseQuestionTimer(){
+  if(!timer.active||!timer.running)return;
+  timer.elapsedMs+=Math.max(0,Date.now()-timer.start);timer.start=0;timer.running=false;clearInterval(timer.iv);
+}
+function resumeQuestionTimer(){
+  if(!timer.active||timer.running)return;
+  timer.start=Date.now();timer.running=true;
+  clearInterval(timer.iv);timer.iv=setInterval(()=>{const ms=timer.elapsedMs+(timer.running?Date.now()-timer.start:0);el('timerVal').textContent=(ms/1000).toFixed(1);},100);
+}
+function stopTimer(){pauseQuestionTimer();timer.active=false;return timer.elapsedMs/1000;}
+function startExplanationTimer(uid,book){
+  explanationTimer={uid,book,startedAt:document.hidden?0:Date.now(),elapsedMs:0};
+}
+function pauseExplanationTimer(){
+  if(!explanationTimer||!explanationTimer.startedAt)return;
+  explanationTimer.elapsedMs+=Math.max(0,Date.now()-explanationTimer.startedAt);explanationTimer.startedAt=0;
+}
+function resumeExplanationTimer(){
+  if(explanationTimer&&!explanationTimer.startedAt)explanationTimer.startedAt=Date.now();
+}
+function commitExplanationTime(){
+  if(!explanationTimer)return 0;
+  pauseExplanationTimer();
+  const current=explanationTimer,seconds=current.elapsedMs/1000;explanationTimer=null;
+  if(seconds>0){
+    addStudyTime(seconds,current.book,Date.now(),true,false);
+    const record=session?.records?.slice().reverse().find(r=>r.uid===current.uid);
+    if(record){record.explanationTime=+((+record.explanationTime||0)+seconds).toFixed(1);saveSession();}
+    cloudSyncSoon();
+  }
+  return seconds;
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){pauseQuestionTimer();pauseExplanationTimer();}
+  else {if(session&&!answered&&!el('quiz').classList.contains('hidden'))resumeQuestionTimer();resumeExplanationTimer();}
+});
+window.addEventListener('pagehide',commitExplanationTime);
 
 /* ============ ホーム ============ */
 function wrongList(){return QUESTIONS.filter(q=>{const r=stats.perQ[qkey(q)];return r&&r.last==='wrong';}).map(qkey);}
@@ -1613,6 +1654,7 @@ function favList(){return QUESTIONS.filter(q=>{const r=stats.perQ[qkey(q)];retur
 function imageList(){return QUESTIONS.filter(q=>q.has_image||q.image||q.image_base64).map(qkey);}
 
 function renderHome(){
+  commitExplanationTime();timer.active=false;timer.running=false;
   el('timerChip').classList.remove('show'); clearInterval(timer.iv);
   const book=BOOKS[activeBook];
   el('bookTitle').textContent=book.title;
@@ -1708,6 +1750,7 @@ function resumeSession(){
 /* ============ 問題描画 ============ */
 let answered=false, picked=null;
 function renderQuestion(){
+  commitExplanationTime();
   showOnly('quiz');
   activatePlanQuestion(session.uids[session.idx]);
   const q=byUid(session.uids[session.idx]);
@@ -1868,28 +1911,31 @@ function submit(skip){
   el('nextBtn').textContent=(session.idx<session.uids.length-1)?'次の問題へ ›':lastLabel();
   el('nextBtn').disabled=false;
   setProgress((session.idx+1)/session.uids.length*100);
+  startExplanationTimer(qkey(q),activeBook);
   setTimeout(()=>el('resultBlock').scrollIntoView({behavior:'smooth',block:'nearest'}),60);
 }
 
 function lastLabel(){ if(session.single&&session.returnTo==='list')return '一覧に戻る'; if(session.single&&session.returnTo==='stats')return '分析に戻る'; return '結果を見る'; }
 function next(){
   if(!answered){submit(false);return;}
+  commitExplanationTime();
   if(session.idx<session.uids.length-1){session.idx++;saveSession();renderQuestion();}
   else { if(session.single&&session.returnTo==='list'){clearSession();renderList();showOnly('list');el('footer').classList.add('hidden');} else if(session.single&&session.returnTo==='stats'){clearSession();openStats();} else if(session.mode==='plan'&&!session.extra&&session.assignmentDate&&session.assignmentDate<dateKey()){clearSession();session=null;openStudyPlan();toast('未達成分を完了。今日以降の計画を再計算しました');} else finish(); }
 }
-function prev(){ if(session.mode!=='noback'&&session.idx>0){session.idx--;saveSession();renderQuestion();} }
+function prev(){ if(session.mode!=='noback'&&session.idx>0){commitExplanationTime();session.idx--;saveSession();renderQuestion();} }
 
 /* ============ 完了・見直し ============ */
 function finish(){
+  commitExplanationTime();
   clearSession();
   showOnly('finish');el('footer').classList.add('hidden');setProgress(100);
   el('timerChip').classList.remove('show');clearInterval(timer.iv);
   const n=session.records.length,c=session.sessionCorrect;
   const nm=session.extra?'追加学習':({random:'ランダム出題',order:'順番に解く',review:'間違い復習',fav:'お気に入り',noback:'戻れない連問',plan:'今日の学習計画'}[session.mode]||'');
-  const totT=session.records.reduce((s,r)=>s+r.time,0);
-  const totalSeconds=Math.max(0,Math.round(totT)),totalTime=`${Math.floor(totalSeconds/60)}分${String(totalSeconds%60).padStart(2,'0')}秒`;
+  const answerT=session.records.reduce((s,r)=>s+(+r.time||0),0),explanationT=session.records.reduce((s,r)=>s+(+r.explanationTime||0),0),totT=answerT+explanationT;
+  const totalTime=formatMinutesSeconds(totT);
   el('finScore').textContent=`${c} / ${n}`;
-  el('finDetail').textContent=`${nm} ・ 正答率 ${n?Math.round(c/n*100):0}% ・ 合計 ${totalTime}（平均 ${n?(totT/n).toFixed(1):0}秒/問）`;
+  el('finDetail').textContent=`${nm} ・ 正答率 ${n?Math.round(c/n*100):0}% ・ 合計 ${totalTime}（回答 ${formatMinutesSeconds(answerT)}・解説 ${formatMinutesSeconds(explanationT)}）`;
   const wrap=el('reviewList');wrap.innerHTML='';
   session.records.forEach(r=>{
     const q=byUid(r.uid);
@@ -1899,7 +1945,7 @@ function finish(){
         <span class="rev-no">${r.no}</span>
         <span class="rev-res ${rc}">${res}</span>
         <span class="rev-q">${escapeHtml(q.question.split('\n')[0])}</span>
-        <span class="rev-meta">${r.time}s</span>
+        <span class="rev-meta">回答 ${r.time}s${r.explanationTime?`・解説 ${formatStudyDuration(r.explanationTime)}`:''}</span>
       </div><div class="rev-body"></div>`;
     const body=item.querySelector('.rev-body');
     let h=`<div style="margin-bottom:6px;"><b>あなたの解答:</b> ${r.skip?'（スキップ）':escapeHtml(r.picked||'—')}　/　<b>正解:</b> ${escapeHtml(r.answer)}</div>`;
