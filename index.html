@@ -548,7 +548,7 @@
   <!-- STUDY PLAN -->
   <section id="studyPlan" class="hidden">
     <div class="hero"><h1 style="font-size:24px;">🛤️ 忘却曲線ルート</h1><p id="planBookTitle">—</p></div>
-    <div class="plan-rule"><b>新規問題は、問題集1の最初から掲載順</b>問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
+    <div class="plan-rule"><b>新規問題を先に、そのあと復習</b>新規は問題集1の最初から掲載順で出題し、問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
     <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
     <div class="plan-rule"><b>仕上がりの判定</b>忘却曲線に沿った別日の復習で2回連続正解すると、自動で「習得済み」になります。同じ日の解き直しは連続回数に含めません。間違えた場合や「まだ説明できない」を選んだ場合は連続回数をリセットします。</div>
     <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、復習の間隔と優先度を調整します。</span></div>
@@ -815,7 +815,8 @@ function planRouteOrder(uids,summary){
   const unique=[...new Set(uids)].filter(uid=>planQuestion(uid)&&planRouteAllows(uid,summary));
   const reviews=unique.filter(uid=>summary.p.items[uid]).sort((a,b)=>(summary.p.items[a]?.due||'').localeCompare(summary.p.items[b]?.due||'')||summary.personal.scoreFor(b)-summary.personal.scoreFor(a));
   const fresh=unique.filter(uid=>!summary.p.items[uid]).sort((a,b)=>(summary.personal.byUid.get(a)?.index??Number.MAX_SAFE_INTEGER)-(summary.personal.byUid.get(b)?.index??Number.MAX_SAFE_INTEGER));
-  return [...reviews,...fresh];
+  // ルート課題は新規を掲載順で終えてから、その日の復習へ進む。
+  return [...fresh,...reviews];
 }
 function planPersonalInterval(uid,base){
   const score=planPersonalProfile().scoreFor(uid),multiplier=Math.max(.7,Math.min(1.4,1/score));
@@ -1171,7 +1172,7 @@ function studyPlanSummary(){
   let fresh=phaseUnseen.slice(0,freshCount);
   const todayDone=!!p.assignments?.[today]?.done;if(todayDone){due=[];fresh=[];}
   const mastered=all.filter(q=>!!p.items[qkey(q)]?.completed).length;
-  return {p,today,finishDate,studyToday,studyDays,lightDay,lightReason:(p.lightDays||{})[today]||'',augustPrep,personal,due,dueAll,unseen,unseenBook1:unseenBook1.length,unseenBook2:unseenBook2.length,phaseBook,phaseUnseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...due,...fresh])]};
+  return {p,today,finishDate,studyToday,studyDays,lightDay,lightReason:(p.lightDays||{})[today]||'',augustPrep,personal,due,dueAll,unseen,unseenBook1:unseenBook1.length,unseenBook2:unseenBook2.length,phaseBook,phaseUnseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...fresh,...due])]};
 }
 function formatPlanDate(key){
   const p=key.split('-').map(Number),d=new Date(p[0],p[1]-1,p[2]);
@@ -1264,7 +1265,7 @@ function runnablePlanBacklog(backlog,s){
   if(s.augustPrep){
     const reviews=remaining.filter(uid=>s.p.items[uid]).slice(0,30);
     const fresh=remaining.filter(uid=>!s.p.items[uid]).slice(0,15);
-    return [...reviews,...fresh];
+    return [...fresh,...reviews];
   }
   return remaining;
 }
