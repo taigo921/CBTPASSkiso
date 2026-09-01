@@ -394,26 +394,26 @@
 <div id="authGate">
   <div class="auth-card">
     <div class="auth-brand">歯科CBT<span>クイズ</span></div>
-    <p class="auth-lead">友達だけの限定アプリです。<br>許可されたGoogleアカウントでログインしてください。</p>
+    <p class="auth-lead">友達だけの限定アプリです。<br>許可されたメールアドレスでログインしてください。</p>
     <div id="gbtn" style="display:flex;justify-content:center;min-height:44px;"></div>
     <div class="auth-email" id="authEmailBox">
       <div class="auth-first-guide">
         <strong>初めて使う方</strong>
         <ol>
-          <li>許可されたGmailだけを入力</li>
+          <li>許可されたメールアドレスだけを入力</li>
           <li><b>パスワード欄は空欄のまま</b>「初回設定」を押す</li>
           <li>届いたメールを開き、パスワードを設定</li>
-          <li>この画面に戻り、Gmailと設定したパスワードでログイン</li>
+          <li>この画面に戻り、メールアドレスと設定したパスワードでログイン</li>
         </ol>
       </div>
-      <p class="auth-returning">設定済みの方は、Gmailとパスワードを入力してください</p>
-      <input id="authEmail" type="email" inputmode="email" autocomplete="email" placeholder="許可されたGmail">
+      <p class="auth-returning">設定済みの方は、メールアドレスとパスワードを入力してください</p>
+      <input id="authEmail" type="email" inputmode="email" autocomplete="email" placeholder="許可されたメールアドレス">
       <input id="authPassword" type="password" autocomplete="current-password" placeholder="ホーム画面用パスワード">
       <div class="auth-email-actions">
         <button id="emailLoginBtn" type="button">ログイン</button>
         <button id="emailSetupBtn" type="button">初回設定</button>
       </div>
-      <p class="auth-email-note">設定メールは通常数秒〜2分で届きます。届かない場合は、Gmailの入力・迷惑メールを確認し、「初回設定」をもう一度お試しください。</p>
+      <p class="auth-email-note">設定メールは通常数秒〜2分で届きます。届かない場合は、メールアドレスの入力・迷惑メールを確認し、「初回設定」をもう一度お試しください。</p>
     </div>
     <div class="auth-browser-help" id="authBrowserHelp">
       <strong>iPhoneでエラー403が出る場合</strong>
@@ -2336,6 +2336,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     "133c13f531dd83773de6eda41e4fdf244b899fb5621699ab20fbb9579c7e0853", // 友達7
     "f2c3ea19bd3a9518c03037b7d0d9fd1d214737dba307c26b818364a3b6993eb4", // 友達8
     "71115d3640cb152a88fcc834b36454cabf3b19a336bf0653ea83bb961b6dfeb4", // 友達9
+    "9211f77c8f87c25d7c17942fde5d21c9f476a489baaf2ea6ca5e6d8a76db3946", // 友達10
     // ↑ 友達のハッシュはこの下に足していく
   ];
   // ================
@@ -2388,8 +2389,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     const password=document.getElementById('authPassword').value;
     errEl.style.color='';
     errEl.textContent='';
-    if(!email || !password){ errEl.textContent='Gmailとパスワードを入力してください。'; return; }
-    if(!(await isAllowedEmail(email))){ errEl.textContent='このGoogleアカウントは許可されていません。'; return; }
+    if(!email || !password){ errEl.textContent='メールアドレスとパスワードを入力してください。'; return; }
+    if(!(await isAllowedEmail(email))){ errEl.textContent='このメールアドレスは許可されていません。'; return; }
     try{
       await auth.signInWithEmailAndPassword(email,password);
     }catch(error){
@@ -2397,23 +2398,37 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       errEl.textContent='ログインできませんでした。初回設定またはパスワードを確認してください。';
     }
   }
+  let passwordSetupCreating=false;
   async function sendPasswordSetup(){
     const email=document.getElementById('authEmail').value.trim();
     const setupBtn=document.getElementById('emailSetupBtn');
     if(setupBtn.disabled)return;
     errEl.style.color='';
     errEl.textContent='';
-    if(!email){ errEl.textContent='許可されたGmailを入力してください。'; return; }
+    if(!email){ errEl.textContent='許可されたメールアドレスを入力してください。'; return; }
     setupBtn.disabled=true;
     setupBtn.textContent='確認中…';
     if(!(await isAllowedEmail(email))){
       setupBtn.disabled=false;
       setupBtn.textContent='初回設定';
-      errEl.textContent='このGoogleアカウントは許可されていません。';
+      errEl.textContent='このメールアドレスは許可されていません。';
       return;
     }
     setupBtn.textContent='送信中…';
     try{
+      // Firebase Authenticationに未登録の許可済みメールは、初回設定時に自動作成する。
+      // 一時パスワードではアプリへ入れないよう、作成直後にサインアウトして再設定メールを送る。
+      const random=new Uint8Array(24);crypto.getRandomValues(random);
+      const temporaryPassword='Tmp!'+[...random].map(value=>value.toString(16).padStart(2,'0')).join('');
+      passwordSetupCreating=true;
+      try{
+        await auth.createUserWithEmailAndPassword(email,temporaryPassword);
+        await auth.signOut();
+      }catch(createError){
+        if(createError.code!=='auth/email-already-in-use')throw createError;
+      }finally{
+        passwordSetupCreating=false;
+      }
       await auth.sendPasswordResetEmail(email,{url:'https://taigo921.github.io/CBTPASSkiso/'});
       setupBtn.textContent='送信しました';
       errEl.style.color='#0E5E45';
@@ -2527,6 +2542,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
 
   // ログイン状態の監視
   auth.onAuthStateChanged(async function(user){
+    if(passwordSetupCreating){if(user)try{await auth.signOut();}catch(e){}return;}
     if(!user){ return; } // 未ログイン → 関所のまま
     const email = (user.email||'').toLowerCase().trim();
     const hashes=await emailHashCandidates(email);
