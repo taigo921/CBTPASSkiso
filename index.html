@@ -62,6 +62,16 @@
   .modal .uname-err{color:#d8453b;min-height:16px;margin:0 0 8px;font-size:12px;}
   .modal button{width:100%;background:#0E5E45;color:#fff;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;}
   .modal button:disabled{opacity:.5;}
+  .avatar-crop-modal{max-width:380px;text-align:center;}
+  .avatar-crop-frame{position:relative;width:min(72vw,280px);aspect-ratio:1;margin:14px auto;border-radius:50%;overflow:hidden;background:#dfe7e3;box-shadow:0 0 0 4px #fff,0 0 0 7px var(--green);touch-action:none;cursor:grab;}
+  .avatar-crop-frame.dragging{cursor:grabbing;}
+  .avatar-crop-frame canvas{display:block;width:100%;height:100%;}
+  .avatar-crop-frame::after{content:'';position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.75);pointer-events:none;}
+  .avatar-zoom-row{display:flex;align-items:center;gap:10px;margin:18px 0 14px;color:var(--green);font-size:18px;}
+  .modal .avatar-zoom{min-width:0;flex:1;width:auto;margin:0;padding:0;border:0;accent-color:var(--green);}
+  .avatar-crop-actions{display:flex;gap:9px;}
+  .avatar-crop-actions button{flex:1;}
+  .avatar-crop-actions .cancel{background:#edf2ef;color:var(--muted);}
   /* ランキング */
   #leaderboard .lb-tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;}
   #leaderboard .lb-tab{flex:0 0 auto;background:#fff;border:1.5px solid var(--line);color:var(--muted);padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;}
@@ -482,6 +492,18 @@
     <input id="unameInput" maxlength="16" placeholder="例：たいご" autocomplete="off">
     <p class="uname-err" id="unameErr"></p>
     <button id="unameSave">決定</button>
+  </div>
+</div>
+
+<!-- ▼ ランキング写真の切り抜きモーダル -->
+<div id="avatarCropModal" class="modal-backdrop">
+  <div class="modal avatar-crop-modal">
+    <h3>写真の位置を調整</h3>
+    <p>丸い枠の中を指で動かし、拡大率を調整してください。</p>
+    <div class="avatar-crop-frame" id="avatarCropFrame"><canvas id="avatarCropCanvas" width="320" height="320"></canvas></div>
+    <div class="avatar-zoom-row"><span>−</span><input class="avatar-zoom" id="avatarZoom" type="range" min="1" max="3" step="0.01" value="1" aria-label="写真の拡大率"><span>＋</span></div>
+    <p class="uname-err" id="avatarCropErr"></p>
+    <div class="avatar-crop-actions"><button class="cancel" id="avatarCropCancel" type="button">キャンセル</button><button id="avatarCropSave" type="button">この写真にする</button></div>
   </div>
 </div>
 
@@ -2483,16 +2505,38 @@ function fileAsDataUrl(file){
 function loadAvatarImage(src){
   return new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('image failed'));image.src=src;});
 }
-async function makeAvatar(file){
-  if(!file||!String(file.type||'').startsWith('image/'))throw new Error('画像ファイルを選んでください');
+const AVATAR_CROP_SIZE=320;
+let avatarCropState=null;
+function clampAvatarPosition(){
+  if(!avatarCropState)return;
+  const width=avatarCropState.image.naturalWidth*avatarCropState.scale,height=avatarCropState.image.naturalHeight*avatarCropState.scale;
+  avatarCropState.x=Math.min(0,Math.max(AVATAR_CROP_SIZE-width,avatarCropState.x));
+  avatarCropState.y=Math.min(0,Math.max(AVATAR_CROP_SIZE-height,avatarCropState.y));
+}
+function drawAvatarCrop(){
+  if(!avatarCropState)return;
+  const canvas=el('avatarCropCanvas'),ctx=canvas.getContext('2d'),state=avatarCropState;
+  ctx.clearRect(0,0,AVATAR_CROP_SIZE,AVATAR_CROP_SIZE);
+  ctx.drawImage(state.image,state.x,state.y,state.image.naturalWidth*state.scale,state.image.naturalHeight*state.scale);
+}
+function setAvatarZoom(factor){
+  if(!avatarCropState)return;
+  const state=avatarCropState,oldScale=state.scale,newScale=state.minScale*Math.max(1,Math.min(3,+factor||1));
+  const imageCenterX=(AVATAR_CROP_SIZE/2-state.x)/oldScale,imageCenterY=(AVATAR_CROP_SIZE/2-state.y)/oldScale;
+  state.scale=newScale;state.x=AVATAR_CROP_SIZE/2-imageCenterX*newScale;state.y=AVATAR_CROP_SIZE/2-imageCenterY*newScale;
+  clampAvatarPosition();drawAvatarCrop();
+}
+async function openAvatarCrop(file){
+  const looksLikeImage=String(file?.type||'').startsWith('image/')||/\.(?:jpe?g|png|webp|heic|heif)$/i.test(file?.name||'');
+  if(!file||!looksLikeImage)throw new Error('画像ファイルを選んでください');
   if(file.size>12*1024*1024)throw new Error('12MB以下の写真を選んでください');
   const image=await loadAvatarImage(await fileAsDataUrl(file));
-  const side=Math.min(image.naturalWidth,image.naturalHeight),sx=(image.naturalWidth-side)/2,sy=(image.naturalHeight-side)/2;
-  const canvas=document.createElement('canvas');canvas.width=160;canvas.height=160;
-  canvas.getContext('2d').drawImage(image,sx,sy,side,side,0,0,160,160);
-  const avatar=canvas.toDataURL('image/jpeg',.82);
-  if(!safeAvatar(avatar))throw new Error('写真を圧縮できませんでした');
-  return avatar;
+  const minScale=Math.max(AVATAR_CROP_SIZE/image.naturalWidth,AVATAR_CROP_SIZE/image.naturalHeight);
+  avatarCropState={image,minScale,scale:minScale,x:(AVATAR_CROP_SIZE-image.naturalWidth*minScale)/2,y:(AVATAR_CROP_SIZE-image.naturalHeight*minScale)/2,pointerId:null,lastX:0,lastY:0};
+  el('avatarZoom').value='1';el('avatarCropErr').textContent='';el('avatarCropModal').classList.add('show');drawAvatarCrop();
+}
+function closeAvatarCrop(){
+  el('avatarCropModal').classList.remove('show');el('avatarCropFrame').classList.remove('dragging');avatarCropState=null;
 }
 async function openLeaderboard(){
   el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
@@ -2552,15 +2596,41 @@ el('lbRefresh').addEventListener('click',renderLeaderboard);
 el('lbRename').addEventListener('click',()=>{ if(window.cbtRename)window.cbtRename(); });
 el('lbAvatarBtn').addEventListener('click',()=>el('lbAvatarInput').click());
 el('lbAvatarInput').addEventListener('change',async event=>{
-  const file=event.target.files&&event.target.files[0],button=el('lbAvatarBtn');
+  const file=event.target.files&&event.target.files[0];
   if(!file)return;
-  button.disabled=true;button.textContent='写真を設定中…';
+  try{await openAvatarCrop(file);}catch(error){toast(error.message||'写真を読み込めませんでした');}
+  finally{event.target.value='';}
+});
+el('avatarZoom').addEventListener('input',event=>setAvatarZoom(event.target.value));
+el('avatarCropCancel').addEventListener('click',closeAvatarCrop);
+el('avatarCropFrame').addEventListener('pointerdown',event=>{
+  if(!avatarCropState)return;
+  avatarCropState.pointerId=event.pointerId;avatarCropState.lastX=event.clientX;avatarCropState.lastY=event.clientY;
+  el('avatarCropFrame').classList.add('dragging');el('avatarCropFrame').setPointerCapture(event.pointerId);
+});
+el('avatarCropFrame').addEventListener('pointermove',event=>{
+  const state=avatarCropState;if(!state||state.pointerId!==event.pointerId)return;
+  const ratio=AVATAR_CROP_SIZE/el('avatarCropFrame').getBoundingClientRect().width;
+  state.x+=(event.clientX-state.lastX)*ratio;state.y+=(event.clientY-state.lastY)*ratio;state.lastX=event.clientX;state.lastY=event.clientY;
+  clampAvatarPosition();drawAvatarCrop();
+});
+function finishAvatarDrag(event){
+  if(!avatarCropState||avatarCropState.pointerId!==event.pointerId)return;
+  avatarCropState.pointerId=null;el('avatarCropFrame').classList.remove('dragging');
+}
+el('avatarCropFrame').addEventListener('pointerup',finishAvatarDrag);
+el('avatarCropFrame').addEventListener('pointercancel',finishAvatarDrag);
+el('avatarCropSave').addEventListener('click',async()=>{
+  if(!avatarCropState)return;
+  const button=el('avatarCropSave');button.disabled=true;button.textContent='保存中…';el('avatarCropErr').textContent='';
   try{
-    const avatar=await makeAvatar(file);
-    if(!window.cbtSetAvatar)throw new Error('ログイン後に設定してください');
-    await window.cbtSetAvatar(avatar);toast('ランキングの写真アイコンを設定しました');await renderLeaderboard();
-  }catch(error){toast(error.message||'写真を設定できませんでした');}
-  finally{event.target.value='';button.disabled=false;button.textContent='📷 写真アイコン';}
+    const source=el('avatarCropCanvas'),output=document.createElement('canvas');output.width=160;output.height=160;
+    output.getContext('2d').drawImage(source,0,0,AVATAR_CROP_SIZE,AVATAR_CROP_SIZE,0,0,160,160);
+    const avatar=output.toDataURL('image/jpeg',.82);
+    if(!safeAvatar(avatar)||!window.cbtSetAvatar)throw new Error('写真を保存できませんでした');
+    await window.cbtSetAvatar(avatar);closeAvatarCrop();toast('ランキングの写真アイコンを設定しました');await renderLeaderboard();
+  }catch(error){el('avatarCropErr').textContent=error.message||'写真を保存できませんでした';}
+  finally{button.disabled=false;button.textContent='この写真にする';}
 });
 document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('#leaderboard .lb-tab').forEach(x=>x.classList.toggle('on',x===t));
