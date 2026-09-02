@@ -192,6 +192,13 @@
   .setting .note{font-size:11.5px;color:var(--muted);margin-top:6px;}
   .plan-rule{margin:12px 0 16px;padding:14px 16px;background:#edf8f3;border:1px solid #d4e9df;border-radius:var(--radius);color:var(--green-d);font-size:12.5px;font-weight:700;line-height:1.7;}
   .plan-rule b{display:block;font-size:14px;margin-bottom:2px;}
+  .plan-about{margin:12px 0 16px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+  .plan-about summary{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;color:var(--green-d);font-size:14px;font-weight:900;cursor:pointer;list-style:none;}
+  .plan-about summary::-webkit-details-marker{display:none;}
+  .plan-about summary::after{content:'＋';font-size:18px;line-height:1;}
+  .plan-about[open] summary{border-bottom:1px solid var(--line);}
+  .plan-about[open] summary::after{content:'−';}
+  .plan-about-body{padding:2px 12px 1px;}
   .plan-extra{margin:12px 0 16px;padding:14px 16px;background:#fff8e9;border:1px solid #ead7aa;border-radius:var(--radius);box-shadow:var(--shadow);}
   .plan-extra b{display:block;color:#805700;font-size:14px;margin-bottom:3px;}
   .plan-extra p{color:#806c42;font-size:11.5px;line-height:1.55;margin:0 0 10px;}
@@ -614,10 +621,16 @@
   <!-- STUDY PLAN -->
   <section id="studyPlan" class="hidden">
     <div class="hero"><h1 style="font-size:24px;">🛤️ 忘却曲線ルート</h1><p id="planBookTitle">—</p></div>
-    <div class="plan-rule"><b>新規問題を先に、そのあと復習</b>新規は問題集1の最初から掲載順で出題し、問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
-    <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
-    <div class="plan-rule"><b>仕上がりの判定</b>忘却曲線に沿った別日の復習で3回連続正解すると、自動で「習得済み」になります。同じ日の解き直しは連続回数に含めません。間違えた場合や「まだ説明できない」を選んだ場合は連続回数をリセットします。</div>
-    <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、復習の間隔と優先度を調整します。</span></div>
+    <details class="plan-about">
+      <summary>ルートについて</summary>
+      <div class="plan-about-body">
+        <div class="plan-rule"><b>新規問題を先に、そのあと復習</b>新規は問題集1の最初から掲載順で出題し、問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
+        <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
+        <div class="plan-rule"><b>仕上がりの判定</b>忘却曲線に沿った別日の復習で3回連続正解すると、自動で「習得済み」になります。同じ日の解き直しは連続回数に含めません。間違えた場合や「まだ説明できない」を選んだ場合は連続回数をリセットします。</div>
+        <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、復習の間隔と優先度を調整します。</span></div>
+        <div class="plan-rule"><b>5周の労力から毎日の量を逆算</b>初回100・2周目80・3周目70・4周目60・5周目50として計算します。土日祝と学校がない日は、平日の1.5倍を目安に多めの課題を出します。</div>
+      </div>
+    </details>
     <div class="plan-grid">
       <div class="plan-card"><b id="planDueCount">0</b><span id="planDueLabel">今日までの復習</span></div>
       <div class="plan-card"><b id="planNewCount">0</b><span>今日の新規問題</span></div>
@@ -636,7 +649,6 @@
       <label>CBTPASSを仕上げる <input type="number" id="planFinishLead" min="1" max="180" step="1"> 日前</label>
       <div class="note" id="planFinishNote">仕上げ日以降は、他教材や総復習に使う期間です。</div>
     </div>
-    <div class="plan-rule"><b>5周の労力から毎日の量を逆算</b>初回100・2周目80・3周目70・4周目60・5周目50として計算します。土日祝と学校がない日は、平日の1.5倍を目安に多めの課題を出します。</div>
     <div class="row-btns"><button class="ghost-btn" id="planToggleTodayBtn">今日を休みにする</button></div>
     <div class="sec-h">勉強可能日（月単位で設定）</div>
     <div class="plan-calendar">
