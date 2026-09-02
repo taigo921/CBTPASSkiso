@@ -1929,11 +1929,28 @@ el('skipBtn').addEventListener('click',()=>{
   if(!answered)submit(true);
 });
 /* 事後手応え */
+function restorePlanItemBeforeFeedback(record){
+  const p=planFor(),snapshot=record?.planItemBeforeFeedback;
+  if(!p.active||!snapshot)return false;
+  p.items[record.uid]={...snapshot};p.updatedAt=Date.now();saveStudyPlans(false);return true;
+}
 document.querySelectorAll('#postConf button').forEach(b=>{
   b.addEventListener('click',()=>{
-    document.querySelectorAll('#postConf button').forEach(x=>x.classList.toggle('on',x===b));
+    const wasOn=b.classList.contains('on');
     const r=session.records[session.records.length-1];
-    if(r&&session.mode==='plan'){r.post=b.dataset.oc; const pr=rec(r.uid); pr.post.push(b.dataset.oc);setPlanExplanation(r.uid,b.dataset.oc==='explained');saveStats();cloudSyncSoon();}
+    if(!r||session.mode!=='plan')return;
+    const pr=rec(r.uid);
+    if(!r.planItemBeforeFeedback){const item=planFor().items[r.uid];if(item)r.planItemBeforeFeedback={...item};}
+    if(!Number.isInteger(r.postHistoryStart))r.postHistoryStart=pr.post.length;
+    document.querySelectorAll('#postConf button').forEach(x=>x.classList.remove('on'));
+    restorePlanItemBeforeFeedback(r);
+    pr.post=pr.post.slice(0,r.postHistoryStart);
+    if(wasOn){
+      r.post=null;saveStudyPlans();toast('理解確認を解除しました');
+    }else{
+      b.classList.add('on');r.post=b.dataset.oc;pr.post.push(b.dataset.oc);setPlanExplanation(r.uid,b.dataset.oc==='explained');
+    }
+    saveStats();saveSession();cloudSyncSoon();
   });
 });
 
@@ -1982,7 +1999,8 @@ function submit(skip){
   r.rankV=1;
   saveStats();
   cloudSyncSoon();
-  session.records.push({uid:qkey(q),no:qno(q),section:q.section,picked:skip?null:picked,pickedDisplay:skip?null:pickedDisplay,answer:q.answer,answerDisplay,choiceMap:{...choiceCanonicalToDisplay},correct,skip:!!skip,time:+t.toFixed(1),pre:null,post:null});
+  const planItemBeforeFeedback=session.mode==='plan'&&planFor().items[qkey(q)]?{...planFor().items[qkey(q)]}:null;
+  session.records.push({uid:qkey(q),no:qno(q),section:q.section,picked:skip?null:picked,pickedDisplay:skip?null:pickedDisplay,answer:q.answer,answerDisplay,choiceMap:{...choiceCanonicalToDisplay},correct,skip:!!skip,time:+t.toFixed(1),pre:null,post:null,planItemBeforeFeedback});
   session.resumeIdx=Math.min(session.idx+1,session.uids.length);
   if(session.sectionKey&&session.mode==='order'){
     saveSectionUid(session.sectionKey,session.uids[session.idx+1]||null);
