@@ -72,6 +72,8 @@
   #leaderboard .lb-row.top1 .lb-rank{color:#e0a500;}
   #leaderboard .lb-row.top2 .lb-rank{color:#9aa0a6;}
   #leaderboard .lb-row.top3 .lb-rank{color:#b06a2c;}
+  #leaderboard .lb-avatar{width:42px;height:42px;flex:none;border-radius:50%;object-fit:cover;background:#eaf4ef;border:2px solid #fff;box-shadow:0 1px 5px rgba(20,40,30,.16);}
+  #leaderboard .lb-avatar.fallback{display:grid;place-items:center;color:var(--green);font-size:17px;font-weight:800;}
   #leaderboard .lb-name{flex:1;font-weight:700;}
   #leaderboard .lb-name small{display:block;font-weight:400;color:var(--muted);font-size:11px;}
   #leaderboard .lb-val{font-weight:800;color:var(--green);font-size:16px;}
@@ -754,7 +756,9 @@
       <button class="lb-tab" data-metric="level">レベル</button>
     </div>
     <div id="lbBody"></div>
-    <div class="row-btns"><button class="ghost-btn" id="lbRefresh">↻ 更新</button> <button class="ghost-btn" id="lbRename">✎ 名前を変更</button></div>
+    <input class="hidden" id="lbAvatarInput" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
+    <div class="row-btns"><button class="ghost-btn" id="lbRefresh">↻ 更新</button> <button class="ghost-btn" id="lbRename">✎ 名前</button> <button class="ghost-btn" id="lbAvatarBtn">📷 写真アイコン</button></div>
+    <p class="study-time-note" style="text-align:center;">選んだ写真は正方形に切り抜いて圧縮し、ランキングを利用できる友達に表示します。</p>
   </section>
 
 </div>
@@ -2469,6 +2473,27 @@ window.cbtFullPayload=fullStatsPayload;
 window.cbtMergeCloud=cbtMergeCloud;
 
 let lbMetric='accuracy';
+function safeAvatar(value){
+  const avatar=String(value||'');
+  return /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(avatar)&&avatar.length<=120000?avatar:'';
+}
+function fileAsDataUrl(file){
+  return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error||new Error('read failed'));reader.readAsDataURL(file);});
+}
+function loadAvatarImage(src){
+  return new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('image failed'));image.src=src;});
+}
+async function makeAvatar(file){
+  if(!file||!String(file.type||'').startsWith('image/'))throw new Error('画像ファイルを選んでください');
+  if(file.size>12*1024*1024)throw new Error('12MB以下の写真を選んでください');
+  const image=await loadAvatarImage(await fileAsDataUrl(file));
+  const side=Math.min(image.naturalWidth,image.naturalHeight),sx=(image.naturalWidth-side)/2,sy=(image.naturalHeight-side)/2;
+  const canvas=document.createElement('canvas');canvas.width=160;canvas.height=160;
+  canvas.getContext('2d').drawImage(image,sx,sy,side,side,0,0,160,160);
+  const avatar=canvas.toDataURL('image/jpeg',.82);
+  if(!safeAvatar(avatar))throw new Error('写真を圧縮できませんでした');
+  return avatar;
+}
 async function openLeaderboard(){
   el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
   showOnly('leaderboard');
@@ -2515,7 +2540,8 @@ async function renderLeaderboard(){
     const row=document.createElement('div');
     row.className='lb-row'+(u.uid===meUid?' me':'')+(i<3?' top'+(i+1):'');
     const sub=lbMetric==='accuracy'?(u.answered||0)+'問':(lbMetric==='usage'?'最終利用 '+(u.lastDay||'—'):(lbMetric==='level'?((u.game&&u.game.xp)||0)+' XP':'正答率 '+(u.accuracy||0)+'%'));
-    row.innerHTML='<div class="lb-rank">'+(i+1)+'</div><div class="lb-name">'+escapeHtml(u.username||'名無し')+'<small>'+sub+'</small></div><div class="lb-val">'+md.fmt(u)+'</div>';
+    const avatar=safeAvatar(u.avatar),initial=String(u.username||'名').trim().charAt(0)||'名';
+    row.innerHTML='<div class="lb-rank">'+(i+1)+'</div>'+(avatar?'<img class="lb-avatar" alt="" src="'+avatar+'">':'<div class="lb-avatar fallback">'+escapeHtml(initial)+'</div>')+'<div class="lb-name">'+escapeHtml(u.username||'名無し')+'<small>'+sub+'</small></div><div class="lb-val">'+md.fmt(u)+'</div>';
     body.appendChild(row);
   });
   const meIdx=list.findIndex(u=>u.uid===meUid);
@@ -2524,6 +2550,18 @@ async function renderLeaderboard(){
 el('rankBtn').addEventListener('click',openLeaderboard);
 el('lbRefresh').addEventListener('click',renderLeaderboard);
 el('lbRename').addEventListener('click',()=>{ if(window.cbtRename)window.cbtRename(); });
+el('lbAvatarBtn').addEventListener('click',()=>el('lbAvatarInput').click());
+el('lbAvatarInput').addEventListener('change',async event=>{
+  const file=event.target.files&&event.target.files[0],button=el('lbAvatarBtn');
+  if(!file)return;
+  button.disabled=true;button.textContent='写真を設定中…';
+  try{
+    const avatar=await makeAvatar(file);
+    if(!window.cbtSetAvatar)throw new Error('ログイン後に設定してください');
+    await window.cbtSetAvatar(avatar);toast('ランキングの写真アイコンを設定しました');await renderLeaderboard();
+  }catch(error){toast(error.message||'写真を設定できませんでした');}
+  finally{event.target.value='';button.disabled=false;button.textContent='📷 写真アイコン';}
+});
 document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('#leaderboard .lb-tab').forEach(x=>x.classList.toggle('on',x===t));
   lbMetric=t.dataset.metric; renderLeaderboard();
@@ -2752,6 +2790,12 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     if(typeof toast==='function') toast('名前を変更しました');
     if(typeof renderLeaderboard==='function') renderLeaderboard();
   };
+  window.cbtSetAvatar = async function(avatar){
+    if(!window.cbtUser)throw new Error('ログイン後に設定してください');
+    if(!safeAvatar(avatar))throw new Error('写真を設定できませんでした');
+    await db.collection('users').doc(window.cbtUser.uid).set({avatar:avatar}, {merge:true});
+    window.cbtUser.avatar=avatar;
+  };
 
   // メインアプリから使うクラウドAPI
   window.cbtCloud = {
@@ -2760,6 +2804,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       const body = Object.assign({
         username: window.cbtUser.username || '',
         email: window.cbtUser.email || '',
+        avatar: safeAvatar(window.cbtUser.avatar),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, payload||{});
       await db.collection('users').doc(window.cbtUser.uid).set(body, {merge:true});
@@ -2797,7 +2842,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       try{ await auth.signOut(); }catch(e){}
       return;
     }
-    window.cbtUser = { uid:user.uid, email:email, username:'' };
+    window.cbtUser = { uid:user.uid, email:email, username:'', avatar:'' };
     // プロフィール読み込み（無ければユーザーネーム登録）
     let snap=null;
     try{ snap = await db.collection('users').doc(user.uid).get(); }catch(e){}
@@ -2809,6 +2854,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       const name = await askUsername(suggested);
       window.cbtUser.username = name;
     }
+    window.cbtUser.avatar=safeAvatar(cloudData&&cloudData.avatar);
     reveal();
     // アプリ準備完了後：クラウド→ローカル統合 → 統合結果を書き戻す（数字は消えない）
     afterAppReady(async function(){
