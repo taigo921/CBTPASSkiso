@@ -1101,7 +1101,8 @@ function savedExtraSessionForToday(){
   const saved=safeGet(sharedPlanSessionKey());
   if(!saved?.extra)return null;
   // 追加・無限演習はその日の任意課題。日付をまたいだ未出題分で翌日の必須課題を塞がない。
-  if(saved.assignmentDate&&saved.assignmentDate!==dateKey()){safeRemove(sharedPlanSessionKey());return null;}
+  const today=dateKey(),p=planFor(),todayAssignment=p.active?p.assignments?.[today]:null,todayDone=!!todayAssignment&&(!!todayAssignment.done||planAssignmentProgress(todayAssignment).done);
+  if((saved.assignmentDate&&saved.assignmentDate!==today)||!todayDone){safeRemove(sharedPlanSessionKey());return null;}
   return saved;
 }
 function sectionProgress(){
