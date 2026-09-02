@@ -199,6 +199,10 @@
   .plan-extra-actions button{border:1px solid #d7b96f;border-radius:11px;background:#fff;color:#805700;padding:10px 4px;font-size:13px;font-weight:900;cursor:pointer;}
   #planExtraEndless{grid-column:1/-1;background:#805700;color:#fff;border-color:#805700;padding:12px;}
   #planExtraResume{grid-column:1/-1;}
+  .plan-whitepass{margin:12px 0;background:#f4f8ff;border:1px solid #cad9ef;border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);}
+  .plan-whitepass b{display:block;color:#244f82;font-size:14px;margin-bottom:4px;}
+  .plan-whitepass p{color:#526a84;font-size:11.5px;line-height:1.55;margin:0 0 10px;}
+  .plan-whitepass button{width:100%;border:1px solid #89a9d0;border-radius:11px;background:#fff;color:#244f82;padding:11px;font-size:14px;font-weight:900;cursor:pointer;}
   .plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;}
   .plan-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow);}
   .plan-card b{display:block;color:var(--green);font-size:28px;line-height:1.15;}
@@ -619,6 +623,7 @@
       <div class="plan-card"><b id="planStudyDays">0</b><span>仕上げまでの勉強日</span></div>
     </div>
     <div class="plan-mastery"><div class="plan-mastery-head"><span id="planMasteryText">習得済み 0 / 0問</span><span id="planMasteryPct">0%</span></div><div class="plan-mastery-bar"><i id="planMasteryBar" style="width:0%"></i></div></div>
+    <div class="plan-whitepass hidden" id="planWhitePassBox"><b>📘 今日の新規問題の前に読む白パス</b><p id="planWhitePassNote">問題になっていない部分も含め、この範囲を通して読んでください。</p><button type="button" id="planWhitePassOpen">白パスを開く</button></div>
     <button class="mode primary" id="planStartBtn"><div class="ic">▶️</div><div class="t"><b>今日の指定課題を始める</b><span id="planStartInfo">—</span></div><div class="arr">›</div></button>
     <div class="plan-today-status" id="planTodayStatus">今日のノルマはまだ開始していません</div>
     <div class="plan-extra hidden" id="planExtraBox"><b>🔥 まだ余裕がある人へ</b><p id="planExtraNote">追加した問題も正式な進捗になり、翌日以降のノルマを自動で軽くします。</p><div class="plan-extra-actions"><button type="button" id="planExtraEndless">♾️ 飽きるまで続ける</button><button type="button" data-extra-count="10">＋10問</button><button type="button" data-extra-count="25">＋25問</button><button type="button" data-extra-count="50">＋50問</button><button type="button" class="hidden" id="planExtraResume">追加学習の続き</button></div></div>
@@ -911,6 +916,19 @@ function planPersonalInterval(uid,base){
 
 function guidePages(ref){
   return [...new Set((String(ref||'').match(/\d+/g)||[]).map(Number).filter(page=>page>=1&&page<=681))];
+}
+function planWhitePassRange(s,assignment,backlog,runnableBacklog){
+  let freshUids=[];
+  if(backlog&&runnableBacklog.length){
+    const declared=Array.isArray(backlog.freshUids)?backlog.freshUids:(Array.isArray(backlog.saved?.planFreshUids)?backlog.saved.planFreshUids:[]),freshSet=new Set(declared);
+    freshUids=runnableBacklog.filter(uid=>freshSet.has(uid));
+  }else if(assignment&&!planAssignmentProgress(assignment).done){
+    const completed=assignment.completedUids||{};
+    freshUids=(assignment.freshUids||[]).filter(uid=>!completed[uid]);
+  }else if(!assignment){freshUids=s.fresh.slice();}
+  const pages=[...new Set(freshUids.flatMap(uid=>guidePages(planQuestion(uid)?.guide_ref)))].sort((a,b)=>a-b);
+  if(!freshUids.length||!pages.length)return null;
+  return {first:pages[0],last:pages[pages.length-1],freshCount:freshUids.length,referencedCount:freshUids.filter(uid=>guidePages(planQuestion(uid)?.guide_ref).length).length};
 }
 const GUIDE_TOTAL_PAGES=681;
 let guidePagesBuilt=false;
@@ -1461,6 +1479,13 @@ function renderStudyPlan(){
   const measured=Object.values(s.personal.subjects).filter(x=>x.attempts>=3).sort((a,b)=>b.score-a.score),weak=measured.filter(x=>x.score>1.04).slice(0,2),strong=measured.filter(x=>x.score<.9).sort((a,b)=>a.score-b.score).slice(0,1);
   el('planPersonalNote').textContent=!measured.length?'回答が3問以上たまった科目から、正答率・回答時間・連続正解を使って復習間隔を自動調整します。':`${weak.length?'復習優先：'+weak.map(x=>x.subject).join('・'):'大きな苦手科目はありません'}${strong.length?' ／ 定着：'+strong.map(x=>x.subject).join('・'):''}`;
   const backlog=savedPlanBacklog(),runnableBacklog=runnablePlanBacklog(backlog,s),status=el('planTodayStatus');
+  const whitePass=planWhitePassRange(s,todayAssignment,backlog,runnableBacklog),whitePassBox=el('planWhitePassBox'),whitePassOpen=el('planWhitePassOpen');
+  whitePassBox.classList.toggle('hidden',!whitePass);
+  if(whitePass){
+    const range=whitePass.first===whitePass.last?`p.${whitePass.first}`:`p.${whitePass.first}〜p.${whitePass.last}`;
+    whitePassOpen.textContent=`白パス ${range} を開く`;whitePassOpen.dataset.page=whitePass.first;
+    el('planWhitePassNote').textContent=`新規${whitePass.freshCount}問に対応。参照ページが飛び飛びでも、${range}を省略せず通して読んでください。問題になっていない部分も学習範囲です。`;
+  }else{whitePassOpen.removeAttribute('data-page');}
   const savedExtra=safeGet(sharedPlanSessionKey()),extraAt=savedExtra?.extra?(Number.isInteger(savedExtra.resumeIdx)?savedExtra.resumeIdx:(savedExtra.idx||0)):0,extraRemaining=savedExtra?.extra?Math.max(0,(savedExtra.uids||[]).length-extraAt):0,extraBox=el('planExtraBox');
   const canExtra=!!todayAssignment?.done&&s.studyToday&&!s.lightDay&&s.unseen.length>0;
   extraBox.classList.toggle('hidden',!canExtra&&!extraRemaining);
@@ -2339,6 +2364,7 @@ el('planExtraBox').addEventListener('click',event=>{
 });
 el('planExtraEndless').addEventListener('click',()=>startExtraStudy(0,true));
 el('planExtraResume').addEventListener('click',()=>startExtraStudy(0));
+el('planWhitePassOpen').addEventListener('click',event=>{const page=+event.currentTarget.dataset.page;if(page)openGuide(page);});
 el('planUpcoming').addEventListener('click',event=>{
   const row=event.target.closest('[data-plan-date]');if(!row)return;
   const key=row.dataset.planDate,today=dateKey();
