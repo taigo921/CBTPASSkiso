@@ -1097,6 +1097,13 @@ const sessionStoreKey=(book=activeBook)=>STORE_SES_PREFIX+book;
 const sharedPlanSessionKey=()=>STORE_SES_PREFIX+'shared-plan';
 const saveSession=()=>{if(session&&!session.single){session.book=activeBook;safeSet(session.mode==='plan'?sharedPlanSessionKey():sessionStoreKey(),session);}};
 const clearSession=()=>{safeRemove(session&&session.mode==='plan'?sharedPlanSessionKey():sessionStoreKey());};
+function savedExtraSessionForToday(){
+  const saved=safeGet(sharedPlanSessionKey());
+  if(!saved?.extra)return null;
+  // 追加・無限演習はその日の任意課題。日付をまたいだ未出題分で翌日の必須課題を塞がない。
+  if(saved.assignmentDate&&saved.assignmentDate!==dateKey()){safeRemove(sharedPlanSessionKey());return null;}
+  return saved;
+}
 function sectionProgress(){
   const all=safeGet(STORE_SECTION_PROGRESS)||{};
   if(!all[activeBook])all[activeBook]={};
@@ -1493,7 +1500,7 @@ function renderStudyPlan(){
     el('planWhitePassUnits').textContent=`対象分野：${whitePass.units.length?whitePass.units.join('・'):'参照ページの範囲'}`;
     el('planWhitePassNote').textContent=`新規${whitePass.freshCount}問に対応。参照ページが飛び飛びでも、${range}を省略せず通して読んでください。問題になっていない部分も学習範囲です。`;
   }else{whitePassOpen.removeAttribute('data-page');}
-  const savedExtra=safeGet(sharedPlanSessionKey()),extraAt=savedExtra?.extra?(Number.isInteger(savedExtra.resumeIdx)?savedExtra.resumeIdx:(savedExtra.idx||0)):0,extraRemaining=savedExtra?.extra?Math.max(0,(savedExtra.uids||[]).length-extraAt):0,extraBox=el('planExtraBox');
+  const savedExtra=savedExtraSessionForToday(),extraAt=savedExtra?(Number.isInteger(savedExtra.resumeIdx)?savedExtra.resumeIdx:(savedExtra.idx||0)):0,extraRemaining=savedExtra?Math.max(0,(savedExtra.uids||[]).length-extraAt):0,extraBox=el('planExtraBox');
   const canExtra=!!todayAssignment?.done&&s.studyToday&&!s.lightDay&&s.unseen.length>0;
   extraBox.classList.toggle('hidden',!canExtra&&!extraRemaining);
   extraBox.querySelectorAll('[data-extra-count],#planExtraEndless').forEach(button=>button.classList.toggle('hidden',!!extraRemaining));
@@ -1523,7 +1530,7 @@ function openStudyPlan(){
   renderStudyPlan();showOnly('studyPlan');
 }
 function startStudyPlan(){
-  const savedExtra=safeGet(sharedPlanSessionKey());if(savedExtra?.extra){resumeSession();return;}
+  const savedExtra=savedExtraSessionForToday();if(savedExtra){resumeSession();return;}
   const s=studyPlanSummary();if(!s.studyToday){toast('今日はルートの休み日です');return;}
   if(s.p.assignments[s.today]?.done){toast('今日の必須課題は達成済みです。追加する場合は下の＋ボタンを使ってください');return;}
   const backlog=savedPlanBacklog();
@@ -1542,8 +1549,8 @@ function startStudyPlan(){
   saveSession();el('footer').classList.remove('hidden');renderQuestion();
 }
 function startExtraStudy(count,endless=false){
-  const saved=safeGet(sharedPlanSessionKey());
-  if(saved?.extra){resumeSession();return;}
+  const saved=savedExtraSessionForToday();
+  if(saved){resumeSession();return;}
   const s=studyPlanSummary(),assignment=s.p.assignments[s.today];
   if(!s.studyToday||s.lightDay){toast(s.lightDay?'模試・試験日は追加の新規問題なしです':'今日はルートの休み日です');return;}
   if(!assignment?.done){toast('先に今日の必須ノルマを達成してください');return;}
@@ -1798,6 +1805,7 @@ function renderHome(){
   }else el('planHomeCount').textContent='毎日の指定課題だけで問題集を仕上げる';
   el('slowSec').value=settings.slowSec;
   // resume
+  savedExtraSessionForToday();
   const ses=safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey());
   const resumeAt=ses&&(Number.isInteger(ses.resumeIdx)?ses.resumeIdx:ses.idx);
   if(ses&&ses.uids&&Number.isInteger(resumeAt)&&resumeAt<ses.uids.length){
@@ -1847,6 +1855,7 @@ function startSession(mode){
   renderQuestion();
 }
 function resumeSession(){
+  savedExtraSessionForToday();
   const ses=safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey());
   if(!ses){renderHome();return;}
   if(ses.mode==='plan'){const ps=studyPlanSummary();const assignment=!ses.extra?ps.p.assignments?.[ses.assignmentDate||ps.today]:null;if(assignment&&planAssignmentProgress(assignment).done){safeRemove(sharedPlanSessionKey());renderHome();toast('今日のノルマは達成済みです');return;}if(!ps.studyToday){renderHome();toast('今日はルートの休み日です');return;}if(ses.extra&&ps.lightDay){renderHome();toast('模試・試験日のため追加学習は翌日に再開できます');return;}if(!ses.extra&&(ps.lightDay||ps.augustPrep)){openStudyPlan();startStudyPlan();return;}const oldIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0),done=ses.uids.slice(0,oldIdx).filter(uid=>planRouteAllows(uid,ps)),completedUids=assignment?.completedUids||{},declaredFresh=Array.isArray(ses.planFreshUids)?ses.planFreshUids:(Array.isArray(assignment?.freshUids)?assignment.freshUids:null),remaining=planRouteOrder(ses.uids.slice(oldIdx).filter(uid=>!completedUids[uid]),ps,declaredFresh);if(Array.isArray(declaredFresh))ses.planFreshUids=declaredFresh;ses.uids=[...done,...remaining];ses.idx=done.length;ses.resumeIdx=done.length;ses.bookByUid=Object.fromEntries(ses.uids.map(uid=>[uid,planBookForUid(uid)]));}
