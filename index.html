@@ -197,6 +197,7 @@
   .plan-extra p{color:#806c42;font-size:11.5px;line-height:1.55;margin:0 0 10px;}
   .plan-extra-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
   .plan-extra-actions button{border:1px solid #d7b96f;border-radius:11px;background:#fff;color:#805700;padding:10px 4px;font-size:13px;font-weight:900;cursor:pointer;}
+  #planExtraEndless{grid-column:1/-1;background:#805700;color:#fff;border-color:#805700;padding:12px;}
   #planExtraResume{grid-column:1/-1;}
   .plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;}
   .plan-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow);}
@@ -249,6 +250,7 @@
   .tags{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
   .tag{font-size:11px;font-weight:700;color:var(--green-d);background:#eaf4ef;border-radius:999px;padding:4px 10px;}
   .tag.sub{background:#fff4e6;color:#9a6a18;}
+  .tag.endless-stop{border:1px solid #efc6c2;background:#fff8f7;color:var(--wrong);font:inherit;font-size:11px;font-weight:800;cursor:pointer;}
   .fav-btn{flex:none;width:40px;height:40px;border-radius:12px;border:1.5px solid var(--line);background:#fff;font-size:20px;cursor:pointer;color:#cdd5d0;line-height:1;}
   .fav-btn.on{color:#f4b400;border-color:#f4d27a;background:#fffaf0;}
 
@@ -619,7 +621,7 @@
     <div class="plan-mastery"><div class="plan-mastery-head"><span id="planMasteryText">習得済み 0 / 0問</span><span id="planMasteryPct">0%</span></div><div class="plan-mastery-bar"><i id="planMasteryBar" style="width:0%"></i></div></div>
     <button class="mode primary" id="planStartBtn"><div class="ic">▶️</div><div class="t"><b>今日の指定課題を始める</b><span id="planStartInfo">—</span></div><div class="arr">›</div></button>
     <div class="plan-today-status" id="planTodayStatus">今日のノルマはまだ開始していません</div>
-    <div class="plan-extra hidden" id="planExtraBox"><b>🔥 まだ余裕がある人へ</b><p id="planExtraNote">追加した問題も正式な進捗になり、翌日以降のノルマを自動で軽くします。</p><div class="plan-extra-actions"><button type="button" data-extra-count="10">＋10問</button><button type="button" data-extra-count="25">＋25問</button><button type="button" data-extra-count="50">＋50問</button><button type="button" class="hidden" id="planExtraResume">追加学習の続き</button></div></div>
+    <div class="plan-extra hidden" id="planExtraBox"><b>🔥 まだ余裕がある人へ</b><p id="planExtraNote">追加した問題も正式な進捗になり、翌日以降のノルマを自動で軽くします。</p><div class="plan-extra-actions"><button type="button" id="planExtraEndless">♾️ 飽きるまで続ける</button><button type="button" data-extra-count="10">＋10問</button><button type="button" data-extra-count="25">＋25問</button><button type="button" data-extra-count="50">＋50問</button><button type="button" class="hidden" id="planExtraResume">追加学習の続き</button></div></div>
     <div class="setting">
       <label>CBT本番 <input type="date" id="planExamDate"></label>
       <div class="note">現在は2027年1月26日です。</div>
@@ -654,6 +656,7 @@
         <span class="tag" id="qCat">—</span>
         <span class="tag sub" id="qSub">—</span>
         <span class="tag sub hidden" id="qPlanRemaining">残り—問</span>
+        <button type="button" class="tag endless-stop hidden" id="qEndlessStop">■ 無限演習を終了</button>
       </div>
       <button class="fav-btn" id="favBtn" title="お気に入り">☆</button>
     </div>
@@ -1461,10 +1464,10 @@ function renderStudyPlan(){
   const savedExtra=safeGet(sharedPlanSessionKey()),extraAt=savedExtra?.extra?(Number.isInteger(savedExtra.resumeIdx)?savedExtra.resumeIdx:(savedExtra.idx||0)):0,extraRemaining=savedExtra?.extra?Math.max(0,(savedExtra.uids||[]).length-extraAt):0,extraBox=el('planExtraBox');
   const canExtra=!!todayAssignment?.done&&s.studyToday&&!s.lightDay&&s.unseen.length>0;
   extraBox.classList.toggle('hidden',!canExtra&&!extraRemaining);
-  extraBox.querySelectorAll('[data-extra-count]').forEach(button=>button.classList.toggle('hidden',!!extraRemaining));
+  extraBox.querySelectorAll('[data-extra-count],#planExtraEndless').forEach(button=>button.classList.toggle('hidden',!!extraRemaining));
   el('planExtraResume').classList.toggle('hidden',!extraRemaining);
-  el('planExtraResume').textContent=extraRemaining?`追加学習の続き ${extraRemaining}問`:'追加学習の続き';
-  el('planExtraNote').textContent=extraRemaining?'追加学習が途中です。続きから再開できます。':'追加分も正式な進捗になり、翌日以降の新規ノルマを自動で軽くします。';
+  el('planExtraResume').textContent=extraRemaining?(savedExtra?.endless?`♾️ 無限演習の続き（${extraRemaining}問未出題）`:`追加学習の続き ${extraRemaining}問`):'追加学習の続き';
+  el('planExtraNote').textContent=extraRemaining?(savedExtra?.endless?'無限演習が途中です。解いた分は保存済みで、続きから再開できます。':'追加学習が途中です。続きから再開できます。'):'「飽きるまで」は残っている新規問題を掲載順で上限なく出題します。好きなところで終了でき、解いた分は正式な進捗になります。';
   el('planStartInfo').textContent=!s.studyToday?'今日は予定あり（休み）':(todayDone?'今日の必須課題は完了しました':(runnableBacklog.length?`前回の未完了から ${runnableBacklog.length}問を先に実施`:(s.pool.length?`${s.augustPrep?'8月軽め ・ ':(s.lightDay?s.lightReason+' ・ 新規なし ・ ':(s.highLoad?'多めの日 ・ ':''))}復習 ${s.due.length}問 ＋ 新規 ${s.fresh.length}問`:(s.lightDay&&backlog?'未達の新規問題は翌日に繰り越します':'今日の課題は完了しました'))));
   el('planStartBtn').querySelector('b').textContent=todayDone?'今日のノルマ達成':'今日の指定課題を始める';
   el('planStartBtn').disabled=todayDone||!s.studyToday||(!runnableBacklog.length&&!s.pool.length);
@@ -1506,16 +1509,16 @@ function startStudyPlan(){
   session={mode:'plan',uids:s.pool,planFreshUids:s.fresh.slice(),bookByUid:Object.fromEntries(s.pool.map(uid=>[uid,planBookForUid(uid)])),assignmentDate,idx:0,records:[],sessionCorrect:0};
   saveSession();el('footer').classList.remove('hidden');renderQuestion();
 }
-function startExtraStudy(count){
+function startExtraStudy(count,endless=false){
   const saved=safeGet(sharedPlanSessionKey());
   if(saved?.extra){resumeSession();return;}
   const s=studyPlanSummary(),assignment=s.p.assignments[s.today];
   if(!s.studyToday||s.lightDay){toast(s.lightDay?'模試・試験日は追加の新規問題なしです':'今日はルートの休み日です');return;}
   if(!assignment?.done){toast('先に今日の必須ノルマを達成してください');return;}
-  const limit=Math.max(1,Math.min(50,+count||10)),uids=s.phaseUnseen.slice(0,limit);
+  const limit=endless?s.phaseUnseen.length:Math.max(1,Math.min(50,+count||10)),uids=s.phaseUnseen.slice(0,limit);
   if(!uids.length){toast('新規問題はすべて1周目を終えています');return;}
-  session={mode:'plan',extra:true,uids,planFreshUids:uids.slice(),bookByUid:Object.fromEntries(uids.map(uid=>[uid,planBookForUid(uid)])),assignmentDate:s.today,idx:0,resumeIdx:0,records:[],sessionCorrect:0};
-  saveSession();el('footer').classList.remove('hidden');toast(`追加学習 ${uids.length}問を開始`);renderQuestion();
+  session={mode:'plan',extra:true,endless:!!endless,uids,planFreshUids:uids.slice(),bookByUid:Object.fromEntries(uids.map(uid=>[uid,planBookForUid(uid)])),assignmentDate:s.today,idx:0,resumeIdx:0,records:[],sessionCorrect:0};
+  saveSession();el('footer').classList.remove('hidden');toast(endless?'♾️ 無限演習を開始。好きなところで終了できます':`追加学習 ${uids.length}問を開始`);renderQuestion();
 }
 
 function resolveQuestions(){
@@ -1862,7 +1865,10 @@ function renderQuestion(){
   el('qCat').textContent=q.category||'';
   el('qSub').textContent=q.subject?'科目: '+q.subject:''; el('qSub').classList.toggle('hidden',!q.subject);
   const planRemaining=el('qPlanRemaining'),assignment=session.mode==='plan'&&!session.extra?planFor().assignments[session.assignmentDate||dateKey()]:null,assignmentProgress=planAssignmentProgress(assignment);
-  planRemaining.textContent=`残り ${assignmentProgress.remaining}問`;planRemaining.classList.toggle('hidden',!assignment);
+  if(assignment)planRemaining.textContent=`残り ${assignmentProgress.remaining}問`;
+  else if(session.endless)planRemaining.textContent=`∞ 追加演習 ${session.records.length+1}問目`;
+  planRemaining.classList.toggle('hidden',!assignment&&!session.endless);
+  el('qEndlessStop').classList.toggle('hidden',!session.endless);
   el('qText').textContent=q.question;
 
   const fig=el('qFig'),img=el('qImg');
@@ -2027,6 +2033,13 @@ function next(){
   else { if(session.single&&session.returnTo==='list'){clearSession();renderList();showOnly('list');el('footer').classList.add('hidden');} else if(session.single&&session.returnTo==='stats'){clearSession();openStats();} else if(session.mode==='plan'&&!session.extra&&session.assignmentDate&&session.assignmentDate<dateKey()){clearSession();session=null;openStudyPlan();toast('未達成分を完了。今日以降の計画を再計算しました');} else finish(); }
 }
 function prev(){ if(session.mode!=='noback'&&session.idx>0){commitExplanationTime();session.idx--;saveSession();renderQuestion();} }
+
+function stopEndlessStudy(){
+  if(!session?.endless)return;
+  commitExplanationTime();
+  if(session.records.length){finish();return;}
+  clearSession();session=null;openStudyPlan();toast('無限演習を終了しました');
+}
 
 /* ============ 完了・見直し ============ */
 function finish(){
@@ -2306,6 +2319,7 @@ el('planStartBtn').addEventListener('click',startStudyPlan);
 el('planExtraBox').addEventListener('click',event=>{
   const button=event.target.closest('[data-extra-count]');if(button)startExtraStudy(button.dataset.extraCount);
 });
+el('planExtraEndless').addEventListener('click',()=>startExtraStudy(0,true));
 el('planExtraResume').addEventListener('click',()=>startExtraStudy(0));
 el('planUpcoming').addEventListener('click',event=>{
   const row=event.target.closest('[data-plan-date]');if(!row)return;
@@ -2359,6 +2373,7 @@ document.querySelectorAll('#filterBar .fbtn').forEach(b=>b.addEventListener('cli
 el('resumeCard').addEventListener('click',resumeSession);
 el('nextBtn').addEventListener('click',next);
 el('prevBtn').addEventListener('click',prev);
+el('qEndlessStop').addEventListener('click',stopEndlessStudy);
 el('homeBtn').addEventListener('click',()=>{ if(session&&session.records&&session.idx<session.uids.length){saveSession();} renderHome(); });
 el('slowSec').addEventListener('change',e=>{let v=parseInt(e.target.value)||60;v=Math.max(5,Math.min(600,v));settings.slowSec=v;e.target.value=v;saveSettings();toast(`基準を ${v}秒 に設定`);});
 el('resetStatsBtn').addEventListener('click',()=>{if(confirm(`${BOOKS[activeBook].title}の回答履歴・正答率・お気に入り・ランク履歴・学習記録を消します。共通レベルとXPは残ります。よろしいですか？`)){stats=emptyStats();statsByBook[activeBook]=stats;const p=planFor();Object.keys(p.items||{}).forEach(uid=>{if(planBookForUid(uid)===activeBook)delete p.items[uid];});p.updatedAt=Date.now();saveStats();saveStudyPlans();renderHome();toast(`${BOOKS[activeBook].title}の成績をリセットしました`);}});
