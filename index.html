@@ -586,7 +586,7 @@
     <div class="hero"><h1 style="font-size:24px;">🛤️ 忘却曲線ルート</h1><p id="planBookTitle">—</p></div>
     <div class="plan-rule"><b>新規問題を先に、そのあと復習</b>新規は問題集1の最初から掲載順で出題し、問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
     <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
-    <div class="plan-rule"><b>仕上がりの判定</b>忘却曲線に沿った別日の復習で2回連続正解すると、自動で「習得済み」になります。同じ日の解き直しは連続回数に含めません。間違えた場合や「まだ説明できない」を選んだ場合は連続回数をリセットします。</div>
+    <div class="plan-rule"><b>仕上がりの判定</b>忘却曲線に沿った別日の復習で3回連続正解すると、自動で「習得済み」になります。同じ日の解き直しは連続回数に含めません。間違えた場合や「まだ説明できない」を選んだ場合は連続回数をリセットします。</div>
     <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、復習の間隔と優先度を調整します。</span></div>
     <div class="plan-grid">
       <div class="plan-card"><b id="planDueCount">0</b><span id="planDueLabel">今日までの復習</span></div>
@@ -1063,6 +1063,7 @@ function saveSectionUid(section,uid){
 /* ============ 学習計画（忘却曲線） ============ */
 const PLAN_INTERVALS=[1,3,7,14,30];
 const PLAN_EFFORTS=[100,80,70,60,50];
+const PLAN_CORRECT_STREAK_TARGET=3;
 const JP_HOLIDAYS=new Set([
   '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06','2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23',
   '2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22','2027-04-29','2027-05-03','2027-05-04','2027-05-05','2027-07-19','2027-08-11','2027-09-20','2027-09-23','2027-10-11','2027-11-03','2027-11-23'
@@ -1157,16 +1158,25 @@ function planRemainingEffort(item){
 }
 function planNextEffort(item){const round=planItemRound(item);return PLAN_EFFORTS[Math.min(round,PLAN_EFFORTS.length-1)];}
 function advancePlanCorrectStreak(item,correct,today){
-  const streak=Math.max(0,Math.min(2,+item?.correctStreak||0));
+  const streak=Math.max(0,Math.min(PLAN_CORRECT_STREAK_TARGET,+item?.correctStreak||0));
   if(!correct)return {correctStreak:0,correctStreakDate:null};
   if(item?.correctStreakDate===today)return {correctStreak:Math.max(1,streak),correctStreakDate:today};
-  return {correctStreak:Math.min(2,streak+1),correctStreakDate:today};
+  return {correctStreak:Math.min(PLAN_CORRECT_STREAK_TARGET,streak+1),correctStreakDate:today};
 }
 function planFor(){
-  if(!studyPlans.shared)studyPlans.shared={active:false,examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},lightDays:{},augustPrepV:1,items:{},assignments:{},daily:{date:dateKey(),count:0},updatedAt:0};
+  if(!studyPlans.shared)studyPlans.shared={active:false,examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},lightDays:{},augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,items:{},assignments:{},daily:{date:dateKey(),count:0},updatedAt:0};
   const p=studyPlans.shared;
   p.items=p.items||{};p.assignments=p.assignments||{};p.unavailable=p.unavailable||{};p.schoolOff=Object.assign(Object.fromEntries([...CAMPUS_SCHOOL_OFF].map(key=>[key,true])),p.schoolOff||{});p.lightDays=Object.assign({},CAMPUS_LIGHT_DAYS,p.lightDays||{});p.examDate=p.examDate||'2027-01-26';
   if(!p.augustPrepV){p.augustPrepV=1;p.updatedAt=Date.now();}
+  if((+p.correctStreakTargetV||0)<PLAN_CORRECT_STREAK_TARGET){
+    const today=dateKey(),finish=planFinishDate(p);
+    Object.values(p.items).forEach(item=>{
+      if(item.completed&&!item.explained&&(+item.correctStreak||0)<PLAN_CORRECT_STREAK_TARGET){
+        item.completed=false;item.due=today>finish?finish:today;item.updatedAt=Date.now();
+      }
+    });
+    p.correctStreakTargetV=PLAN_CORRECT_STREAK_TARGET;p.updatedAt=Date.now();safeSet(STORE_PLAN,studyPlans);
+  }
   p.finishLeadDays=Number.isFinite(+p.finishLeadDays)?Math.max(1,+p.finishLeadDays):30;
   const finish=planFinishDate(p);Object.values(p.items).forEach(item=>{if(!item.completed&&item.due>finish)item.due=finish;});
   if(!p.daily||p.daily.date!==dateKey())p.daily={date:dateKey(),count:0,effort:0};
@@ -1180,7 +1190,7 @@ function saveStudyPlans(sync=true){
 function rebuildStudyPlan(showMessage=true){
   const old=planFor(),today=dateKey(),latest={};
   Object.values(statsByBook).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>{if(a&&a.u&&(!latest[a.u]||(a.a||0)>latest[a.u]))latest[a.u]=a.a||0;}));
-  const p={active:true,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,lightDays:old.lightDays,augustPrepV:1,items:{},assignments:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
+  const p={active:true,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,lightDays:old.lightDays,augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,items:{},assignments:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
   Object.values(statsByBook).forEach(bookStats=>Object.entries(bookStats.perQ||{}).forEach(([uid,r])=>{
     if(((r.correct||0)+(r.wrong||0))<1)return;
     const last=latest[uid]?dateKey(new Date(latest[uid])):today;
@@ -1213,7 +1223,7 @@ function updateStudyPlan(uid,correct){
   }else{
     const round=Math.min(5,planItemRound(existing)+1),stage=correct?Math.min(round-1,PLAN_INTERVALS.length-1):0;
     const streak=advancePlanCorrectStreak(existing,correct,today);
-    const explained=correct&&!!existing.explained,completed=correct&&(explained||streak.correctStreak>=2);
+    const explained=correct&&!!existing.explained,completed=correct&&(explained||streak.correctStreak>=PLAN_CORRECT_STREAK_TARGET);
     const baseInterval=PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)];
     const nextDue=addPlanDays(today,correct?planPersonalInterval(uid,baseInterval):1);
     p.items[uid]={round,stage,due:completed?'9999-12-31':(nextDue>planFinishDate(p)?planFinishDate(p):nextDue),last:today,explained,...streak,completed,updatedAt:Date.now()};
