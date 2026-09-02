@@ -421,6 +421,11 @@
   .litem.resume-point{border-color:var(--green);background:#f1faf6;box-shadow:0 5px 18px rgba(6,103,73,.13);}
   .resume-tag{flex:none;font-size:11px;font-weight:800;color:#fff;background:var(--green);border-radius:999px;padding:3px 8px;white-space:nowrap;}
   .section-start-note{margin:0 0 12px;padding:11px 13px;border-radius:12px;background:#eaf4ef;color:var(--green-d);font-size:13px;font-weight:700;line-height:1.55;}
+  .section-mode-box{margin:0 0 14px;padding:14px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);}
+  .section-mode-box>b{display:block;color:var(--green-d);font-size:14px;margin-bottom:4px;}
+  #sectionModePicker{position:static;display:flex;flex-wrap:wrap;gap:7px;overflow:visible;padding:8px 0;background:transparent;}
+  #sectionModePicker .fbtn{padding:7px 11px;font-size:12px;}
+  .section-mode-note{margin:2px 0 0;color:var(--muted);font-size:11px;line-height:1.55;}
   .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;font-weight:700;
     padding:10px 16px;border-radius:999px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center;}
   .toast.show{opacity:.95;}
@@ -576,12 +581,6 @@
     <div class="modes">
       <button class="mode primary" id="planModeBtn"><div class="ic">🛤️</div><div class="t"><b>忘却曲線ルート</b><span id="planHomeCount">毎日の指定課題だけで問題集を仕上げる</span></div><div class="arr">›</div></button>
       <button class="mode primary" id="sectionModeBtn"><div class="ic">🗂️</div><div class="t"><b>セクションを選んで解く</b><span>科目・分野ごとに集中演習</span></div><div class="arr">›</div></button>
-      <button class="mode" data-mode="order"><div class="ic">📖</div><div class="t"><b>順番に解く</b><span>セクション順に出題</span></div><div class="arr">›</div></button>
-      <button class="mode" data-mode="review" id="reviewMode"><div class="ic">🔁</div><div class="t"><b>間違えた問題だけ復習</b><span id="reviewCount">対象なし</span></div><div class="arr">›</div></button>
-      <button class="mode" data-mode="fav" id="favMode"><div class="ic">⭐️</div><div class="t"><b>お気に入りだけ</b><span id="favCount">対象なし</span></div><div class="arr">›</div></button>
-      <button class="mode" data-mode="noback"><div class="ic">🚫</div><div class="t"><b>戻れない連問モード</b><span>本番風・後戻り不可・最後にまとめて確認</span></div><div class="arr">›</div></button>
-      <button class="mode" data-mode="image" id="imageMode"><div class="ic">🖼️</div><div class="t"><b>図・画像問題だけ</b><span id="imageCount">対象なし</span></div><div class="arr">›</div></button>
-      <button class="mode" data-mode="random"><div class="ic">🎲</div><div class="t"><b>ランダム出題</b><span>全問シャッフル＋解説あり</span></div><div class="arr">›</div></button>
     </div>
 
     <div class="sec-h">分析・設定</div>
@@ -745,22 +744,24 @@
   <!-- SECTION LIST -->
   <section id="sectionList" class="hidden">
     <div class="hero"><h1 style="font-size:22px;">🗂️ セクションを選んで解く</h1><p id="sectionListProgress">セクションをタップして演習を開始</p></div>
-    <div id="sectionListBody"></div>
-  </section>
-
-  <!-- SECTION PICK (順番/ランダム) -->
-  <section id="sectionPick" class="hidden">
-    <div class="hero"><h1 style="font-size:22px;" id="sectionPickTitle">—</h1><p id="sectionPickCount"></p></div>
-    <div class="modes">
-      <button class="mode primary" id="sectionPickOrder"><div class="ic">📖</div><div class="t"><b>順番に解く</b><span>セクション内の並び順</span></div><div class="arr">›</div></button>
-      <button class="mode" id="sectionPickRandom"><div class="ic">🎲</div><div class="t"><b>ランダム</b><span>セクション内をシャッフル</span></div><div class="arr">›</div></button>
+    <div class="section-mode-box">
+      <b>解き方を選ぶ</b>
+      <div class="filterbar" id="sectionModePicker">
+        <button class="fbtn on" data-section-mode="order">📖 順番</button>
+        <button class="fbtn" data-section-mode="random">🎲 ランダム</button>
+        <button class="fbtn" data-section-mode="review">🔁 間違いのみ</button>
+        <button class="fbtn" data-section-mode="fav">⭐️ お気に入り</button>
+        <button class="fbtn" data-section-mode="image">🖼️ 図・画像のみ</button>
+        <button class="fbtn" data-section-mode="noback">🚫 戻れない連問</button>
+      </div>
+      <p class="section-mode-note" id="sectionModeNote">掲載順で解きます。開始する問題も指定できます。</p>
     </div>
-    <div class="row-btns"><button class="ghost-btn" id="sectionPickBack">‹ 科目選択に戻る</button></div>
+    <div id="sectionListBody"></div>
   </section>
 
   <!-- SECTION START (開始問題を指定) -->
   <section id="sectionStart" class="hidden">
-    <div class="row-btns"><button class="ghost-btn" id="sectionStartBack">‹ 順番／ランダムの選択に戻る</button></div>
+    <div class="row-btns"><button class="ghost-btn" id="sectionStartBack">‹ セクション一覧に戻る</button></div>
     <div class="hero"><h1 style="font-size:22px;" id="sectionStartTitle">—</h1><p>どの問題から始めるか選んでください</p></div>
     <div id="sectionStartNote" class="section-start-note hidden"></div>
     <div id="sectionStartBody"></div>
@@ -843,7 +844,7 @@ let studyTime={days:{},migratedV:0};
 let studyPlans={shared:null,book1:null,book2:null};
 let studyChartRange=7;
 let planCalendarMonth=null;
-let settings={slowSec:60,activeBook:'book1'};
+let settings={slowSec:60,activeBook:'book1',sectionMode:'order'};
 let activeBook='book1';
 let session=null;       // {mode,uids,idx,records,sessionCorrect}
 let timer={start:0,iv:null,elapsedMs:0,running:false,active:false};
@@ -1680,7 +1681,7 @@ function migrateGameData(){
 }
 
 function toast(m){const t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
-function showOnly(id){['home','studyPlan','quiz','finish','stats','list','sectionList','sectionPick','sectionStart','leaderboard'].forEach(s=>el(s).classList.toggle('hidden',s!==id));}
+function showOnly(id){['home','studyPlan','quiz','finish','stats','list','sectionList','sectionStart','leaderboard'].forEach(s=>el(s).classList.toggle('hidden',s!==id));}
 function setProgress(p){el('pbarFill').style.width=Math.max(0,Math.min(100,p))+'%';}
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -1760,16 +1761,13 @@ function renderHome(){
     const masteryPct=ps.total?Math.round(ps.mastered/ps.total*100):0;
     el('planHomeCount').textContent=(!ps.studyToday?'今日は予定あり（休み）':(runnableBacklog.length?`未完了 ${runnableBacklog.length}問から再開`:(ps.pool.length?`${ps.augustPrep?'8月軽め':(ps.lightDay?'軽め・新規なし':'今日')} ${ps.pool.length}問（復習${ps.due.length} ＋ 新規${ps.fresh.length}）`:'今日の課題は完了')))+` ・ 習得${masteryPct}%`;
   }else el('planHomeCount').textContent='毎日の指定課題だけで問題集を仕上げる';
-  const wl=wrongList(); el('reviewCount').textContent=wl.length?`${wl.length} 問が対象`:'対象なし'; el('reviewMode').disabled=!wl.length;
-  const fl=favList(); el('favCount').textContent=fl.length?`${fl.length} 問が対象`:'対象なし'; el('favMode').disabled=!fl.length;
-  const il=imageList(); el('imageCount').textContent=il.length?`${il.length} 問が対象`:'対象なし'; el('imageMode').disabled=!il.length;
   el('slowSec').value=settings.slowSec;
   // resume
   const ses=safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey());
   const resumeAt=ses&&(Number.isInteger(ses.resumeIdx)?ses.resumeIdx:ses.idx);
   if(ses&&ses.uids&&Number.isInteger(resumeAt)&&resumeAt<ses.uids.length){
     el('resumeCard').classList.remove('hidden');
-    const nm=ses.extra?'追加学習':({random:'ランダム',order:'順番',review:'復習',fav:'お気に入り',noback:'連問',plan:'学習計画'}[ses.mode]||'');
+    const nm=ses.extra?'追加学習':({random:'ランダム',order:'順番',review:'復習',fav:'お気に入り',image:'図・画像',noback:'連問',plan:'学習計画'}[ses.mode]||'');
     const current=byUid(ses.uids[resumeAt]);
     el('resumeInfo').textContent=current
       ?`${nm}モード ・ ${qno(current)} から再開`
@@ -2037,7 +2035,7 @@ function finish(){
   showOnly('finish');el('footer').classList.add('hidden');setProgress(100);
   el('timerChip').classList.remove('show');clearInterval(timer.iv);
   const n=session.records.length,c=session.sessionCorrect;
-  const nm=session.extra?'追加学習':({random:'ランダム出題',order:'順番に解く',review:'間違い復習',fav:'お気に入り',noback:'戻れない連問',plan:'今日の学習計画'}[session.mode]||'');
+  const nm=session.extra?'追加学習':({random:'ランダム出題',order:'順番に解く',review:'間違い復習',fav:'お気に入り',image:'図・画像問題',noback:'戻れない連問',plan:'今日の学習計画'}[session.mode]||'');
   const answerT=session.records.reduce((s,r)=>s+(+r.time||0),0),explanationT=session.records.reduce((s,r)=>s+(+r.explanationTime||0),0),totT=answerT+explanationT;
   const totalTime=formatMinutesSeconds(totT);
   el('finScore').textContent=`${c} / ${n}`;
@@ -2188,6 +2186,22 @@ function renderList(){
 
 /* ============ セクションを選んで解く ============ */
 let pickedSection=null;
+const SECTION_MODE_INFO={
+  order:'掲載順で解きます。開始する問題も指定できます。',
+  random:'選んだセクション内の全問題をシャッフルします。',
+  review:'選んだセクション内で、最後に間違えた問題だけを出します。',
+  fav:'選んだセクション内のお気に入り問題だけを出します。',
+  image:'選んだセクション内の図・画像問題だけを出します。',
+  noback:'選んだセクションをシャッフルし、途中で前の問題へ戻らず最後に結果を確認します。'
+};
+function currentSectionMode(){return SECTION_MODE_INFO[settings.sectionMode]?settings.sectionMode:'order';}
+function sectionModeQuestions(sec,mode=currentSectionMode()){
+  let list=QUESTIONS.filter(q=>q.section===sec);
+  if(mode==='review')list=list.filter(q=>stats.perQ[qkey(q)]?.last==='wrong');
+  else if(mode==='fav')list=list.filter(q=>stats.perQ[qkey(q)]?.fav);
+  else if(mode==='image')list=list.filter(q=>q.has_image||q.image||q.image_base64);
+  return list;
+}
 function openSectionList(){
   el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
   renderSectionList();
@@ -2202,27 +2216,25 @@ function renderSectionList(){
   const body=el('sectionListBody'); body.innerHTML='';
   const groups=groupBySection(QUESTIONS);
   const secs=Object.keys(groups);
+  const mode=currentSectionMode();
+  document.querySelectorAll('[data-section-mode]').forEach(button=>button.classList.toggle('on',button.dataset.sectionMode===mode));
+  el('sectionModeNote').textContent=SECTION_MODE_INFO[mode];
   const overall=sectionStat(QUESTIONS);
   el('sectionListProgress').textContent=`全体進捗 ${overall.progress}%（${overall.solved}/${overall.total}問）`;
   if(!secs.length){ body.innerHTML='<div class="empty">問題データがありません。</div>'; return; }
   secs.forEach(sec=>{
     const it=document.createElement('div'); it.className='litem';
     const s=sectionStat(groups[sec]);
+    const targetCount=sectionModeQuestions(sec,mode).length;
     const col = s.acc==null ? '#9aa0a6' : (s.acc>=80?'#1f9d57':(s.acc>=60?'#d98a1f':'#d8453b'));
     const accHtml=`<span class="lacc" style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.35;margin-right:10px;white-space:nowrap;">`
       +`<span style="font-size:12px;font-weight:700;color:${col};">正答率 ${s.acc==null?'—':s.acc+'%'}</span>`
       +`<span style="font-size:11px;color:#65756e;font-weight:700;">進捗 ${s.progress}% <small style="font-size:10px;font-weight:500;color:#9aa0a6;">（${s.solved}/${s.total}問）</small></span></span>`;
-    it.innerHTML=`<span class="lq" style="font-weight:800;flex:1;">${escapeHtml(sec)}</span>${accHtml}<span class="lno">${groups[sec].length}問</span>`;
-    it.addEventListener('click',()=>openSectionPick(sec));
+    it.innerHTML=`<span class="lq" style="font-weight:800;flex:1;">${escapeHtml(sec)}</span>${accHtml}<span class="lno">${targetCount}問</span>`;
+    if(!targetCount){it.style.opacity='.48';it.setAttribute('aria-disabled','true');}
+    else it.addEventListener('click',()=>{pickedSection=sec;if(mode==='order')openSectionStart();else startSectionModeSession(mode);});
     body.appendChild(it);
   });
-}
-function openSectionPick(sec){
-  pickedSection=sec;
-  const n=QUESTIONS.filter(q=>q.section===sec).length;
-  el('sectionPickTitle').textContent=sec;
-  el('sectionPickCount').textContent=`${n} 問`;
-  showOnly('sectionPick');
 }
 function openSectionStart(){
   if(!pickedSection)return;
@@ -2254,8 +2266,8 @@ function openSectionStart(){
 }
 function startSectionModeSession(orderMode,startUid=null){
   if(!pickedSection)return;
-  let pool=QUESTIONS.filter(q=>q.section===pickedSection).map(qkey);
-  if(orderMode==='random')pool=shuffle(pool);
+  let pool=sectionModeQuestions(pickedSection,orderMode).map(qkey);
+  if(orderMode!=='order')pool=shuffle(pool);
   if(!pool.length){toast('対象の問題がありません');return;}
   let idx=startUid?pool.indexOf(startUid):0;
   if(idx<0)idx=0;
@@ -2285,7 +2297,6 @@ el('fileInput').addEventListener('change',e=>{
 });
 
 /* ============ イベント ============ */
-document.querySelectorAll('.mode[data-mode]').forEach(b=>b.addEventListener('click',()=>{if(!b.disabled)startSession(b.dataset.mode);}));
 document.querySelectorAll('.book-tab').forEach(b=>b.addEventListener('click',()=>switchBook(b.dataset.book)));
 el('statsBtn').addEventListener('click',openStats);
 document.querySelectorAll('[data-study-range]').forEach(button=>button.addEventListener('click',()=>{studyChartRange=+button.dataset.studyRange||7;renderStudyTime();}));
@@ -2340,10 +2351,10 @@ el('planRebuildBtn').addEventListener('click',()=>{
   if(confirm('現在の回答履歴から学習計画を作り直しますか？')){rebuildStudyPlan();renderStudyPlan();}
 });
 el('sectionModeBtn').addEventListener('click',openSectionList);
-el('sectionPickOrder').addEventListener('click',openSectionStart);
-el('sectionPickRandom').addEventListener('click',()=>startSectionModeSession('random'));
-el('sectionPickBack').addEventListener('click',()=>{showOnly('sectionList');});
-el('sectionStartBack').addEventListener('click',()=>{showOnly('sectionPick');});
+document.querySelectorAll('[data-section-mode]').forEach(button=>button.addEventListener('click',()=>{
+  settings.sectionMode=button.dataset.sectionMode;saveSettings();renderSectionList();
+}));
+el('sectionStartBack').addEventListener('click',openSectionList);
 document.querySelectorAll('#filterBar .fbtn').forEach(b=>b.addEventListener('click',()=>{listFilter=b.dataset.f;renderList();}));
 el('resumeCard').addEventListener('click',resumeSession);
 el('nextBtn').addEventListener('click',next);
