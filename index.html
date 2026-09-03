@@ -269,7 +269,8 @@
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 18px;}
   .qtext{font-size:17px;font-weight:700;line-height:1.65;margin:0 0 6px;white-space:pre-wrap;}
   .imgnote{font-size:12.5px;color:#9a6a18;background:#fff4e6;border-radius:10px;padding:9px 12px;margin:12px 0 2px;border:1px solid #f3e2c4;}
-  .qfig{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);margin:14px 0 2px;background:#fff;}
+  .qfig{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);margin:14px 0 2px;background:#fff;cursor:zoom-in;}
+  .image-zoom-hint{display:block;margin:7px auto 2px;border:0;background:transparent;color:var(--green);font-size:11px;font-weight:800;cursor:pointer;}
 
   .confrow{display:flex;align-items:center;gap:8px;margin:16px 0 2px;flex-wrap:wrap;}
   .confrow .clab{font-size:12px;font-weight:800;color:var(--muted);}
@@ -343,10 +344,19 @@
   .guide-viewer-scroll{min-height:0;flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 8px calc(20px + env(safe-area-inset-bottom));text-align:center;overflow-anchor:none;overscroll-behavior:contain;}
   .guide-pages{width:100%;max-width:976px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}
   .guide-page{position:relative;width:100%;aspect-ratio:976/1395;background:#fff;box-shadow:var(--shadow);overflow:hidden;}
-  .guide-page img{display:block;width:100%;height:100%;object-fit:contain;background:#fff;}
+  .guide-page img{display:block;width:100%;height:100%;object-fit:contain;background:#fff;cursor:zoom-in;}
   .guide-page-placeholder{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:13px;background:#fff;}
   .guide-page.loaded .guide-page-placeholder{display:none;}
   .guide-page-error{position:absolute;inset:0;display:grid;place-items:center;padding:24px;color:var(--wrong);font-size:14px;line-height:1.7;background:#fff;}
+
+  .image-zoom-viewer{position:fixed;inset:0;z-index:10050;display:flex;flex-direction:column;background:rgba(5,14,11,.96);color:#fff;}
+  .image-zoom-toolbar{position:relative;z-index:2;display:flex;align-items:center;gap:8px;padding:calc(9px + env(safe-area-inset-top)) 12px 9px;background:rgba(6,30,23,.92);}
+  .image-zoom-toolbar strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:13px;}
+  .image-zoom-toolbar button{min-width:42px;height:38px;border:1px solid rgba(255,255,255,.35);border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font-size:17px;font-weight:900;cursor:pointer;}
+  #imageZoomClose{width:auto;padding:0 12px;font-size:13px;}
+  .image-zoom-stage{position:relative;flex:1;min-height:0;overflow:hidden;display:grid;place-items:center;touch-action:none;user-select:none;-webkit-user-select:none;}
+  .image-zoom-stage img{display:block;max-width:100%;max-height:100%;object-fit:contain;transform-origin:center center;will-change:transform;-webkit-user-drag:none;}
+  .image-zoom-help{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);margin:0;padding:7px 11px;border-radius:999px;background:rgba(0,0,0,.55);font-size:11px;white-space:nowrap;pointer-events:none;}
 
   .footer{position:fixed;left:0;right:0;bottom:0;z-index:30;background:linear-gradient(180deg,rgba(245,247,245,0),rgba(245,247,245,.96) 30%);
     padding:14px 16px calc(14px + env(safe-area-inset-bottom));}
@@ -681,6 +691,7 @@
     <div class="card">
       <p class="qtext" id="qText"></p>
       <img class="qfig hidden" id="qFig" alt="問題の図">
+      <button type="button" class="image-zoom-hint hidden" id="qFigZoomBtn">🔍 タップして拡大</button>
       <div class="imgnote hidden" id="qImg"></div>
 
       <div class="skiprow" id="skipRow">
@@ -816,6 +827,10 @@
 
 <div class="reward-burst" id="rewardBurst" aria-hidden="true"></div>
 <div class="level-up" id="levelUp" aria-hidden="true"><div class="level-up-card"><small id="levelUpLabel">LEVEL UP</small><b id="levelUpNum">2</b><span id="levelUpMessage">新しいレベルに到達！</span></div></div>
+<div class="image-zoom-viewer hidden" id="imageZoomViewer" aria-hidden="true">
+  <div class="image-zoom-toolbar"><button type="button" id="imageZoomClose">閉じる</button><strong id="imageZoomTitle">画像</strong><button type="button" id="imageZoomOut" aria-label="縮小">−</button><button type="button" id="imageZoomReset" aria-label="等倍">1×</button><button type="button" id="imageZoomIn" aria-label="拡大">＋</button></div>
+  <div class="image-zoom-stage" id="imageZoomStage"><img id="imageZoomImage" alt="拡大画像" draggable="false"><p class="image-zoom-help">ピンチで拡大・縮小／指で移動</p></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -967,6 +982,7 @@ function buildGuidePages(){
     const img=document.createElement('img');
     img.alt=`ガイド編 p.${page}`;
     img.dataset.src=`guide/p${page}.webp`;
+    img.addEventListener('click',()=>openImageZoom(img.currentSrc||img.src,`ガイド編 p.${page}`));
     img.addEventListener('load',()=>{
       item.querySelector('.guide-page-error')?.remove();
       item.classList.add('loaded');
@@ -1024,6 +1040,38 @@ function closeGuide(){
   el('guideViewer').classList.add('hidden');
   document.body.style.overflow='';
   window.scrollTo(0,guideReturnScrollY);
+}
+const imageZoomState={scale:1,x:0,y:0,pointers:new Map(),lastDistance:0,lastCenter:null,lastPoint:null,bodyOverflow:''};
+function clampImageZoom(){
+  const image=el('imageZoomImage'),stage=el('imageZoomStage'),state=imageZoomState;
+  state.scale=Math.max(1,Math.min(5,state.scale));
+  if(state.scale===1){state.x=0;state.y=0;return;}
+  const maxX=Math.max(0,(image.offsetWidth*state.scale-stage.clientWidth)/2),maxY=Math.max(0,(image.offsetHeight*state.scale-stage.clientHeight)/2);
+  state.x=Math.max(-maxX,Math.min(maxX,state.x));state.y=Math.max(-maxY,Math.min(maxY,state.y));
+}
+function applyImageZoom(){
+  clampImageZoom();
+  el('imageZoomImage').style.transform=`translate3d(${imageZoomState.x}px,${imageZoomState.y}px,0) scale(${imageZoomState.scale})`;
+  el('imageZoomReset').textContent=`${imageZoomState.scale.toFixed(imageZoomState.scale%1?1:0)}×`;
+}
+function setImageZoom(nextScale,point=null,previousPoint=null){
+  const state=imageZoomState,stage=el('imageZoomStage'),oldScale=state.scale,next=Math.max(1,Math.min(5,nextScale));
+  if(point&&oldScale>0){
+    const rect=stage.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,prev=previousPoint||point,ratio=next/oldScale;
+    state.x=point.x-cx-(prev.x-cx-state.x)*ratio;state.y=point.y-cy-(prev.y-cy-state.y)*ratio;
+  }
+  state.scale=next;applyImageZoom();
+}
+function openImageZoom(src,title='画像'){
+  if(!src)return;
+  const state=imageZoomState;state.scale=1;state.x=0;state.y=0;state.pointers.clear();state.lastDistance=0;state.lastCenter=null;state.lastPoint=null;
+  state.bodyOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
+  el('imageZoomImage').src=src;el('imageZoomTitle').textContent=title;
+  el('imageZoomViewer').classList.remove('hidden');el('imageZoomViewer').setAttribute('aria-hidden','false');applyImageZoom();
+}
+function closeImageZoom(){
+  el('imageZoomViewer').classList.add('hidden');el('imageZoomViewer').setAttribute('aria-hidden','true');
+  el('imageZoomImage').removeAttribute('src');imageZoomState.pointers.clear();document.body.style.overflow=imageZoomState.bodyOverflow;
 }
 function renderGuideLinks(q){
   const guide=el('qGuide');
@@ -1939,6 +1987,7 @@ function renderQuestion(){
     if(q.has_image){img.textContent='🖼 '+(q.image_note||'この問題には画像があります。');img.classList.remove('hidden');}
     else img.classList.add('hidden');
   }
+  el('qFigZoomBtn').classList.toggle('hidden',fig.classList.contains('hidden'));
 
   // favorite
   const r=stats.perQ[qkey(q)];
@@ -2447,6 +2496,32 @@ el('resumeCard').addEventListener('click',resumeSession);
 el('nextBtn').addEventListener('click',next);
 el('prevBtn').addEventListener('click',prev);
 el('qEndlessStop').addEventListener('click',stopEndlessStudy);
+el('qFig').addEventListener('click',()=>openImageZoom(el('qFig').currentSrc||el('qFig').src,'問題の画像'));
+el('qFigZoomBtn').addEventListener('click',()=>openImageZoom(el('qFig').currentSrc||el('qFig').src,'問題の画像'));
+el('imageZoomClose').addEventListener('click',closeImageZoom);
+el('imageZoomOut').addEventListener('click',()=>setImageZoom(imageZoomState.scale-.5));
+el('imageZoomIn').addEventListener('click',()=>setImageZoom(imageZoomState.scale+.5));
+el('imageZoomReset').addEventListener('click',()=>{imageZoomState.scale=1;imageZoomState.x=0;imageZoomState.y=0;applyImageZoom();});
+el('imageZoomStage').addEventListener('wheel',event=>{event.preventDefault();setImageZoom(imageZoomState.scale*(event.deltaY<0?1.18:.85),{x:event.clientX,y:event.clientY});},{passive:false});
+el('imageZoomStage').addEventListener('dblclick',event=>setImageZoom(imageZoomState.scale>1?1:2.5,{x:event.clientX,y:event.clientY}));
+el('imageZoomStage').addEventListener('pointerdown',event=>{
+  const state=imageZoomState,stage=el('imageZoomStage');stage.setPointerCapture?.(event.pointerId);state.pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  if(state.pointers.size===1)state.lastPoint={x:event.clientX,y:event.clientY};
+  if(state.pointers.size===2){const points=[...state.pointers.values()],a=points[0],b=points[1];state.lastDistance=Math.hypot(a.x-b.x,a.y-b.y);state.lastCenter={x:(a.x+b.x)/2,y:(a.y+b.y)/2};state.lastPoint=null;}
+});
+el('imageZoomStage').addEventListener('pointermove',event=>{
+  const state=imageZoomState;if(!state.pointers.has(event.pointerId))return;event.preventDefault();state.pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  if(state.pointers.size>=2){
+    const points=[...state.pointers.values()],a=points[0],b=points[1],distance=Math.hypot(a.x-b.x,a.y-b.y),center={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+    if(state.lastDistance)setImageZoom(state.scale*distance/state.lastDistance,center,state.lastCenter);state.lastDistance=distance;state.lastCenter=center;
+  }else if(state.scale>1&&state.lastPoint){state.x+=event.clientX-state.lastPoint.x;state.y+=event.clientY-state.lastPoint.y;state.lastPoint={x:event.clientX,y:event.clientY};applyImageZoom();}
+});
+function endImageZoomPointer(event){
+  const state=imageZoomState;state.pointers.delete(event.pointerId);state.lastDistance=0;state.lastCenter=null;state.lastPoint=state.pointers.size===1?[...state.pointers.values()][0]:null;
+}
+el('imageZoomStage').addEventListener('pointerup',endImageZoomPointer);
+el('imageZoomStage').addEventListener('pointercancel',endImageZoomPointer);
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!el('imageZoomViewer').classList.contains('hidden'))closeImageZoom();});
 el('homeBtn').addEventListener('click',()=>{ if(session&&session.records&&session.idx<session.uids.length){saveSession();} renderHome(); });
 el('slowSec').addEventListener('change',e=>{let v=parseInt(e.target.value)||60;v=Math.max(5,Math.min(600,v));settings.slowSec=v;e.target.value=v;saveSettings();toast(`基準を ${v}秒 に設定`);});
 el('resetStatsBtn').addEventListener('click',()=>{if(confirm(`${BOOKS[activeBook].title}の回答履歴・正答率・お気に入り・ランク履歴・学習記録を消します。共通レベルとXPは残ります。よろしいですか？`)){stats=emptyStats();statsByBook[activeBook]=stats;const p=planFor();Object.keys(p.items||{}).forEach(uid=>{if(planBookForUid(uid)===activeBook)delete p.items[uid];});p.updatedAt=Date.now();saveStats();saveStudyPlans();renderHome();toast(`${BOOKS[activeBook].title}の成績をリセットしました`);}});
