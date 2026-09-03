@@ -340,11 +340,14 @@
   .guide-viewer-head{position:relative;z-index:2;flex:none;display:flex;align-items:center;gap:12px;min-height:56px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px 160px;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(20,40,30,.08);}
   .guide-viewer-head button{border:1px solid var(--line);background:#fff;color:var(--green-d);border-radius:999px;padding:8px 13px;font-size:13px;font-weight:800;cursor:pointer;}
   #guideCloseBtn{position:fixed;top:calc(10px + env(safe-area-inset-top));left:14px;z-index:10002;box-shadow:0 2px 10px rgba(20,40,30,.15);}
-  .guide-viewer-head strong{font-size:15px;color:var(--green-d);}
+  .guide-viewer-head strong{flex:1;min-width:0;font-size:15px;color:var(--green-d);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .guide-zoom-controls{display:flex;gap:5px;flex:none;}
+  .guide-zoom-controls button{min-width:35px;padding:7px 8px;border-radius:9px;font-size:15px;}
+  #guideZoomReset{min-width:43px;font-size:11px;}
   .guide-viewer-scroll{min-height:0;flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 8px calc(20px + env(safe-area-inset-bottom));text-align:center;overflow-anchor:none;overscroll-behavior:contain;}
   .guide-pages{width:100%;max-width:976px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}
   .guide-page{position:relative;width:100%;aspect-ratio:976/1395;background:#fff;box-shadow:var(--shadow);overflow:hidden;}
-  .guide-page img{display:block;width:100%;height:100%;object-fit:contain;background:#fff;cursor:zoom-in;}
+  .guide-page img{display:block;width:100%;height:100%;object-fit:contain;background:#fff;}
   .guide-page-placeholder{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:13px;background:#fff;}
   .guide-page.loaded .guide-page-placeholder{display:none;}
   .guide-page-error{position:absolute;inset:0;display:grid;place-items:center;padding:24px;color:var(--wrong);font-size:14px;line-height:1.7;background:#fff;}
@@ -507,6 +510,7 @@
   <div class="guide-viewer-head">
     <button id="guideCloseBtn" type="button">‹ 問題へ戻る</button>
     <strong id="guideTitle">ガイド編</strong>
+    <div class="guide-zoom-controls"><button id="guideZoomOut" type="button" aria-label="縮小">−</button><button id="guideZoomReset" type="button" aria-label="等倍">1×</button><button id="guideZoomIn" type="button" aria-label="拡大">＋</button></div>
   </div>
   <div class="guide-viewer-scroll" id="guideScroll">
     <div id="guidePages" class="guide-pages"></div>
@@ -967,6 +971,19 @@ const GUIDE_TOTAL_PAGES=681;
 let guidePagesBuilt=false;
 let guideLoadObserver=null;
 let guideReturnScrollY=0;
+const guideZoomState={scale:1,lastDistance:0,lastCenter:null};
+function applyGuideZoom(nextScale,point=null,previousPoint=null){
+  const scroll=el('guideScroll'),pages=el('guidePages'),oldScale=guideZoomState.scale,next=Math.max(1,Math.min(4,nextScale));
+  const current=point||{x:scroll.clientWidth/2,y:scroll.clientHeight/2},previous=previousPoint||current;
+  const contentX=(scroll.scrollLeft+previous.x)/oldScale,contentY=(scroll.scrollTop+previous.y)/oldScale;
+  guideZoomState.scale=next;pages.style.width=`${next*100}%`;pages.style.maxWidth=`${976*next}px`;
+  el('guideZoomReset').textContent=`${next.toFixed(next%1?1:0)}×`;
+  scroll.scrollLeft=Math.max(0,contentX*next-current.x);scroll.scrollTop=Math.max(0,contentY*next-current.y);
+}
+function resetGuideZoom(){
+  const pages=el('guidePages');guideZoomState.scale=1;guideZoomState.lastDistance=0;guideZoomState.lastCenter=null;
+  pages.style.width='100%';pages.style.maxWidth='976px';el('guideZoomReset').textContent='1×';
+}
 function buildGuidePages(){
   if(guidePagesBuilt)return;
   const host=el('guidePages'),scroll=el('guideScroll');
@@ -982,7 +999,6 @@ function buildGuidePages(){
     const img=document.createElement('img');
     img.alt=`ガイド編 p.${page}`;
     img.dataset.src=`guide/p${page}.webp`;
-    img.addEventListener('click',()=>openImageZoom(img.currentSrc||img.src,`ガイド編 p.${page}`));
     img.addEventListener('load',()=>{
       item.querySelector('.guide-page-error')?.remove();
       item.classList.add('loaded');
@@ -1027,6 +1043,7 @@ function updateGuideTitle(){
 function openGuide(page){
   const viewer=el('guideViewer');
   buildGuidePages();
+  resetGuideZoom();
   guideReturnScrollY=window.scrollY;
   el('guideTitle').textContent=`ガイド編 p.${page} / ${GUIDE_TOTAL_PAGES}`;
   viewer.classList.remove('hidden');
@@ -1088,6 +1105,23 @@ function renderGuideLinks(q){
 }
 el('guideCloseBtn').addEventListener('click',closeGuide);
 el('guideScroll').addEventListener('scroll',updateGuideTitle,{passive:true});
+el('guideZoomOut').addEventListener('click',()=>applyGuideZoom(guideZoomState.scale-.5));
+el('guideZoomIn').addEventListener('click',()=>applyGuideZoom(guideZoomState.scale+.5));
+el('guideZoomReset').addEventListener('click',()=>applyGuideZoom(1));
+el('guideScroll').addEventListener('touchstart',event=>{
+  if(event.touches.length!==2)return;
+  const rect=el('guideScroll').getBoundingClientRect(),a=event.touches[0],b=event.touches[1];
+  guideZoomState.lastDistance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+  guideZoomState.lastCenter={x:(a.clientX+b.clientX)/2-rect.left,y:(a.clientY+b.clientY)/2-rect.top};
+},{passive:true});
+el('guideScroll').addEventListener('touchmove',event=>{
+  if(event.touches.length!==2)return;event.preventDefault();
+  const rect=el('guideScroll').getBoundingClientRect(),a=event.touches[0],b=event.touches[1],distance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),center={x:(a.clientX+b.clientX)/2-rect.left,y:(a.clientY+b.clientY)/2-rect.top};
+  if(guideZoomState.lastDistance)applyGuideZoom(guideZoomState.scale*distance/guideZoomState.lastDistance,center,guideZoomState.lastCenter);
+  guideZoomState.lastDistance=distance;guideZoomState.lastCenter=center;
+},{passive:false});
+el('guideScroll').addEventListener('touchend',event=>{if(event.touches.length<2){guideZoomState.lastDistance=0;guideZoomState.lastCenter=null;}},{passive:true});
+el('guideScroll').addEventListener('wheel',event=>{if(!event.ctrlKey)return;event.preventDefault();const rect=el('guideScroll').getBoundingClientRect();applyGuideZoom(guideZoomState.scale*(event.deltaY<0?1.12:.89),{x:event.clientX-rect.left,y:event.clientY-rect.top});},{passive:false});
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&!el('guideViewer').classList.contains('hidden'))closeGuide();
 });
