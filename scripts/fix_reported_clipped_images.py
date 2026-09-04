@@ -62,33 +62,43 @@ def update_question(path: Path, uid: str, image: Image.Image, apply: bool) -> No
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--uid", choices=["E4-1-027", "E4-1-036", "E4-2-006", "D1-018"])
     args = parser.parse_args()
 
     enriched = json.loads((ROOT / "tmp/pdfs/enriched/臨床_E-4.json").read_text(encoding="utf-8"))
-    target_uids = {"E4-1-027", "E4-1-036"}
+    target_uids = {"E4-1-027", "E4-1-036", "E4-2-006"}
     sources = {
         question["uid"]: decode(question.get("image_base64") or question["image"])
         for question in enriched
         if question.get("uid") in target_uids
     }
 
-    cephalogram = compose(sources["E4-1-027"], [[(263, 62, 871, 386)]])
-    update_question(REPO / "data/E4.json", "E4-1-027", cephalogram, args.apply)
+    if args.uid in (None, "E4-1-027"):
+        cephalogram = compose(sources["E4-1-027"], [[(263, 62, 871, 386)]])
+        update_question(REPO / "data/E4.json", "E4-1-027", cephalogram, args.apply)
 
-    clinical = compose(
-        sources["E4-1-036"],
-        [
-            [(580, 138, 868, 352)],
-            [(195, 352, 583, 570), (580, 352, 868, 570)],
-            [(580, 568, 868, 750)],
-            [(210, 750, 868, 1086)],
-        ],
-    )
-    update_question(REPO / "data/E4.json", "E4-1-036", clinical, args.apply)
+    if args.uid in (None, "E4-1-036"):
+        clinical = compose(
+            sources["E4-1-036"],
+            [
+                [(580, 138, 868, 352)],
+                [(195, 352, 583, 570), (580, 352, 868, 570)],
+                [(580, 568, 868, 750)],
+                [(210, 750, 868, 1086)],
+            ],
+        )
+        update_question(REPO / "data/E4.json", "E4-1-036", clinical, args.apply)
 
-    rendered_page = Image.open(ROOT / "tmp/pdfs/current-fixes/book1-page-395.png").convert("RGB")
-    contact_angle = rendered_page.crop((720, 1625, 1405, 1788))
-    update_question(REPO / "data/D1-001-034.json", "D1-018", contact_angle, args.apply)
+    # Preserve both skull views and every (ア)〜(オ) callout. The old crop
+    # retained only the right-hand view and cut off its left-side labels.
+    if args.uid in (None, "E4-2-006"):
+        skull_fontanelles = compose(sources["E4-2-006"], [[(278, 58, 864, 349)]])
+        update_question(REPO / "data/E4.json", "E4-2-006", skull_fontanelles, args.apply)
+
+    if args.uid in (None, "D1-018"):
+        rendered_page = Image.open(ROOT / "tmp/pdfs/current-fixes/book1-page-395.png").convert("RGB")
+        contact_angle = rendered_page.crop((720, 1625, 1405, 1788))
+        update_question(REPO / "data/D1-001-034.json", "D1-018", contact_angle, args.apply)
 
 
 if __name__ == "__main__":
