@@ -1303,12 +1303,12 @@
       "D": "（エ）",
       "E": "（オ）"
     },
-    "answer": "C",
+    "answer": "D",
     "explanation_intro": "",
     "explanation": [
       {
         "mark": "○",
-        "labels": "C",
+        "labels": "D",
         "text": "周産期死亡とは妊娠満22週以後の死産と早期新生児死亡をいう。早期新生児死亡は生後1週未満の死亡である。"
       }
     ],
