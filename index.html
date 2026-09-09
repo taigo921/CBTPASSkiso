@@ -856,20 +856,31 @@ const BOOKS = {
 };
 
 const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
+const QUESTION_LOAD_PROMISES = {};
 
-async function loadDefaultQuestions() {
-  try {
-    await Promise.all(Object.entries(BOOKS).map(async ([book,config])=>{
-      const results=await Promise.all(config.files.map(file=>fetch(file).then(res=>{
-        if(!res.ok)throw new Error('fetch failed: '+file);
-        return res.json();
-      })));
-      DEFAULT_QUESTIONS_BY_BOOK[book]=results.flat();
-    }));
-  } catch(e) {
+function questionsLoaded(book){return Array.isArray(DEFAULT_QUESTIONS_BY_BOOK[book])&&DEFAULT_QUESTIONS_BY_BOOK[book].length>0;}
+async function loadBookQuestions(book) {
+  if(!BOOKS[book])throw new Error('unknown book: '+book);
+  if(questionsLoaded(book))return DEFAULT_QUESTIONS_BY_BOOK[book];
+  if(QUESTION_LOAD_PROMISES[book])return QUESTION_LOAD_PROMISES[book];
+  const config=BOOKS[book];
+  QUESTION_LOAD_PROMISES[book]=(async()=>{
+    const results=await Promise.all(config.files.map(file=>fetch(file).then(res=>{
+      if(!res.ok)throw new Error('fetch failed: '+file);
+      return res.json();
+    })));
+    DEFAULT_QUESTIONS_BY_BOOK[book]=results.flat();
+    return DEFAULT_QUESTIONS_BY_BOOK[book];
+  })();
+  try{return await QUESTION_LOAD_PROMISES[book];}
+  catch(e){delete QUESTION_LOAD_PROMISES[book];throw e;}
+}
+async function loadDefaultQuestions(books=Object.keys(BOOKS)) {
+  const targets=Array.isArray(books)?books:[books];
+  try{return await Promise.all(targets.map(loadBookQuestions));}
+  catch(e){
     console.warn('data/*.json の読み込み失敗（手動JSONで代用可）:', e);
-    DEFAULT_QUESTIONS_BY_BOOK.book1=[];
-    DEFAULT_QUESTIONS_BY_BOOK.book2=[];
+    throw e;
   }
 }
 
@@ -1914,8 +1925,12 @@ function renderHome(){
   showOnly('home'); el('footer').classList.add('hidden'); setProgress(0);
 }
 
-function switchBook(book){
+async function switchBook(book){
   if(!BOOKS[book]||book===activeBook)return;
+  if(!questionsLoaded(book)){
+    toast(`${BOOKS[book].title}を準備中…`);
+    try{await loadDefaultQuestions(book);}catch(_){toast('問題データを読み込めませんでした。通信を確認して再度お試しください');return;}
+  }
   if(session&&session.records&&session.idx<session.uids.length)saveSession();
   saveStats();
   activeBook=book;settings.activeBook=book;saveSettings();
@@ -2848,8 +2863,16 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
 /* ============ 初期化 ============ */
 (async () => {
   safeRemove(STORE_Q); // 古い手動読み込みデータを起動時に必ず消す
-  await loadDefaultQuestions();
+  // 旧形式の成績だけはUIDから問題集を判定するため、最初の一度だけ全問題を読む。
+  // 通常起動は選択中の問題集だけでホームを出し、ログイン後のクラウド成績反映を待たせない。
+  const needsLegacyQuestionMap=!safeGet(STORE_S_BOOKS)&&!!safeGet(STORE_S);
+  if(needsLegacyQuestionMap){try{await loadDefaultQuestions();}catch(_){}}
   load();
+  if(!needsLegacyQuestionMap){
+    try{await loadDefaultQuestions(activeBook);}catch(_){
+      // 従来と同じく空の状態で起動し、画面側で通信エラーを確認できるようにする。
+    }
+  }
   migrateStudyTimeData();
   migrateGameData();
   QUESTIONS = resolveQuestions();
@@ -2863,6 +2886,13 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   renderHome();
   window.cbtAppReady = true;
   if (window._pendingCloud) { cbtMergeCloud(window._pendingCloud); window._pendingCloud = null; }
+  const deferredBook=activeBook==='book1'?'book2':'book1';
+  // もう一方は初期表示後に読み込む。読み込み完了時にホームだけ更新して、計画の総問題数も揃える。
+  setTimeout(()=>{
+    loadDefaultQuestions(deferredBook).then(()=>{
+      if(!session&&!el('home').classList.contains('hidden'))renderHome();
+    }).catch(()=>{});
+  },0);
   // Safari file:// でlocalStorage使えない場合に警告
   if (!_lsAvail()) {
     setTimeout(() => toast('⚠️ 成績はページを閉じると消えます（Safari file://制限）'), 600);
