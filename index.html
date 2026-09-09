@@ -857,6 +857,20 @@ const BOOKS = {
 
 const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
+const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
+const offlineCacheWrites=[];
+
+function cacheQuestionResponse(file,response){
+  if(!('caches' in window)||!response.ok)return;
+  const task=caches.open(OFFLINE_CACHE_NAME).then(cache=>cache.put(new Request(file),response.clone())).catch(()=>{});
+  offlineCacheWrites.push(task);
+}
+async function finishOfflineQuestionCache(){await Promise.allSettled(offlineCacheWrites);}
+async function setupOfflineSupport(){
+  if(!('serviceWorker' in navigator))return;
+  try{await navigator.serviceWorker.register('./sw.js');}
+  catch(e){console.warn('オフライン用キャッシュを準備できませんでした:',e);}
+}
 
 function questionsLoaded(book){return Array.isArray(DEFAULT_QUESTIONS_BY_BOOK[book])&&DEFAULT_QUESTIONS_BY_BOOK[book].length>0;}
 async function loadBookQuestions(book) {
@@ -867,6 +881,7 @@ async function loadBookQuestions(book) {
   QUESTION_LOAD_PROMISES[book]=(async()=>{
     const results=await Promise.all(config.files.map(file=>fetch(file).then(res=>{
       if(!res.ok)throw new Error('fetch failed: '+file);
+      cacheQuestionResponse(file,res);
       return res.json();
     })));
     DEFAULT_QUESTIONS_BY_BOOK[book]=results.flat();
@@ -2713,6 +2728,10 @@ function cloudSyncSoon(){
   clearTimeout(_syncT);
   _syncT=setTimeout(()=>{ window.cbtCloud.save(fullStatsPayload()); },2000);
 }
+window.addEventListener('online',()=>{
+  if(window.cbtCloud&&window.cbtCloud.save){cloudSyncSoon();toast('オンラインに戻りました。学習記録を同期します');}
+});
+window.addEventListener('offline',()=>toast('オフライン中です。学習記録は端末に保存され、通信復帰後に同期します'));
 window.cbtStatsSummary=statsSummary;
 window.cbtFullPayload=fullStatsPayload;
 window.cbtMergeCloud=cbtMergeCloud;
@@ -2774,7 +2793,7 @@ async function renderLeaderboard(){
   body.innerHTML='<div class="lb-empty">読み込み中…</div>';
   let users;
   try{ users=await window.cbtCloud.fetchLeaderboard(); }
-  catch(e){ body.innerHTML='<div class="lb-empty">読み込みに失敗しました</div>'; return; }
+  catch(e){ body.innerHTML='<div class="lb-empty">'+(navigator.onLine?'読み込みに失敗しました':'オフライン中はランキングを表示できません')+'</div>'; return; }
   users=users.map(u=>{
     const bookStats=u.books&&u.books[activeBook];
     return Object.assign({},u,bookStats||(activeBook==='book1'?u:{}));
@@ -2886,11 +2905,14 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   renderHome();
   window.cbtAppReady = true;
   if (window._pendingCloud) { cbtMergeCloud(window._pendingCloud); window._pendingCloud = null; }
+  setupOfflineSupport();
   const deferredBook=activeBook==='book1'?'book2':'book1';
   // もう一方は初期表示後に読み込む。読み込み完了時にホームだけ更新して、計画の総問題数も揃える。
   setTimeout(()=>{
-    loadDefaultQuestions(deferredBook).then(()=>{
+    loadDefaultQuestions(deferredBook).then(async()=>{
+      await finishOfflineQuestionCache();
       if(!session&&!el('home').classList.contains('hidden'))renderHome();
+      if(navigator.onLine)toast('📥 オフライン用の問題データを保存しました');
     }).catch(()=>{});
   },0);
   // Safari file:// でlocalStorage使えない場合に警告
