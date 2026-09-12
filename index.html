@@ -2047,6 +2047,14 @@ function shuffledChoices(q){
 function displayedExplanationLabels(labels,map=choiceCanonicalToDisplay){
   return String(labels||'').replace(/[A-E]/g,key=>map[key]||key);
 }
+function explanationsInDisplayedOrder(explanations,map=choiceCanonicalToDisplay,choiceKeys=['A','B','C','D','E']){
+  // 選択肢は毎回シャッフルされるため、解説もその回に見えている A→E の順にそろえる。
+  return (explanations||[]).map((item,index)=>{
+    const labels=String(item?.labels||'').match(/[A-E]/g)||[];
+    const positions=labels.map(key=>choiceKeys.indexOf(map[key]||key)).filter(position=>position>=0);
+    return {item,index,position:positions.length?Math.min(...positions):Number.MAX_SAFE_INTEGER};
+  }).sort((a,b)=>a.position-b.position||a.index).map(entry=>entry.item);
+}
 function renderQuestion(){
   commitExplanationTime();
   if(session.mode==='plan'){
@@ -2232,7 +2240,7 @@ function submit(skip){
   const intro=el('expIntro');
   if(q.explanation_intro){intro.textContent=q.explanation_intro;intro.classList.remove('hidden');}else intro.classList.add('hidden');
   const list=el('expList');list.innerHTML='';
-  (q.explanation||[]).forEach(it=>{
+  explanationsInDisplayedOrder(q.explanation).forEach(it=>{
     const mk=it.mark||'';const cls=(mk.includes('✗')&&mk.includes('○'))?'':(mk.includes('○')?'o':(mk.includes('✗')?'x':''));
     const d=document.createElement('div');d.className='exp-item';
     d.innerHTML=`<span class="m ${cls}">${escapeHtml(mk)}</span><span><span class="lab">${escapeHtml(displayedExplanationLabels(it.labels))}：</span>${escapeHtml(it.text||'')}</span>`;
@@ -2291,7 +2299,7 @@ function finish(){
     const answerText=r.answer&&q.choices?.[r.answer]?`${r.answerDisplay||r.answer} ${q.choices[r.answer]}`:(r.answerDisplay||r.answer||'—');
     let h=`<div style="margin-bottom:6px;"><b>あなたの解答:</b> ${r.skip?'（スキップ）':escapeHtml(pickedText)}　/　<b>正解:</b> ${escapeHtml(answerText)}</div>`;
     if(q.explanation_intro)h+=`<div style="margin-bottom:6px;">${escapeHtml(q.explanation_intro)}</div>`;
-    (q.explanation||[]).forEach(it=>{h+=`<div style="margin-bottom:5px;"><b>${escapeHtml(it.mark||'')} ${escapeHtml(displayedExplanationLabels(it.labels,r.choiceMap||{}))}：</b>${escapeHtml(it.text||'')}</div>`;});
+    explanationsInDisplayedOrder(q.explanation,r.choiceMap||{},Object.keys(q.choices||{})).forEach(it=>{h+=`<div style="margin-bottom:5px;"><b>${escapeHtml(it.mark||'')} ${escapeHtml(displayedExplanationLabels(it.labels,r.choiceMap||{}))}：</b>${escapeHtml(it.text||'')}</div>`;});
     body.innerHTML=h;
     item.querySelector('.rev-top').addEventListener('click',()=>item.classList.toggle('open'));
     wrap.appendChild(item);
@@ -2821,17 +2829,28 @@ function closeAvatarCrop(){
 async function openLeaderboard(){
   el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
   showOnly('leaderboard');
-  el('lbBody').innerHTML='<div class="lb-empty">読み込み中…</div>';
-  if(window.cbtCloud&&window.cbtCloud.save){ try{ await window.cbtCloud.save(fullStatsPayload()); }catch(e){} }
+  // 成績の同期完了を待つと、順位取得までが直列になって遅くなる。保存は裏で進める。
+  if(window.cbtCloud&&window.cbtCloud.save){
+    const started=performance.now();
+    window.cbtCloud.save(fullStatsPayload()).then(()=>console.info(`[ランキング] 自分の成績同期 ${(performance.now()-started).toFixed(0)}ms`)).catch(()=>{});
+  }
   renderLeaderboard();
 }
+let leaderboardUsersCache=null;
 async function renderLeaderboard(){
   const body=el('lbBody');
   if(!(window.cbtCloud&&window.cbtCloud.fetchLeaderboard)){ body.innerHTML='<div class="lb-empty">ログインすると表示されます</div>'; el('lbMe').textContent=''; return; }
-  body.innerHTML='<div class="lb-empty">読み込み中…</div>';
-  let users;
-  try{ users=await window.cbtCloud.fetchLeaderboard(); }
-  catch(e){ body.innerHTML='<div class="lb-empty">'+(navigator.onLine?'読み込みに失敗しました':'オフライン中はランキングを表示できません')+'</div>'; return; }
+  let users=leaderboardUsersCache;
+  if(!users){
+    body.innerHTML='<div class="lb-empty">読み込み中…</div>';
+    const started=performance.now();
+    try{
+      users=await window.cbtCloud.fetchLeaderboard();
+      leaderboardUsersCache=users;
+      console.info(`[ランキング] Firestore取得 ${(performance.now()-started).toFixed(0)}ms / ${users.length}人`);
+    }
+    catch(e){ body.innerHTML='<div class="lb-empty">'+(navigator.onLine?'読み込みに失敗しました':'オフライン中はランキングを表示できません')+'</div>'; return; }
+  }
   users=users.map(u=>{
     const bookStats=u.books&&u.books[activeBook];
     return Object.assign({},u,bookStats||(activeBook==='book1'?u:{}));
@@ -2872,7 +2891,7 @@ async function renderLeaderboard(){
   el('lbMe').textContent = meIdx>=0? ('あなたは '+list.length+'人中 '+(meIdx+1)+'位') : (lbMetric==='accuracy'?'あなたはまだ10問未満（正答率ランキング対象外）':'');
 }
 el('rankBtn').addEventListener('click',openLeaderboard);
-el('lbRefresh').addEventListener('click',renderLeaderboard);
+el('lbRefresh').addEventListener('click',()=>{leaderboardUsersCache=null;renderLeaderboard();});
 el('lbRename').addEventListener('click',()=>{ if(window.cbtRename)window.cbtRename(); });
 el('lbAvatarBtn').addEventListener('click',()=>el('lbAvatarInput').click());
 el('lbAvatarInput').addEventListener('change',async event=>{
@@ -3158,6 +3177,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     window.cbtUser.username = v;
     try{ await db.collection('users').doc(window.cbtUser.uid).set({username:v}, {merge:true}); }catch(e){}
     if(typeof toast==='function') toast('名前を変更しました');
+    leaderboardUsersCache=null;
     if(typeof renderLeaderboard==='function') renderLeaderboard();
   };
   window.cbtSetAvatar = async function(avatar){
@@ -3165,6 +3185,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     if(!safeAvatar(avatar))throw new Error('写真を設定できませんでした');
     await db.collection('users').doc(window.cbtUser.uid).set({avatar:avatar}, {merge:true});
     window.cbtUser.avatar=avatar;
+    leaderboardUsersCache=null;
   };
 
   // メインアプリから使うクラウドAPI
