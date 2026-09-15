@@ -1430,7 +1430,7 @@ function planFor(){
   const finish=planFinishDate(p),today=dateKey();
   // 旧仕様の「completed=以後出題しない」を、5回＋仕上げ日確認へ移行する。
   if((+p.minimumFiveRoundsV||0)<PLAN_FINAL_REVIEW_VERSION){
-    Object.values(p.items).forEach(item=>{
+    Object.entries(p.items).forEach(([uid,item])=>{
       const mastered=planIsMastered(item);
       item.mastered=mastered;item.completed=mastered;item.finalReviewDone=!!item.finalReviewDone;
       const round=planItemRound(item);
