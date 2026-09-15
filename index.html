@@ -644,7 +644,7 @@
       <div class="plan-about-body">
         <div class="plan-rule"><b>新規問題を先に、そのあと復習</b>新規は問題集1の最初から掲載順で出題し、問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
         <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
-        <div class="plan-rule"><b>仕上がりの判定</b>忘却曲線に沿った別日の復習で3回連続正解すると「習得済み」になります。ただし出題は止めず、最低5回は解き、仕上げ日の直前にも最終確認として再出題します。同じ日の解き直しは連続回数に含めません。間違えた場合や「まだ説明できない」を選んだ場合は連続回数をリセットします。</div>
+        <div class="plan-rule"><b>仕上がりの判定</b>忘却曲線に沿った別日の復習で3回連続正解すると「習得済み」になります。ただし出題は止めず、最低5回は解きます。仕上げ前の最後の7日間で全問題をもう一度確認し、それがルートでの最後の出題です。同じ日の解き直しは連続回数に含めません。間違えた場合や「まだ説明できない」を選んだ場合は連続回数をリセットします。</div>
         <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、復習の間隔と優先度を調整します。</span></div>
         <div class="plan-rule"><b>5周の労力から毎日の量を逆算</b>初回100・2周目80・3周目70・4周目60・5周目50として計算します。土日祝と学校がない日は、平日の1.5倍を目安に多めの課題を出します。</div>
       </div>
@@ -1284,7 +1284,9 @@ const PLAN_INTERVALS=[1,3,7,14,30];
 const PLAN_EFFORTS=[100,80,70,60,50];
 const PLAN_CORRECT_STREAK_TARGET=3;
 const PLAN_MINIMUM_ROUNDS=5;
-const PLAN_FINAL_REVIEW_VERSION=1;
+const PLAN_FINAL_REVIEW_WINDOW_DAYS=7;
+const PLAN_FINAL_REVIEW_VERSION=2;
+const PLAN_FULL_EFFORT=PLAN_EFFORTS.reduce((sum,value)=>sum+value,0)+PLAN_EFFORTS[PLAN_MINIMUM_ROUNDS-1];
 const JP_HOLIDAYS=new Set([
   '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06','2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23',
   '2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22','2027-04-29','2027-05-03','2027-05-04','2027-05-05','2027-07-19','2027-08-11','2027-09-20','2027-09-23','2027-10-11','2027-11-03','2027-11-23'
@@ -1377,15 +1379,29 @@ function planIsMastered(item){return !!(item?.mastered||item?.completed);}
 function planRemainingEffort(item){
   const round=planItemRound(item);
   const remainingRounds=round>=PLAN_MINIMUM_ROUNDS?0:PLAN_EFFORTS.slice(round).reduce((sum,value)=>sum+value,0);
-  // 3連続正解で習得表示になっても、仕上げ日の最終確認は必ず残す。
-  const finalReview=planIsMastered(item)&&!item?.finalReviewDone?PLAN_EFFORTS[PLAN_MINIMUM_ROUNDS-1]:0;
+  // 習得表示に関係なく、最後の1週間の総確認を1回ぶん残す。
+  const finalReview=!item?.finalReviewDone?PLAN_EFFORTS[PLAN_MINIMUM_ROUNDS-1]:0;
   return remainingRounds+finalReview;
 }
 function planNextEffort(item){const round=planItemRound(item);return PLAN_EFFORTS[Math.min(round,PLAN_EFFORTS.length-1)];}
+function planFinalReviewDays(p){
+  const finish=planFinishDate(p),start=addPlanDays(finish,-(PLAN_FINAL_REVIEW_WINDOW_DAYS-1)),days=[];
+  for(let key=start;key<=finish;key=addPlanDays(key,1))if(isPlanStudyDay(key,p))days.push(key);
+  return days.length?days:[finish];
+}
+function planFinalReviewDate(uid,p){
+  const days=planFinalReviewDays(p),questions=planQuestions(),index=Math.max(0,questions.findIndex(q=>qkey(q)===uid));
+  return days[Math.min(days.length-1,Math.floor(index*Math.max(1,days.length)/Math.max(1,questions.length)))];
+}
+function planNewQuestionDeadline(p){
+  // 最も間隔が長くなった場合でも、5回目の後に最後の7日間の総確認を残す。
+  const maximumReviewDays=PLAN_INTERVALS.slice(0,PLAN_MINIMUM_ROUNDS-1).reduce((sum,interval)=>sum+Math.ceil(interval*1.4),0);
+  return addPlanDays(planFinalReviewDays(p)[0],-maximumReviewDays);
+}
 function planNextDue(uid,round,correct,today,p){
   const finish=planFinishDate(p);
-  // 5回目までは忘却曲線に沿って復習し、その後は仕上げ日に最終確認する。
-  if(round>=PLAN_MINIMUM_ROUNDS)return today>=finish?'9999-12-31':finish;
+  // 5回目までは忘却曲線に沿って復習し、その後は最後の7日間に総確認する。
+  if(round>=PLAN_MINIMUM_ROUNDS)return planFinalReviewDate(uid,p)<today?today:planFinalReviewDate(uid,p);
   const baseInterval=PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)];
   const due=addPlanDays(today,correct?planPersonalInterval(uid,baseInterval):1);
   return due>finish?finish:due;
@@ -1403,7 +1419,7 @@ function planFor(){
   if(!p.augustPrepV){p.augustPrepV=1;p.updatedAt=Date.now();}
   if((+p.correctStreakTargetV||0)<PLAN_CORRECT_STREAK_TARGET){
     const today=dateKey(),finish=planFinishDate(p);
-    Object.values(p.items).forEach(item=>{
+    Object.entries(p.items).forEach(([uid,item])=>{
       if(item.completed&&!item.explained&&(+item.correctStreak||0)<PLAN_CORRECT_STREAK_TARGET){
         item.completed=false;item.due=today>finish?finish:today;item.updatedAt=Date.now();
       }
@@ -1419,7 +1435,8 @@ function planFor(){
       item.mastered=mastered;item.completed=mastered;item.finalReviewDone=!!item.finalReviewDone;
       const round=planItemRound(item);
       if(item.finalReviewDone)return;
-      if(round>=PLAN_MINIMUM_ROUNDS)item.due=today>=finish?'9999-12-31':finish;
+      item.finalReviewDue=item.finalReviewDue||planFinalReviewDate(uid,p);
+      if(round>=PLAN_MINIMUM_ROUNDS)item.due=item.finalReviewDue<today?today:item.finalReviewDue;
       else if(item.due==='9999-12-31'||item.due>finish)item.due=planNextDue('',round,true,item.last||today,p);
       if(item.due<today)item.due=today;
       item.updatedAt=Date.now();
@@ -1443,7 +1460,7 @@ function rebuildStudyPlan(showMessage=true){
     if(((r.correct||0)+(r.wrong||0))<1)return;
     const last=latest[uid]?dateKey(new Date(latest[uid])):today;
     const round=Math.min(PLAN_MINIMUM_ROUNDS,(r.correct||0)+(r.wrong||0));
-    p.items[uid]={round,stage:Math.max(0,round-1),due:addPlanDays(last,1),last,explained:false,correctStreak:0,correctStreakDate:null,mastered:false,completed:false,finalReviewDone:false,updatedAt:Date.now()};
+    p.items[uid]={round,stage:Math.max(0,round-1),due:addPlanDays(last,1),last,explained:false,correctStreak:0,correctStreakDate:null,mastered:false,completed:false,finalReviewDue:planFinalReviewDate(uid,p),finalReviewDone:false,updatedAt:Date.now()};
   }));
   studyPlans.shared=p;saveStudyPlans();
   if(showMessage)toast('学習計画を作成しました');
@@ -1467,14 +1484,15 @@ function updateStudyPlan(uid,correct){
   if(!existing){
     p.daily.count=(p.daily.count||0)+1;
     const streak=advancePlanCorrectStreak(null,correct,today);
-    p.items[uid]={round:1,stage:0,due:planNextDue(uid,1,correct,today,p),last:today,explained:false,...streak,mastered:false,completed:false,finalReviewDone:false,updatedAt:Date.now()};
+    p.items[uid]={round:1,stage:0,due:planNextDue(uid,1,correct,today,p),last:today,explained:false,...streak,mastered:false,completed:false,finalReviewDue:planFinalReviewDate(uid,p),finalReviewDone:false,updatedAt:Date.now()};
   }else{
     const round=Math.min(PLAN_MINIMUM_ROUNDS,planItemRound(existing)+1),stage=correct?Math.min(round-1,PLAN_INTERVALS.length-1):0;
     const streak=advancePlanCorrectStreak(existing,correct,today);
     const explained=correct&&!!existing.explained;
     const mastered=correct&&streak.correctStreak>=PLAN_CORRECT_STREAK_TARGET;
-    const finalReviewDone=round>=PLAN_MINIMUM_ROUNDS&&today>=planFinishDate(p);
-    p.items[uid]={round,stage,due:finalReviewDone?'9999-12-31':planNextDue(uid,round,correct,today,p),last:today,explained,...streak,mastered,completed:mastered,finalReviewDone,updatedAt:Date.now()};
+    const finalReviewDue=existing.finalReviewDue||planFinalReviewDate(uid,p);
+    const finalReviewDone=planItemRound(existing)>=PLAN_MINIMUM_ROUNDS&&today>=finalReviewDue;
+    p.items[uid]={round,stage,due:finalReviewDone?'9999-12-31':planNextDue(uid,round,correct,today,p),last:today,explained,...streak,mastered,completed:mastered,finalReviewDue,finalReviewDone,updatedAt:Date.now()};
   }
   p.updatedAt=Date.now();saveStudyPlans();
 }
@@ -1518,12 +1536,12 @@ function studyPlanSummary(){
   }
   const dueAll=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.finalReviewDone&&item.due<=today&&(phaseBook!=='book1'||planBookForUid(uid)==='book1')).sort((a,b)=>a[1].due.localeCompare(b[1].due)||personal.scoreFor(b[0])-personal.scoreFor(a[0])).map(([uid])=>uid);
   let due=studyToday?((lightDay||augustPrep)?dueAll.slice(0,30):dueAll):[];
-  const remainingEffort=all.reduce((sum,q)=>sum+(p.items[qkey(q)]?planRemainingEffort(p.items[qkey(q)]):PLAN_EFFORTS.reduce((a,b)=>a+b,0)),0);
+  const remainingEffort=all.reduce((sum,q)=>sum+(p.items[qkey(q)]?planRemainingEffort(p.items[qkey(q)]):PLAN_FULL_EFFORT),0);
   const capacity=Math.max(1,planCapacitySum(today,addPlanDays(finishDate,1),p));
   const baseEffort=remainingEffort/capacity,todayBudget=studyToday?Math.max(0,baseEffort*planDayFactor(today,p)-(p.daily.effort||0)):0;
   const reviewEffort=due.reduce((sum,uid)=>sum+planNextEffort(p.items[uid]),0);
   const budgetFresh=Math.max(0,Math.floor((todayBudget-reviewEffort)/PLAN_EFFORTS[0]));
-  const introEnd=addPlanDays(finishDate,-PLAN_INTERVALS.slice(0,4).reduce((a,b)=>a+b,0));
+  const introEnd=planNewQuestionDeadline(p);
   const introDays=Math.max(1,countPlanStudyDays(today,addPlanDays(introEnd<today?finishDate:introEnd,1),p));
   const doneToday=p.daily.date===today?(p.daily.count||0):0;
   const urgentFresh=unseen.length?Math.max(0,Math.ceil((unseen.length+doneToday)/introDays)-doneToday):0;
@@ -1557,12 +1575,12 @@ function planUpcomingRows(s){
       });
       const review=reviewed.length;
       const queueEffort=queue.reduce((sum,item)=>sum+(item.round>=5?PLAN_EFFORTS[4]:PLAN_EFFORTS.slice(item.round).reduce((a,b)=>a+b,0)),0);
-      const unseen=unseenBook1+unseenBook2,remainingEffort=queueEffort+unseen*PLAN_EFFORTS.reduce((a,b)=>a+b,0);
+      const unseen=unseenBook1+unseenBook2,remainingEffort=queueEffort+unseen*PLAN_FULL_EFFORT;
       const capacity=Math.max(1,planCapacitySum(key,addPlanDays(s.finishDate,1),p));
       const budget=remainingEffort/capacity*planDayFactor(key,p);
       const reviewEffort=reviewed.reduce((sum,item)=>sum+PLAN_EFFORTS[Math.min(item.round,4)],0);
       let fresh=Math.max(0,Math.floor((budget-reviewEffort)/PLAN_EFFORTS[0]));
-      const introEnd=addPlanDays(s.finishDate,-PLAN_INTERVALS.slice(0,4).reduce((a,b)=>a+b,0));
+      const introEnd=planNewQuestionDeadline(p);
       const introDays=Math.max(1,countPlanStudyDays(key,addPlanDays(introEnd<key?s.finishDate:introEnd,1),p));
       fresh=Math.max(fresh,unseen?Math.ceil(unseen/introDays):0);
       if(light)fresh=0;
