@@ -619,7 +619,6 @@
     <div class="modes">
       <button class="mode" id="listBtn"><div class="ic">📋</div><div class="t"><b>問題一覧から選ぶ</b><span>状態を見ながら1問ずつ解く</span></div><div class="arr">›</div></button>
       <button class="mode" id="statsBtn"><div class="ic">📊</div><div class="t"><b>学習分析・勉強時間</b><span id="studyTimeHome">今日の勉強時間 0分</span></div><div class="arr">›</div></button>
-      <button class="mode" id="rankBtn"><div class="ic">🏆</div><div class="t"><b>みんなでランキング</b><span id="rankSub">友達と正答率・正解数・連続正解で競う</span></div><div class="arr">›</div></button>
     </div>
     <div class="offline-status pending" id="offlineStatus" aria-live="polite">📥 オフライン準備を確認中…</div>
 
@@ -863,6 +862,8 @@ const BOOKS = {
 const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
+// 一時休止中。再開時は true に戻すだけで、ランキング記録はそのまま利用できる。
+const LEADERBOARD_ENABLED=false;
 const offlineCacheWrites=[];
 
 function cacheQuestionResponse(file,response){
@@ -2827,6 +2828,7 @@ function closeAvatarCrop(){
   el('avatarCropModal').classList.remove('show');el('avatarCropFrame').classList.remove('dragging');avatarCropState=null;
 }
 async function openLeaderboard(){
+  if(!LEADERBOARD_ENABLED){toast('ランキングは現在休止中です');return;}
   el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
   showOnly('leaderboard');
   // 成績の同期完了を待つと、順位取得までが直列になって遅くなる。保存は裏で進める。
@@ -2890,7 +2892,7 @@ async function renderLeaderboard(){
   const meIdx=list.findIndex(u=>u.uid===meUid);
   el('lbMe').textContent = meIdx>=0? ('あなたは '+list.length+'人中 '+(meIdx+1)+'位') : (lbMetric==='accuracy'?'あなたはまだ10問未満（正答率ランキング対象外）':'');
 }
-el('rankBtn').addEventListener('click',openLeaderboard);
+const rankButton=el('rankBtn');if(LEADERBOARD_ENABLED&&rankButton)rankButton.addEventListener('click',openLeaderboard);
 el('lbRefresh').addEventListener('click',()=>{leaderboardUsersCache=null;renderLeaderboard();});
 el('lbRename').addEventListener('click',()=>{ if(window.cbtRename)window.cbtRename(); });
 el('lbAvatarBtn').addEventListener('click',()=>el('lbAvatarInput').click());
