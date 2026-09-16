@@ -2875,6 +2875,12 @@ function cloudSyncSoon(){
   setCloudSyncState('pending');
   _syncT=setTimeout(async()=>{
     try{
+      // 先にサーバー側を統合する。古い端末が起動直後のローカル記録だけで、
+      // 別端末の新しい回答数を上書きしないための順番。
+      if(window.cbtCloud.readLatest&&window.cbtMergeCloud){
+        const latest=await window.cbtCloud.readLatest();
+        if(latest)window.cbtMergeCloud(latest);
+      }
       await window.cbtCloud.save(fullStatsPayload());
       // 通知だけに頼ると、復帰直後の端末で古いキャッシュのまま表示されることがある。
       // 保存後はサーバー上の確定データを読み直して、端末間の集計を必ず統合する。
@@ -3395,10 +3401,18 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     setCloudSyncState('pending');
     // プロフィール読み込み（無ければユーザーネーム登録）
     let snap=null;
-    try{ snap = await db.collection('users').doc(user.uid).get(); }
+    try{
+      // 端末に残ったFirestoreキャッシュではなく、まずサーバーの最新記録を使う。
+      // これをしないと古い端末が起動時に新しい端末の回答数を上書きしてしまう。
+      snap = await db.collection('users').doc(user.uid).get({source:'server'});
+    }
     catch(error){
       console.warn('cloud profile read error',error);
-      setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'read failed')});
+      // オフライン時だけは、端末内キャッシュで従来どおり開けるようにする。
+      if(!navigator.onLine){
+        try{snap=await db.collection('users').doc(user.uid).get({source:'cache'});}
+        catch(_){setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'read failed')});}
+      }else setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'read failed')});
     }
     const cloudData = (snap && snap.exists) ? snap.data() : null;
     if(cloudData && cloudData.username){
