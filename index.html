@@ -1287,6 +1287,7 @@ const PLAN_MINIMUM_ROUNDS=5;
 const PLAN_FINAL_REVIEW_WINDOW_DAYS=7;
 const PLAN_FINAL_REVIEW_VERSION=2;
 const PLAN_FULL_EFFORT=PLAN_EFFORTS.reduce((sum,value)=>sum+value,0)+PLAN_EFFORTS[PLAN_MINIMUM_ROUNDS-1];
+const PLAN_REVIEW_BASE_LIMIT=70;
 const JP_HOLIDAYS=new Set([
   '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06','2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23',
   '2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22','2027-04-29','2027-05-03','2027-05-04','2027-05-05','2027-07-19','2027-08-11','2027-09-20','2027-09-23','2027-10-11','2027-11-03','2027-11-23'
@@ -1364,6 +1365,11 @@ function planIsHighLoadDay(key,p){
   return day===0||day===6||JP_HOLIDAYS.has(key)||!!(p.schoolOff||{})[key];
 }
 function planDayFactor(key,p){return planIsLightDay(key,p)?0.35:(planIsAugustPrep(key)?0.45:(planIsHighLoadDay(key,p)?1.5:1));}
+function planReviewLimit(key,p){
+  if(planIsLightDay(key,p)||planIsAugustPrep(key))return 30;
+  // 平日は復習を詰め込みすぎず、土日祝・学校がない日は1.5倍まで受け持つ。
+  return Math.round(PLAN_REVIEW_BASE_LIMIT*planDayFactor(key,p));
+}
 function countPlanStudyDays(from,to,p){
   let count=0,key=from,guard=0;
   while(key<to&&guard++<1000){if(isPlanStudyDay(key,p))count++;key=addPlanDays(key,1);}
@@ -1535,7 +1541,7 @@ function studyPlanSummary(){
     if(migrated){p.updatedAt=Date.now();saveStudyPlans();}
   }
   const dueAll=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.finalReviewDone&&item.due<=today&&(phaseBook!=='book1'||planBookForUid(uid)==='book1')).sort((a,b)=>a[1].due.localeCompare(b[1].due)||personal.scoreFor(b[0])-personal.scoreFor(a[0])).map(([uid])=>uid);
-  let due=studyToday?((lightDay||augustPrep)?dueAll.slice(0,30):dueAll):[];
+  let due=studyToday?dueAll.slice(0,planReviewLimit(today,p)):[];
   const remainingEffort=all.reduce((sum,q)=>sum+(p.items[qkey(q)]?planRemainingEffort(p.items[qkey(q)]):PLAN_FULL_EFFORT),0);
   const capacity=Math.max(1,planCapacitySum(today,addPlanDays(finishDate,1),p));
   const baseEffort=remainingEffort/capacity,todayBudget=studyToday?Math.max(0,baseEffort*planDayFactor(today,p)-(p.daily.effort||0)):0;
@@ -1566,7 +1572,7 @@ function planUpcomingRows(s){
       const activePhase=unseenBook1>0?'book1':'book2';
       const ready=queue.filter(item=>item.due<=key&&(activePhase!=='book1'||item.book==='book1')).sort((a,b)=>a.due.localeCompare(b.due)||(b.score||1)-(a.score||1));
       const deferred=queue.filter(item=>item.due<=key&&activePhase==='book1'&&item.book!=='book1');
-      const light=planIsLightDay(key,p),augustPrep=planIsAugustPrep(key),future=queue.filter(item=>item.due>key),alreadyDone=key===s.today&&!!p.assignments?.[key]?.done,reviewed=alreadyDone?[]:((light||augustPrep)?ready.slice(0,30):ready);
+      const light=planIsLightDay(key,p),augustPrep=planIsAugustPrep(key),future=queue.filter(item=>item.due>key),alreadyDone=key===s.today&&!!p.assignments?.[key]?.done,reviewed=alreadyDone?[]:ready.slice(0,planReviewLimit(key,p));
       queue=[...future,...deferred,...ready.slice(reviewed.length)];
       reviewed.forEach(item=>{
         const round=Math.min(PLAN_MINIMUM_ROUNDS,(item.round||0)+1);
