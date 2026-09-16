@@ -2876,6 +2876,12 @@ function cloudSyncSoon(){
   _syncT=setTimeout(async()=>{
     try{
       await window.cbtCloud.save(fullStatsPayload());
+      // 通知だけに頼ると、復帰直後の端末で古いキャッシュのまま表示されることがある。
+      // 保存後はサーバー上の確定データを読み直して、端末間の集計を必ず統合する。
+      if(window.cbtCloud.readLatest&&window.cbtMergeCloud){
+        const latest=await window.cbtCloud.readLatest();
+        if(latest)window.cbtMergeCloud(latest);
+      }
       setCloudSyncState('ready',{savedAt:Date.now(),error:''});
     }catch(error){
       console.warn('cloud sync error',error);
@@ -3318,6 +3324,13 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       }, payload||{});
       await db.collection('users').doc(window.cbtUser.uid).set(body, {merge:true});
     },
+    // cache ではなく Firestore サーバーから読む。同期表示を「保存要求を出した」だけで
+    // 完了にせず、別端末の回答も含む確定値へ統合するために使う。
+    readLatest: async function(){
+      if(!window.cbtUser)return null;
+      const snap=await db.collection('users').doc(window.cbtUser.uid).get({source:'server'});
+      return snap.exists?snap.data():null;
+    },
     fetchLeaderboard: async function(){
       const snap = await db.collection('users').get();
       const arr = [];
@@ -3405,6 +3418,9 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       try{
         if(window.cbtFullPayload){
           await window.cbtCloud.save(window.cbtFullPayload());
+          // 初回起動時も、書き込み直後のサーバー値を取り込んでから同期済みにする。
+          const latest=await window.cbtCloud.readLatest();
+          if(latest&&window.cbtMergeCloud)window.cbtMergeCloud(latest);
           setCloudSyncState('ready',{savedAt:Date.now(),error:''});
         }
       }catch(error){
