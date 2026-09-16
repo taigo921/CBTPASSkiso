@@ -870,6 +870,8 @@ const BOOKS = {
 const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
+// ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
+const SERVICE_WORKER_BUILD='20260916-sync-3';
 // 一時休止中。再開時は true に戻すだけで、ランキング記録はそのまま利用できる。
 const LEADERBOARD_ENABLED=false;
 const offlineCacheWrites=[];
@@ -885,7 +887,17 @@ function cacheQuestionResponse(file,response){
 async function finishOfflineQuestionCache(){await Promise.allSettled(offlineCacheWrites);}
 async function setupOfflineSupport(){
   if(!('serviceWorker' in navigator))return;
-  try{await navigator.serviceWorker.register('./sw.js');}
+  try{
+    const reloadKey=`cbt-sw-reloaded-${SERVICE_WORKER_BUILD}`;
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      // 新しいService Workerへ切り替わった初回だけ再読み込みする。連続リロードは防ぐ。
+      if(sessionStorage.getItem(reloadKey))return;
+      sessionStorage.setItem(reloadKey,'1');
+      window.location.reload();
+    },{once:true});
+    const registration=await navigator.serviceWorker.register(`./sw.js?build=${SERVICE_WORKER_BUILD}`,{updateViaCache:'none'});
+    registration.update().catch(()=>{});
+  }
   catch(e){console.warn('オフライン用キャッシュを準備できませんでした:',e);}
 }
 function offlineQuestionFiles(){return Object.values(BOOKS).flatMap(book=>book.files);}
@@ -2898,6 +2910,10 @@ function cloudSyncSoon(){
 window.addEventListener('online',()=>{
   if(window.cbtCloud&&window.cbtCloud.save){cloudSyncSoon();toast('オンラインに戻りました。学習記録を同期します');}
   renderOfflineStatus();renderCloudStatus();
+});
+// iPhone/iPadのホーム画面アプリを再び前面に出した時も、端末間の差分を取り込む。
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&navigator.onLine&&window.cbtUser&&window.cbtCloud&&window.cbtCloud.save)cloudSyncSoon();
 });
 window.addEventListener('offline',()=>{toast('オフライン中です。学習記録は端末に保存され、通信復帰後に同期します');renderOfflineStatus();renderCloudStatus();});
 window.cbtStatsSummary=statsSummary;
