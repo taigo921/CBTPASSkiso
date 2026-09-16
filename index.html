@@ -24,6 +24,8 @@
   #authGate .auth-brand span{font-size:13px;color:#5d6b64;margin-left:6px;font-weight:600;}
   #authGate .auth-lead{color:#13201b;font-size:14px;margin:18px 0 22px;line-height:1.7;}
   #authGate #gbtn{display:flex;justify-content:center;min-height:44px;}
+  #authGate .auth-email-toggle{display:block;margin:10px auto 0;border:0;background:none;color:#0E5E45;font-size:12px;font-weight:700;text-decoration:underline;cursor:pointer;}
+  #authGate .auth-email-toggle.hidden{display:none;}
   #authGate .auth-browser-help{margin:14px auto 0;padding:12px 14px;border-radius:12px;background:#f2f7f5;color:#4c6259;font-size:12px;line-height:1.6;}
   #authGate .auth-browser-help strong{display:block;color:#0E5E45;font-size:13px;margin-bottom:4px;}
   #authGate .auth-browser-help a{display:inline-flex;margin-top:8px;padding:8px 16px;border-radius:18px;background:#0E5E45;color:#fff;text-decoration:none;font-weight:700;}
@@ -194,6 +196,10 @@
   .offline-status.ready{color:var(--green-d);}
   .offline-status.pending{color:#9a6a12;}
   .offline-status.unavailable{color:#9a5050;}
+  .cloud-status{margin:5px 0 2px;text-align:center;font-size:11px;font-weight:800;color:var(--muted);}
+  .cloud-status.ready{color:var(--green-d);}
+  .cloud-status.pending{color:#9a6a12;}
+  .cloud-status.unavailable{color:#9a5050;}
   .plan-rule{margin:12px 0 16px;padding:14px 16px;background:#edf8f3;border:1px solid #d4e9df;border-radius:var(--radius);color:var(--green-d);font-size:12.5px;font-weight:700;line-height:1.7;}
   .plan-rule b{display:block;font-size:14px;margin-bottom:2px;}
   .plan-about{margin:12px 0 16px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
@@ -480,6 +486,7 @@
     <div class="auth-brand">歯科CBT<span>クイズ</span></div>
     <p class="auth-lead">友達だけの限定アプリです。<br>許可されたメールアドレスでログインしてください。</p>
     <div id="gbtn" style="display:flex;justify-content:center;min-height:44px;"></div>
+    <button type="button" class="auth-email-toggle" id="authEmailToggle">ホーム画面アプリと同じメール・パスワードでログイン</button>
     <div class="auth-email" id="authEmailBox">
       <div class="auth-first-guide">
         <strong>初めて使う方</strong>
@@ -621,6 +628,7 @@
       <button class="mode" id="statsBtn"><div class="ic">📊</div><div class="t"><b>学習分析・勉強時間</b><span id="studyTimeHome">今日の勉強時間 0分</span></div><div class="arr">›</div></button>
     </div>
     <div class="offline-status pending" id="offlineStatus" aria-live="polite">📥 オフライン準備を確認中…</div>
+    <div class="cloud-status pending" id="cloudStatus" aria-live="polite">☁️ 学習記録の同期を確認中…</div>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -907,6 +915,39 @@ function renderOfflineStatus(){
       :`📥 オフライン準備中：${status.done}/${status.total}ファイル`;
     target.title='問題データは、この端末のブラウザ内に保存されます。';
   });
+}
+
+// 同期先は Firebase Auth の UID。メールアドレスが同じでも、ログイン方法が別で UID が違うと別記録になるため、
+// 端末間で末尾の同期IDを照合できるようにする。
+const cloudSyncState={phase:'waiting',savedAt:0,error:''};
+function syncIdSuffix(){return window.cbtUser?.uid?String(window.cbtUser.uid).slice(-6):'';}
+function formatSyncClock(stamp){
+  if(!stamp)return '';
+  try{return new Intl.DateTimeFormat('ja-JP',{hour:'2-digit',minute:'2-digit'}).format(new Date(stamp));}
+  catch(_){return new Date(stamp).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});}
+}
+function renderCloudStatus(){
+  const target=el('cloudStatus');if(!target)return;
+  const suffix=syncIdSuffix(),id=suffix?`・ 同期ID …${suffix}`:'';
+  target.className=`cloud-status ${cloudSyncState.phase}`;
+  if(!window.cbtUser){target.textContent='☁️ 学習記録の同期を確認中…';return;}
+  if(!navigator.onLine){target.className='cloud-status pending';target.textContent=`📴 オフライン中：この端末に保存中${id}`;return;}
+  if(cloudSyncState.phase==='unavailable'){
+    target.textContent=`⚠️ 同期できません。通信を確認してください${id}`;
+  }else if(cloudSyncState.phase==='pending'){
+    target.textContent=`☁️ 学習記録を同期中…${id}`;
+  }else if(cloudSyncState.savedAt){
+    target.textContent=`☁️ 同期済み ${formatSyncClock(cloudSyncState.savedAt)}${id}`;
+  }else{
+    target.textContent=`☁️ クラウドに接続済み${id}`;
+  }
+  target.title='同じ同期IDの端末どうしで、学習記録を共有します。';
+}
+function setCloudSyncState(phase,options={}){
+  cloudSyncState.phase=phase;
+  if(options.savedAt)cloudSyncState.savedAt=options.savedAt;
+  if(options.error!==undefined)cloudSyncState.error=options.error||'';
+  renderCloudStatus();
 }
 
 function questionsLoaded(book){return Array.isArray(DEFAULT_QUESTIONS_BY_BOOK[book])&&DEFAULT_QUESTIONS_BY_BOOK[book].length>0;}
@@ -2009,6 +2050,7 @@ function renderHome(){
   el('sFav').textContent=favList().length;
   el('studyTimeHome').textContent=`今日の勉強時間 ${formatStudyDuration(studyTime.days[dateKey()]?.seconds||0)}`;
   renderOfflineStatus();
+  renderCloudStatus();
   renderGameCard();
   const hp=planFor();
   if(hp.active){
@@ -2821,19 +2863,31 @@ function cbtMergeCloud(cd){
   }
   stats=statsByBook[activeBook];
   migrateGameData();saveStats();
-  if(typeof renderHome==='function') renderHome();
+  // Firestore のリアルタイム通知は演習中にも届く。ここでホームへ戻すと解答中の問題が消えるため、
+  // 表示中がホームの場合だけ数字を更新する。
+  if(typeof renderHome==='function'&&!el('home').classList.contains('hidden')) renderHome();
 }
 let _syncT=null;
 function cloudSyncSoon(){
   if(!(window.cbtCloud&&window.cbtCloud.save))return;
   clearTimeout(_syncT);
-  _syncT=setTimeout(()=>{ window.cbtCloud.save(fullStatsPayload()); },2000);
+  if(!navigator.onLine){setCloudSyncState('pending');return;}
+  setCloudSyncState('pending');
+  _syncT=setTimeout(async()=>{
+    try{
+      await window.cbtCloud.save(fullStatsPayload());
+      setCloudSyncState('ready',{savedAt:Date.now(),error:''});
+    }catch(error){
+      console.warn('cloud sync error',error);
+      setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'save failed')});
+    }
+  },2000);
 }
 window.addEventListener('online',()=>{
   if(window.cbtCloud&&window.cbtCloud.save){cloudSyncSoon();toast('オンラインに戻りました。学習記録を同期します');}
-  renderOfflineStatus();
+  renderOfflineStatus();renderCloudStatus();
 });
-window.addEventListener('offline',()=>{toast('オフライン中です。学習記録は端末に保存され、通信復帰後に同期します');renderOfflineStatus();});
+window.addEventListener('offline',()=>{toast('オフライン中です。学習記録は端末に保存され、通信復帰後に同期します');renderOfflineStatus();renderCloudStatus();});
 window.cbtStatsSummary=statsSummary;
 window.cbtFullPayload=fullStatsPayload;
 window.cbtMergeCloud=cbtMergeCloud;
@@ -3172,6 +3226,12 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   document.getElementById('emailLoginBtn').addEventListener('click',emailPasswordLogin);
   document.getElementById('emailSetupBtn').addEventListener('click',sendPasswordSetup);
   document.getElementById('authPassword').addEventListener('keydown',event=>{ if(event.key==='Enter') emailPasswordLogin(); });
+  const authEmailBox=document.getElementById('authEmailBox');
+  const authEmailToggle=document.getElementById('authEmailToggle');
+  authEmailToggle.addEventListener('click',()=>{
+    const visible=authEmailBox.classList.toggle('show');
+    authEmailToggle.textContent=visible?'メール・パスワード入力を閉じる':'ホーム画面アプリと同じメール・パスワードでログイン';
+  });
 
   // Google Identity Services（Googleの規約上、ログインは通常のブラウザで行う）
   const GIS_CLIENT_ID = "657737591623-vk9f9ndrucrq82itg3tq2orc7cirro86.apps.googleusercontent.com";
@@ -3192,7 +3252,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     if(standalone){
       document.getElementById('gbtn').innerHTML = '<span style="font-size:13px;color:#5d6b64;padding:6px 0">ホーム画面用ログイン</span>';
-      document.getElementById('authEmailBox').classList.add('show');
+      authEmailBox.classList.add('show');
+      authEmailToggle.classList.add('hidden');
       return;
     }
     google.accounts.id.initialize({
@@ -3270,8 +3331,35 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
         arr.push(x);
       });
       return arr;
+    },
+    subscribe: function(onData,onError){
+      if(!window.cbtUser)return function(){};
+      return db.collection('users').doc(window.cbtUser.uid).onSnapshot(function(snapshot){
+        if(snapshot.exists&&typeof onData==='function')onData(snapshot.data(),snapshot.metadata);
+      },function(error){if(typeof onError==='function')onError(error);});
     }
   };
+
+  let stopCloudSubscription=null;
+  function startCloudSubscription(){
+    if(stopCloudSubscription){try{stopCloudSubscription();}catch(_){ }stopCloudSubscription=null;}
+    if(!(window.cbtCloud&&window.cbtCloud.subscribe&&window.cbtUser))return;
+    stopCloudSubscription=window.cbtCloud.subscribe(function(data,metadata){
+      // ローカルで保存中の通知も届く。統合処理は回数と時刻を比較するため、二重適用しても記録は増えない。
+      afterAppReady(function(){
+        try{
+          if(window.cbtMergeCloud)window.cbtMergeCloud(data);
+          setCloudSyncState('ready',{savedAt:Date.now(),error:''});
+        }catch(error){
+          console.warn('cloud merge error',error);
+          setCloudSyncState('unavailable',{error:String(error?.message||'merge failed')});
+        }
+      });
+    },function(error){
+      console.warn('cloud subscription error',error);
+      setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'listen failed')});
+    });
+  }
 
   function afterAppReady(fn){
     if(window.cbtAppReady) return fn();
@@ -3291,9 +3379,14 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       return;
     }
     window.cbtUser = { uid:user.uid, email:email, username:'', avatar:'' };
+    setCloudSyncState('pending');
     // プロフィール読み込み（無ければユーザーネーム登録）
     let snap=null;
-    try{ snap = await db.collection('users').doc(user.uid).get(); }catch(e){}
+    try{ snap = await db.collection('users').doc(user.uid).get(); }
+    catch(error){
+      console.warn('cloud profile read error',error);
+      setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'read failed')});
+    }
     const cloudData = (snap && snap.exists) ? snap.data() : null;
     if(cloudData && cloudData.username){
       window.cbtUser.username = cloudData.username;
@@ -3304,10 +3397,20 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     }
     window.cbtUser.avatar=safeAvatar(cloudData&&cloudData.avatar);
     reveal();
+    startCloudSubscription();
     // アプリ準備完了後：クラウド→ローカル統合 → 統合結果を書き戻す（数字は消えない）
     afterAppReady(async function(){
-      try{ if(cloudData && window.cbtMergeCloud) window.cbtMergeCloud(cloudData); }catch(e){}
-      try{ if(window.cbtFullPayload) await window.cbtCloud.save(window.cbtFullPayload()); }catch(e){}
+      try{ if(cloudData && window.cbtMergeCloud) window.cbtMergeCloud(cloudData); }
+      catch(error){console.warn('initial cloud merge error',error);setCloudSyncState('unavailable',{error:String(error?.message||'merge failed')});}
+      try{
+        if(window.cbtFullPayload){
+          await window.cbtCloud.save(window.cbtFullPayload());
+          setCloudSyncState('ready',{savedAt:Date.now(),error:''});
+        }
+      }catch(error){
+        console.warn('initial cloud save error',error);
+        setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'save failed')});
+      }
     });
   });
 })();
