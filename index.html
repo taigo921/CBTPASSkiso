@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="歯科CBT問題集">
+<meta name="apple-mobile-web-app-title" content="toGO">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<title>歯科CBT問題集</title>
+<title>toGO</title>
 <!-- ▼ ログイン＆ランキング（Firebase） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -483,7 +483,7 @@
 <!-- ▼ ログイン関所（許可されたGoogleアカウントのみ解錠） -->
 <div id="authGate">
   <div class="auth-card">
-    <div class="auth-brand">歯科CBT<span>クイズ</span></div>
+    <div class="auth-brand">toGO<span>クイズ</span></div>
     <p class="auth-lead">友達だけの限定アプリです。<br>許可されたメールアドレスでログインしてください。</p>
     <div id="gbtn" style="display:flex;justify-content:center;min-height:44px;"></div>
     <button type="button" class="auth-email-toggle" id="authEmailToggle">ホーム画面アプリと同じメール・パスワードでログイン</button>
@@ -553,7 +553,7 @@
 
 <header>
   <div class="head-row">
-    <div class="logo">歯科CBT<small>クイズ</small></div>
+    <div class="logo">toGO<small>クイズ</small></div>
     <div class="head-spacer"></div>
     <div class="timer-chip" id="timerChip">⏱ <span id="timerVal">0.0</span>s</div>
     <button class="ghost-btn" id="homeBtn">ホーム</button>
@@ -672,7 +672,7 @@
       <div class="note">現在は2027年1月26日です。</div>
     </div>
     <div class="setting">
-      <label>CBTPASSを仕上げる <input type="number" id="planFinishLead" min="1" max="180" step="1"> 日前</label>
+      <label>toGOを仕上げる <input type="number" id="planFinishLead" min="1" max="180" step="1"> 日前</label>
       <div class="note" id="planFinishNote">仕上げ日以降は、他教材や総復習に使う期間です。</div>
     </div>
     <div class="row-btns"><button class="ghost-btn" id="planToggleTodayBtn">今日を休みにする</button></div>
@@ -2689,11 +2689,11 @@ el('planFinishLead').addEventListener('change',event=>{
   const maxLead=Math.max(1,Math.min(180,Math.floor((new Date(p.examDate+'T12:00:00')-new Date(dateKey()+'T12:00:00'))/86400000)-1));
   value=Number.isFinite(value)?Math.max(1,Math.min(maxLead,value)):30;
   p.finishLeadDays=value;p.updatedAt=Date.now();event.target.value=value;saveStudyPlans();renderStudyPlan();
-  toast(`CBTPASSを本番${value}日前に仕上げます`);
+  toast(`toGOを本番${value}日前に仕上げます`);
 });
 el('planToggleTodayBtn').addEventListener('click',()=>{
   const p=ensureStudyPlan(),today=dateKey();
-  if(today>planFinishDate(p)){toast('CBTPASSの仕上げ目標日を過ぎています');return;}
+  if(today>planFinishDate(p)){toast('toGOの仕上げ目標日を過ぎています');return;}
   if(planIsSystemOff(today)){toast('試験対策・定期試験期間はCBT課題なしです');return;}
   if(p.unavailable[today])delete p.unavailable[today];else p.unavailable[today]=true;
   p.updatedAt=Date.now();saveStudyPlans();renderStudyPlan();
