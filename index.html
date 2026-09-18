@@ -1013,9 +1013,10 @@ function planQuestions(){return [...(DEFAULT_QUESTIONS_BY_BOOK.book1||[]),...(DE
 function planBookForUid(uid){return (DEFAULT_QUESTIONS_BY_BOOK.book1||[]).some(q=>qkey(q)===uid)?'book1':((DEFAULT_QUESTIONS_BY_BOOK.book2||[]).some(q=>qkey(q)===uid)?'book2':null);}
 function planQuestion(uid){return planQuestions().find(q=>qkey(q)===uid);}
 function planRecord(uid){const book=planBookForUid(uid);return book?(statsByBook[book].perQ||{})[uid]:null;}
-// C-2「生命の分子的基盤」は、問題データ中の旧ラベルにかかわらず生化学として扱う。
+// 分野の正式な科目区分。問題データに残る旧ラベルではなく、表示・分析・計画で共通して使う。
 function subjectLabel(q){
   if(/^C-2(?:\s|$)/.test(String(q?.section||'')))return '生化学';
+  if(/^B-3(?:\s|$)/.test(String(q?.section||'')))return '衛生';
   return String(q?.subject||'').trim();
 }
 function planSubject(q){return subjectLabel(q)||String(q?.category||q?.section||'未分類').trim()||'未分類';}
