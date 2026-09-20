@@ -354,7 +354,7 @@
   .guide-zoom-controls{display:flex;gap:5px;flex:none;}
   .guide-zoom-controls button{min-width:35px;padding:7px 8px;border-radius:9px;font-size:15px;}
   #guideZoomReset{min-width:43px;font-size:11px;}
-  .guide-viewer-scroll{min-height:0;flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 8px calc(20px + env(safe-area-inset-bottom));text-align:center;overflow-anchor:none;overscroll-behavior:contain;}
+  .guide-viewer-scroll{min-height:0;flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 8px calc(20px + env(safe-area-inset-bottom));text-align:center;overflow-anchor:none;overscroll-behavior:contain;touch-action:pan-x pan-y;}
   .guide-pages{width:100%;max-width:976px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}
   .guide-page{position:relative;width:100%;aspect-ratio:976/1395;background:#fff;box-shadow:var(--shadow);overflow:hidden;}
   .guide-page img{display:block;width:100%;height:100%;object-fit:contain;background:#fff;}
@@ -871,7 +871,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20260918-rainbow-icon-1';
+const SERVICE_WORKER_BUILD='20260920-guide-zoom-1';
 // 一時休止中。再開時は true に戻すだけで、ランキング記録はそのまま利用できる。
 const LEADERBOARD_ENABLED=false;
 const offlineCacheWrites=[];
@@ -1095,12 +1095,22 @@ let guideLoadObserver=null;
 let guideReturnScrollY=0;
 const guideZoomState={scale:1,lastDistance:0,lastCenter:null};
 function applyGuideZoom(nextScale,point=null,previousPoint=null){
-  const scroll=el('guideScroll'),pages=el('guidePages'),oldScale=guideZoomState.scale,next=Math.max(1,Math.min(4,nextScale));
+  const scroll=el('guideScroll'),pages=el('guidePages'),next=Math.max(1,Math.min(4,nextScale));
+  if(next===guideZoomState.scale)return;
+  // 画面中央ではなく、指（またはズームボタンの中心）が指していたガイド上の位置を保つ。
+  // ページが中央寄せの状態から横に広がるケースでも、offsetLeft / 実寸を使うことでジャンプしない。
   const current=point||{x:scroll.clientWidth/2,y:scroll.clientHeight/2},previous=previousPoint||current;
-  const contentX=(scroll.scrollLeft+previous.x)/oldScale,contentY=(scroll.scrollTop+previous.y)/oldScale;
-  guideZoomState.scale=next;pages.style.width=`${next*100}%`;pages.style.maxWidth=`${976*next}px`;
+  const oldWidth=pages.offsetWidth,oldHeight=pages.offsetHeight,oldLeft=pages.offsetLeft,oldTop=pages.offsetTop;
+  const ratioX=oldWidth?(scroll.scrollLeft+previous.x-oldLeft)/oldWidth:0;
+  const ratioY=oldHeight?(scroll.scrollTop+previous.y-oldTop)/oldHeight:0;
+  guideZoomState.scale=next;
+  pages.style.width=`${next*100}%`;pages.style.maxWidth=`${976*next}px`;
+  // Safariでレイアウト更新前のスクロール位置が使われると、拡大時に別のページへ飛ぶため同期させる。
+  void pages.offsetWidth;
+  const newLeft=pages.offsetLeft,newTop=pages.offsetTop;
+  scroll.scrollLeft=Math.max(0,newLeft+ratioX*pages.offsetWidth-current.x);
+  scroll.scrollTop=Math.max(0,newTop+ratioY*pages.offsetHeight-current.y);
   el('guideZoomReset').textContent=`${next.toFixed(next%1?1:0)}×`;
-  scroll.scrollLeft=Math.max(0,contentX*next-current.x);scroll.scrollTop=Math.max(0,contentY*next-current.y);
 }
 function resetGuideZoom(){
   const pages=el('guidePages');guideZoomState.scale=1;guideZoomState.lastDistance=0;guideZoomState.lastCenter=null;
@@ -1243,7 +1253,9 @@ el('guideScroll').addEventListener('touchmove',event=>{
   if(guideZoomState.lastDistance)applyGuideZoom(guideZoomState.scale*distance/guideZoomState.lastDistance,center,guideZoomState.lastCenter);
   guideZoomState.lastDistance=distance;guideZoomState.lastCenter=center;
 },{passive:false});
-el('guideScroll').addEventListener('touchend',event=>{if(event.touches.length<2){guideZoomState.lastDistance=0;guideZoomState.lastCenter=null;}},{passive:true});
+function endGuidePinch(event){if(event.touches.length<2){guideZoomState.lastDistance=0;guideZoomState.lastCenter=null;}}
+el('guideScroll').addEventListener('touchend',endGuidePinch,{passive:true});
+el('guideScroll').addEventListener('touchcancel',endGuidePinch,{passive:true});
 el('guideScroll').addEventListener('wheel',event=>{if(!event.ctrlKey)return;event.preventDefault();const rect=el('guideScroll').getBoundingClientRect();applyGuideZoom(guideZoomState.scale*(event.deltaY<0?1.12:.89),{x:event.clientX-rect.left,y:event.clientY-rect.top});},{passive:false});
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&!el('guideViewer').classList.contains('hidden'))closeGuide();
