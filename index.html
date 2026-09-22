@@ -463,6 +463,29 @@
   #sectionModePicker{position:static;display:flex;flex-wrap:wrap;gap:7px;overflow:visible;padding:8px 0;background:transparent;}
   #sectionModePicker .fbtn{padding:7px 11px;font-size:12px;}
   .section-mode-note{margin:2px 0 0;color:var(--muted);font-size:11px;line-height:1.55;}
+  /* mock exam (separate from the everyday question banks) */
+  .mock-exam{max-width:920px;margin:0 auto;padding-top:22px;}
+  .mock-exam-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding:0 2px;}
+  .mock-exam-head h1{margin:0;font-size:20px;line-height:1.35;}
+  .mock-exam-head p{margin:0;color:var(--muted);font-size:12px;font-weight:700;}
+  .mock-exam-clock{margin-left:auto;padding:5px 11px;border-radius:999px;background:#eaf2ff;color:var(--green-d);font-size:13px;font-weight:900;font-variant-numeric:tabular-nums;}
+  .mock-exam-card{background:#fff;border:1.5px solid #60728d;padding:14px;box-shadow:var(--shadow);}
+  .mock-exam-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;}
+  .mock-exam-toolbar b{font-size:15px;}.mock-exam-toolbar span{color:var(--muted);font-size:12px;}
+  .mock-exam-toolbar button{margin-left:auto;border:0;border-radius:999px;background:var(--green);color:#fff;padding:7px 13px;font-size:12px;font-weight:800;cursor:pointer;}
+  .mock-source{display:block;width:100%;border:1px solid #e1e8f2;cursor:zoom-in;}
+  .mock-answer-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0 0;}
+  .mock-choice{border:1.5px solid #b8c6d9;border-radius:9px;background:#fff;color:var(--ink);padding:10px 4px;font-weight:900;font-size:15px;cursor:pointer;}
+  .mock-choice.selected{background:#eaf2ff;border-color:var(--green);color:var(--green-d);}
+  .mock-choice.correct{background:var(--correct-bg);border-color:var(--correct);color:#10713e;}
+  .mock-choice.wrong{background:var(--wrong-bg);border-color:var(--wrong);color:#b43731;}
+  .mock-submit{width:100%;margin-top:12px;border:0;border-radius:9px;background:var(--green);color:#fff;padding:12px;font-size:15px;font-weight:900;cursor:pointer;}
+  .mock-submit:disabled{opacity:.42;cursor:default;}
+  .mock-result{margin-top:12px;padding:12px 14px;border-radius:10px;background:#f3f7ff;color:var(--green-d);font-size:13px;font-weight:700;line-height:1.65;}
+  .mock-result.bad{background:var(--wrong-bg);color:#a33731;}
+  .mock-explanation-source{display:block;width:100%;margin-top:12px;border:1px solid #e1e8f2;cursor:zoom-in;}
+  .mock-note{margin:12px 2px 0;color:var(--muted);font-size:11px;line-height:1.6;}
+  @media(min-width:780px){.mock-exam{max-width:1060px}.mock-exam-card{padding:20px}.mock-exam-head h1{font-size:23px}}
   .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;font-weight:700;
     padding:10px 16px;border-radius:999px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center;}
   .toast.show{opacity:.95;}
@@ -620,6 +643,7 @@
     <div class="modes">
       <button class="mode primary" id="planModeBtn"><div class="ic">🛤️</div><div class="t"><b>忘却曲線ルート</b><span id="planHomeCount">毎日の指定課題だけで問題集を仕上げる</span></div><div class="arr">›</div></button>
       <button class="mode primary" id="sectionModeBtn"><div class="ic">🗂️</div><div class="t"><b>セクションを選んで解く</b><span>科目・分野ごとに集中演習</span></div><div class="arr">›</div></button>
+      <button class="mode primary" id="mockExamBtn"><div class="ic">📝</div><div class="t"><b>CBT模試モード</b><span>2026 麻布模試・ブロック1 全60問</span></div><div class="arr">›</div></button>
     </div>
 
     <div class="sec-h">分析・設定</div>
@@ -732,6 +756,23 @@
         </div>
       </div>
     </div>
+  </section>
+
+  <!-- MOCK EXAM: kept separate until each source question has been checked. -->
+  <section id="mockExam" class="hidden mock-exam">
+    <div class="mock-exam-head">
+      <div><h1>CBT模擬試験2026：ブロック1</h1><p id="mockExamProgress">問題を準備中</p></div>
+      <div class="mock-exam-clock">経過 <span id="mockExamClock">00:00</span></div>
+    </div>
+    <div class="mock-exam-card">
+      <div class="mock-exam-toolbar"><b id="mockExamNumber">問1</b><span>選択肢は資料の画面どおりです</span><button type="button" id="mockExamZoom">問題を拡大</button></div>
+      <img id="mockExamImage" class="mock-source" alt="CBT模試の問題">
+      <div class="mock-answer-row" id="mockExamChoices" aria-label="回答を選ぶ"></div>
+      <button type="button" class="mock-submit" id="mockExamSubmit" disabled>回答する</button>
+      <div class="mock-result hidden" id="mockExamResult"></div>
+      <img id="mockExplanationImage" class="mock-explanation-source hidden" alt="公式の解答と解説">
+    </div>
+    <p class="mock-note">自分が解いた時の選択マークは使わず、公式の解答・解説を確認した全60問を表示します。模試の成績は通常の問題集・忘却曲線には混ぜません。</p>
   </section>
 
   <!-- FINISH / REVIEW -->
@@ -866,6 +907,56 @@ const BOOKS = {
     files:["data/E1.json", "data/E2.json", "data/E3.json", "data/E4.json", "data/E5.json"]
   }
 };
+
+// 模試は通常の問題集・忘却曲線・同期成績に混ぜない。公式解答まで照合できた問題から追加する。
+const AZABU_MOCK_2026_BLOCK1=[{
+  no:1,
+  answer:'B',
+  image:'mock-assets/azabu-2026/block1/q001.png',
+  explanation:'右ねじの法則より、直線状の導線は（ア）、コイルは（エ）の磁界の向きが正しい。'
+},{
+  no:2,
+  answer:'E',
+  image:'mock-assets/azabu-2026/block1/q002.png',
+  explanation:'乳歯用既製金属冠の辺縁調整には、選択肢（オ）のプライヤーを用いる。'
+},{
+  no:3,
+  answer:'A',
+  image:'mock-assets/azabu-2026/block1/q003.png',
+  explanation:'レボドパは、口腔ジスキネジアを起こし得る副作用が知られている。'
+},{
+  no:4,
+  answer:'A',
+  image:'mock-assets/azabu-2026/block1/q004.png',
+  explanation:'図の壊死領域は冠動脈閉塞による心筋梗塞を示す。'
+},{
+  no:5,
+  answer:'A',
+  image:'mock-assets/azabu-2026/block1/q005.png',
+  explanation:'抜歯鉗子（ヘーベル）は、上顎大臼歯では近心頬側隅角へ挿入する。'
+},{
+  no:6,
+  answer:'B',
+  image:'mock-assets/azabu-2026/block1/q006.png',
+  explanation:'介護保険制度の第2号被保険者は、40歳以上65歳未満の医療保険加入者である。'
+},...[
+  ['E','008'],['A','008'],['A','009'],['D','010'],['D','011'],['A','011'],
+  ['B','012'],['B','012'],['E','013'],['B','013'],['D','014'],['E','014'],
+  ['D','015'],['A','015'],['A','015'],['B','016'],['C','016'],['E','017'],
+  ['C','017'],['D','017'],['C','018'],['E','018'],['C','019'],['E','019'],
+  ['D','020'],['D','020'],['A','021'],['A','021'],['D','022'],['C','022'],
+  ['B','023'],['D','023'],['B','024'],['C','024'],['D','025'],['A','025'],
+  ['C','026'],['C','026'],['A','027'],['E','027'],['E','028'],['A','028'],
+  ['C','029'],['C','029'],['D','030'],['E','030'],['C','031'],['A','031'],
+  ['D','032'],['C','032'],['C','033'],['D','033'],['C','034'],['E','034']
+].map(([answer,page],offset)=>({
+  no:offset+7,
+  answer,
+  image:`mock-assets/azabu-2026/block1/q${String(offset+7).padStart(3,'0')}.jpg`,
+  explanation:'公式の解答・解説を下に表示します。',
+  explanationImage:`mock-assets/azabu-2026/block1/pages/page-${page}.jpg`
+}))];
+let mockExamState={index:0,picked:null,answered:false,startedAt:0,clock:null};
 
 const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
@@ -2008,7 +2099,71 @@ function migrateGameData(){
 }
 
 function toast(m){const t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
-function showOnly(id){['home','studyPlan','quiz','finish','stats','list','sectionList','sectionStart','leaderboard'].forEach(s=>el(s).classList.toggle('hidden',s!==id));}
+function showOnly(id){
+  ['home','studyPlan','quiz','mockExam','finish','stats','list','sectionList','sectionStart','leaderboard'].forEach(s=>el(s).classList.toggle('hidden',s!==id));
+  if(id!=='mockExam'&&mockExamState.clock){clearInterval(mockExamState.clock);mockExamState.clock=null;}
+}
+
+function formatMockExamTime(seconds){
+  const total=Math.max(0,Math.floor(seconds));
+  return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+}
+function renderMockExam(){
+  const q=AZABU_MOCK_2026_BLOCK1[mockExamState.index];
+  if(!q){renderHome();return;}
+  showOnly('mockExam');el('footer').classList.add('hidden');
+  mockExamState.picked=null;mockExamState.answered=false;mockExamState.startedAt=Date.now();
+  el('mockExamNumber').textContent=`問${q.no}`;
+  el('mockExamProgress').textContent=`ブロック1 ・ ${mockExamState.index+1} / ${AZABU_MOCK_2026_BLOCK1.length}問`;
+  el('mockExamImage').src=q.image;
+  el('mockExamResult').classList.add('hidden');el('mockExamResult').textContent='';
+  el('mockExplanationImage').classList.add('hidden');el('mockExplanationImage').removeAttribute('src');
+  el('mockExamSubmit').disabled=true;el('mockExamSubmit').textContent='回答する';
+  const choices=el('mockExamChoices');choices.innerHTML='';
+  ['A','B','C','D','E'].forEach(key=>{
+    const button=document.createElement('button');button.type='button';button.className='mock-choice';button.textContent=key;
+    button.addEventListener('click',()=>{
+      if(mockExamState.answered)return;
+      mockExamState.picked=key;
+      choices.querySelectorAll('button').forEach(item=>item.classList.toggle('selected',item.textContent===key));
+      el('mockExamSubmit').disabled=false;
+    });
+    choices.appendChild(button);
+  });
+  if(mockExamState.clock)clearInterval(mockExamState.clock);
+  const updateClock=()=>el('mockExamClock').textContent=formatMockExamTime((Date.now()-mockExamState.startedAt)/1000);
+  updateClock();mockExamState.clock=setInterval(updateClock,1000);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function openMockExam(){mockExamState.index=0;renderMockExam();}
+function submitMockExam(){
+  const q=AZABU_MOCK_2026_BLOCK1[mockExamState.index];
+  if(!q)return;
+  if(mockExamState.answered){
+    if(mockExamState.index<AZABU_MOCK_2026_BLOCK1.length-1){mockExamState.index++;renderMockExam();}
+    else {renderHome();toast('ブロック1・60問を完了しました');}
+    return;
+  }
+  if(!mockExamState.picked)return;
+  mockExamState.answered=true;
+  const correct=mockExamState.picked===q.answer;
+  el('mockExamChoices').querySelectorAll('button').forEach(button=>{
+    button.disabled=true;
+    if(button.textContent===q.answer)button.classList.add('correct');
+    else if(button.textContent===mockExamState.picked)button.classList.add('wrong');
+  });
+  const result=el('mockExamResult');result.classList.toggle('bad',!correct);
+  result.textContent=(correct?'正解！':'不正解。')+` 正解は ${q.answer}。${q.explanation}`;
+  result.classList.remove('hidden');
+  if(q.explanationImage){
+    const explanationImage=el('mockExplanationImage');
+    explanationImage.src=q.explanationImage;
+    explanationImage.classList.remove('hidden');
+  }
+  el('mockExamSubmit').disabled=false;
+  el('mockExamSubmit').textContent=mockExamState.index<AZABU_MOCK_2026_BLOCK1.length-1?'次の問題へ':'ブロック1を終了';
+  clearInterval(mockExamState.clock);mockExamState.clock=null;
+}
 function setProgress(p){el('pbarFill').style.width=Math.max(0,Math.min(100,p))+'%';}
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -2675,6 +2830,11 @@ el('statsBtn').addEventListener('click',openStats);
 document.querySelectorAll('[data-study-range]').forEach(button=>button.addEventListener('click',()=>{studyChartRange=+button.dataset.studyRange||7;renderStudyTime();}));
 el('listBtn').addEventListener('click',openList);
 el('planModeBtn').addEventListener('click',openStudyPlan);
+el('mockExamBtn').addEventListener('click',openMockExam);
+el('mockExamSubmit').addEventListener('click',submitMockExam);
+el('mockExamZoom').addEventListener('click',()=>openImageZoom(el('mockExamImage').currentSrc||el('mockExamImage').src,'CBT模試の問題'));
+el('mockExamImage').addEventListener('click',()=>openImageZoom(el('mockExamImage').currentSrc||el('mockExamImage').src,'CBT模試の問題'));
+el('mockExplanationImage').addEventListener('click',()=>openImageZoom(el('mockExplanationImage').currentSrc||el('mockExplanationImage').src,'公式の解答と解説'));
 el('planStartBtn').addEventListener('click',startStudyPlan);
 el('planExtraBox').addEventListener('click',event=>{
   const button=event.target.closest('[data-extra-count]');if(button)startExtraStudy(button.dataset.extraCount);
