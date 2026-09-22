@@ -600,12 +600,17 @@
       <button class="book-tab" data-book="mock" role="tab" aria-selected="false"><b>模試</b><span>麻布2026</span></button>
     </div>
     <div id="mockHome" class="hidden">
+      <div class="sec-h">ブロックを選ぶ</div>
+      <div id="mockBlockSelector" class="mock-question-list" role="group" aria-label="模試のブロックを選ぶ"></div>
+      <p id="mockBlockNotice" class="mock-note hidden"></p>
+      <div id="mockBlockContent">
       <button class="mode primary" id="mockResumeBtn"><div class="ic">▶️</div><div class="t"><b id="mockResumeTitle">ブロック1を始める</b><span id="mockResumeInfo">全60問</span></div><div class="arr">›</div></button>
       <p id="mockSummary" class="mock-note"></p>
       <div class="sec-h">問題一覧</div>
       <div class="filterbar" id="mockFilters"><button class="fbtn on" data-mock-filter="all">すべて</button><button class="fbtn" data-mock-filter="unanswered">未解答</button><button class="fbtn" data-mock-filter="wrong">不正解</button></div>
       <div id="mockQuestionList" class="mock-question-list"></div>
       <p class="mock-note">途中の問題・選んだ回答・解答結果をこの端末のブラウザに保存します。</p>
+      </div>
     </div>
     <div id="regularHome">
     <div class="game-card" aria-label="レベルとランク">
@@ -969,6 +974,7 @@ const AZABU_MOCK_2026_BLOCK1=[{
 }))];
 let mockExamState={index:0,picked:null,answered:false,startedAt:0,clock:null};
 let mockHomeSelected=false,mockListFilter='all',mockProgress={index:0,answers:{}};
+let selectedMockBlock=1;
 function mockStorageKey(){return 'togo_mock_azabu2026_block1_v1_'+(window.cbtUser?.uid||'local');}
 function loadMockProgress(){
   const saved=safeGet(mockStorageKey())||{};
@@ -981,6 +987,23 @@ function saveMockProgress(){
   safeSet(mockStorageKey(),mockProgress);
 }
 function renderMockHome(){
+  const selector=el('mockBlockSelector');selector.innerHTML='';
+  for(let block=1;block<=6;block++){
+    const button=document.createElement('button');button.type='button';button.className='mock-choice';
+    button.classList.toggle('selected',block===selectedMockBlock);
+    button.setAttribute('aria-pressed',String(block===selectedMockBlock));
+    button.textContent=`ブロック${block}　${block===1?'60問':'準備中'}`;
+    button.addEventListener('click',()=>{selectedMockBlock=block;mockListFilter='all';renderMockHome();});selector.appendChild(button);
+  }
+  const ready=selectedMockBlock===1;
+  el('mockBlockContent').classList.toggle('hidden',!ready);
+  el('mockBlockNotice').classList.toggle('hidden',ready);
+  el('bookTitle').textContent='模試';
+  if(!ready){
+    el('qcount').textContent=`2026 麻布模試・ブロック${selectedMockBlock}`;
+    el('mockBlockNotice').textContent=`ブロック${selectedMockBlock}は準備中です。問題の取り込みが終わると、ここから開始できます。`;
+    return;
+  }
   loadMockProgress();
   const answered=AZABU_MOCK_2026_BLOCK1.filter(q=>mockProgress.answers[q.no]?.answered);
   const correct=answered.filter(q=>mockProgress.answers[q.no].picked===q.answer).length;
