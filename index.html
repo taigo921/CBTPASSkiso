@@ -669,6 +669,7 @@
     <div class="cloud-status pending" id="cloudStatus" aria-live="polite">☁️ 学習記録の同期を確認中…</div>
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
+    <p class="mock-note">同期診断版：9/23-3（この表示で更新を確認できます）</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1048,7 +1049,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20260923-progress-sync-2';
+const SERVICE_WORKER_BUILD='20260923-progress-sync-3';
 // 一時休止中。再開時は true に戻すだけで、ランキング記録はそのまま利用できる。
 const LEADERBOARD_ENABLED=false;
 const offlineCacheWrites=[];
@@ -3813,7 +3814,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       });
     },function(error){
       console.warn('cloud subscription error',error);
-      setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'listen failed')});
+      setCloudSyncState('unavailable',{error:'更新の受信：'+cloudErrorDetail(error)});
     });
   }
 
@@ -3848,8 +3849,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       // オフライン時だけは、端末内キャッシュで従来どおり開けるようにする。
       if(!navigator.onLine){
         try{snap=await db.collection('users').doc(user.uid).get({source:'cache'});}
-        catch(_){setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'read failed')});}
-      }else setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'read failed')});
+        catch(_){setCloudSyncState('unavailable',{error:'ログイン時の読込：'+cloudErrorDetail(error)});}
+      }else setCloudSyncState('unavailable',{error:'ログイン時の読込：'+cloudErrorDetail(error)});
     }
     const cloudData = (snap && snap.exists) ? snap.data() : null;
     if(cloudData && cloudData.username){
