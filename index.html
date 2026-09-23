@@ -667,6 +667,8 @@
     </div>
     <div class="offline-status pending" id="offlineStatus" aria-live="polite">📥 オフライン準備を確認中…</div>
     <div class="cloud-status pending" id="cloudStatus" aria-live="polite">☁️ 学習記録の同期を確認中…</div>
+    <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
+    <p class="mock-note" id="syncBackupStatus"></p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -984,15 +986,22 @@ function mockStorageKey(){return `togo_mock_azabu2026_block${selectedMockBlock}_
 function loadMockProgress(){
   const saved=safeGet(mockStorageKey())||{};
   mockProgress={index:Number.isInteger(saved.index)?Math.max(0,Math.min(mockQuestions().length-1,saved.index)):0,answers:{}};
-  for(const q of mockQuestions()){const a=saved.answers?.[q.no];if(a&&typeof a.picked==='string'&&a.picked.length===1&&(q.choices||'ABCDE').includes(a.picked))mockProgress.answers[q.no]={picked:a.picked,answered:a.answered===true};}
+  for(const q of mockQuestions()){const a=saved.answers?.[q.no];if(a&&typeof a.picked==='string'&&a.picked.length===1&&(q.choices||'ABCDE').includes(a.picked))mockProgress.answers[q.no]={picked:a.picked,answered:a.answered===true,updatedAt:+a.updatedAt||0};}
+  mockProgress.updatedAt=+saved.updatedAt||0;
   if(mockForwardOnly())mockProgress.index=mockFrontier();
 }
 function saveMockProgress(){
+  const before=JSON.stringify(mockProgress);
   mockProgress.index=mockExamState.index;
   const q=mockQuestions()[mockExamState.index];
-  if(q&&mockExamState.picked&&!(mockForwardOnly()&&mockProgress.answers[q.no]?.answered))mockProgress.answers[q.no]={picked:mockExamState.picked,answered:mockExamState.answered};
+  if(q&&mockExamState.picked&&!mockProgress.answers[q.no]?.answered){
+    const previous=mockProgress.answers[q.no];
+    if(!previous||previous.picked!==mockExamState.picked||previous.answered!==mockExamState.answered)mockProgress.answers[q.no]={picked:mockExamState.picked,answered:mockExamState.answered,updatedAt:Date.now()};
+  }
   if(mockForwardOnly())mockProgress.index=mockFrontier();
+  if(JSON.stringify(mockProgress)!==before)mockProgress.updatedAt=Date.now();
   safeSet(mockStorageKey(),mockProgress);
+  if(JSON.stringify(mockProgress)!==before)cloudSyncSoon();
 }
 function renderMockHome(){
   const selector=el('mockBlockSelector');selector.innerHTML='';
@@ -1039,7 +1048,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20260922-mock-all-blocks-1';
+const SERVICE_WORKER_BUILD='20260923-progress-sync-1';
 // 一時休止中。再開時は true に戻すだけで、ランキング記録はそのまま利用できる。
 const LEADERBOARD_ENABLED=false;
 const offlineCacheWrites=[];
@@ -1113,11 +1122,11 @@ function renderCloudStatus(){
   if(!window.cbtUser){target.textContent='☁️ 学習記録の同期を確認中…';return;}
   if(!navigator.onLine){target.className='cloud-status pending';target.textContent=`📴 オフライン中：この端末に保存中${id}`;return;}
   if(cloudSyncState.phase==='unavailable'){
-    target.textContent=`⚠️ 同期できません。通信を確認してください${id}`;
+    target.textContent=`⚠️ 同期未完了：${cloudSyncState.error||'通信エラー'}${id}（端末の記録は保持しています）`;
   }else if(cloudSyncState.phase==='pending'){
     target.textContent=`☁️ 学習記録を同期中…${id}`;
   }else if(cloudSyncState.savedAt){
-    target.textContent=`☁️ 同期済み ${formatSyncClock(cloudSyncState.savedAt)}${id}`;
+    target.textContent=`☁️ 同期済み ${formatSyncClock(cloudSyncState.savedAt)}${id}・同期版 9/23`;
   }else{
     target.textContent=`☁️ クラウドに接続済み${id}`;
   }
@@ -1451,6 +1460,10 @@ function safeSet(k,v){
   }catch(e){_memStore[k]=v;}
 }
 function safeRemove(k){
+  if(k.startsWith('cbt_session_v3_')){
+    safeSet(k+'_deleted',Date.now());
+    if(typeof cloudSyncSoon==='function')cloudSyncSoon();
+  }
   try{if(_lsAvail())localStorage.removeItem(k);}catch(e){}
   delete _memStore[k];
 }
@@ -1492,7 +1505,7 @@ const saveGame=()=>safeSet(STORE_GAME,game);
 const saveSettings=()=>safeSet(STORE_SET,settings);
 const sessionStoreKey=(book=activeBook)=>STORE_SES_PREFIX+book;
 const sharedPlanSessionKey=()=>STORE_SES_PREFIX+'shared-plan';
-const saveSession=()=>{if(session&&!session.single){session.book=activeBook;safeSet(session.mode==='plan'?sharedPlanSessionKey():sessionStoreKey(),session);}};
+const saveSession=()=>{if(session&&!session.single){session.book=activeBook;session.updatedAt=Date.now();safeSet(session.mode==='plan'?sharedPlanSessionKey():sessionStoreKey(),session);cloudSyncSoon();}};
 const clearSession=()=>{safeRemove(session&&session.mode==='plan'?sharedPlanSessionKey():sessionStoreKey());};
 function savedExtraSessionForToday(){
   const saved=safeGet(sharedPlanSessionKey());
@@ -3078,6 +3091,8 @@ function fullStatsPayload(){
     game:{xp:game.xp||0,lastBonusDay:game.lastBonusDay||null},
     studyTime:compactStudyTimePayload(),
     studyPlans,
+    mockExams:localMockPayload(),
+    sessions:localSessionPayload(),
     books:{book1:compactStatsPayload(statsByBook.book1),book2:compactStatsPayload(statsByBook.book2)}
   },statsSummary());
 }
@@ -3144,6 +3159,19 @@ function mergeStudyPlanBook(local,cloud){
 }
 function cbtMergeCloud(cd){
   if(!cd)return;
+  ensureProgressBackup();
+  const oldMockAnswer=JSON.stringify(mockProgress.answers?.[mockExamState.index+1]||null),oldMockFrontier=mockFrontier();
+  const mergedMocks=mergeMockPayload(localMockPayload(),cd.mockExams||{});
+  for(const [block,value] of Object.entries(mergedMocks))safeSet(mockKeyFor(block),value);
+  // Keep in-memory answers aligned too; otherwise an open mock screen can write stale answers back.
+  mockProgress=mergedMocks[selectedMockBlock];
+  if(!el('mockExam').classList.contains('hidden')&&!el('mockExamChoices').classList.contains('hidden')&&(oldMockAnswer!==JSON.stringify(mockProgress.answers?.[mockExamState.index+1]||null)||(mockForwardOnly()&&oldMockFrontier!==mockFrontier())))renderMockExam();
+  const mergedSessions=mergeSessionPayload(localSessionPayload(),cd.sessions||{});
+  for(const [book,value] of Object.entries(mergedSessions)){
+    const key=STORE_SES_PREFIX+book;
+    if(value.deleted){try{localStorage.removeItem(key);}catch(_){}delete _memStore[key];safeSet(key+'_deleted',value.updatedAt);}
+    else safeSet(key,value);
+  }
   if(cd.studyTime)mergeStudyTime(cd.studyTime);
   if(cd.game){
     game.xp=Math.max(game.xp||0,cd.game.xp||0);
@@ -3174,34 +3202,121 @@ function cbtMergeCloud(cd){
   // 表示中がホームの場合だけ数字を更新する。
   if(typeof renderHome==='function'&&!el('home').classList.contains('hidden')) renderHome();
 }
-let _syncT=null;
-function cloudSyncSoon(){
-  if(!(window.cbtCloud&&window.cbtCloud.save))return;
-  clearTimeout(_syncT);
-  if(!navigator.onLine){setCloudSyncState('pending');return;}
-  setCloudSyncState('pending');
-  _syncT=setTimeout(async()=>{
-    try{
-      // 先にサーバー側を統合する。古い端末が起動直後のローカル記録だけで、
-      // 別端末の新しい回答数を上書きしないための順番。
-      if(window.cbtCloud.readLatest&&window.cbtMergeCloud){
-        const latest=await window.cbtCloud.readLatest();
-        if(latest)window.cbtMergeCloud(latest);
-      }
-      await window.cbtCloud.save(fullStatsPayload());
-      // 通知だけに頼ると、復帰直後の端末で古いキャッシュのまま表示されることがある。
-      // 保存後はサーバー上の確定データを読み直して、端末間の集計を必ず統合する。
-      if(window.cbtCloud.readLatest&&window.cbtMergeCloud){
-        const latest=await window.cbtCloud.readLatest();
-        if(latest)window.cbtMergeCloud(latest);
-      }
-      setCloudSyncState('ready',{savedAt:Date.now(),error:''});
-    }catch(error){
-      console.warn('cloud sync error',error);
-      setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'save failed')});
+function mockKeyFor(block){return `togo_mock_azabu2026_block${block}_v1_${window.cbtUser?.uid||'local'}`;}
+function localMockPayload(){return Object.fromEntries([1,2,3,4,5,6].map(b=>[b,safeGet(mockKeyFor(b))||{index:0,answers:{}}]));}
+function mergeMockPayload(local,remote){
+  const result={};
+  for(let block=1;block<=6;block++){
+    const a=local[block]||{},b=remote[block]||{},answers={...a.answers};
+    for(const [no,answer] of Object.entries(b.answers||{})){
+      const old=answers[no];
+      if(!old||(!old.answered&&answer.answered)||(!!old.answered===!!answer.answered&&(answer.updatedAt||0)>(old.updatedAt||0)))answers[no]=answer;
     }
-  },2000);
+    result[block]={...((b.updatedAt||0)>(a.updatedAt||0)?b:a),answers,updatedAt:Math.max(a.updatedAt||0,b.updatedAt||0)};
+    if(block>=5){let index=0;while(index<40&&answers[index+1]?.answered)index++;result[block].index=index;}
+  }
+  return result;
 }
+function localSessionPayload(){
+  const result={};
+  for(const book of ['book1','book2','shared-plan']){
+    const key=STORE_SES_PREFIX+book,value=safeGet(key),deleted=+safeGet(key+'_deleted')||0;
+    if(value&&(value.updatedAt||0)>=deleted)result[book]=value;
+    else if(deleted)result[book]={deleted:true,updatedAt:deleted};
+  }
+  return result;
+}
+function mergeSessionPayload(local,remote){
+  const result={...local};
+  for(const book of ['book1','book2','shared-plan'])if(remote[book]&&(!result[book]||(remote[book].updatedAt||0)>(result[book].updatedAt||0)))result[book]=remote[book];
+  return result;
+}
+function progressBackupData(){
+  const values={};
+  for(let i=0;i<localStorage.length;i++){
+    const key=localStorage.key(i);
+    if(/^(cbt_(stats|settings|session|section_progress|study_plan|game|study_time)|togo_mock_)/.test(key))values[key]=localStorage.getItem(key);
+  }
+  return {version:1,createdAt:new Date().toISOString(),uid:window.cbtUser?.uid||null,values};
+}
+function ensureProgressBackup(){
+  const key='togo_sync_backup_20260923_'+(window.cbtUser?.uid||'local');
+  try{
+    if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(progressBackupData()));
+    if(!localStorage.getItem(key))throw Error('backup unavailable');
+    if(el('syncBackupStatus'))el('syncBackupStatus').textContent='同期修正前の記録をこの端末にバックアップ済み';
+  }catch(error){
+    if(el('syncBackupStatus'))el('syncBackupStatus').textContent='自動バックアップできません。「進捗をバックアップ」で保存してください';
+    throw Error('端末バックアップ失敗（容量・保存設定を確認）');
+  }
+}
+// Transaction callback: pure merge, with no LocalStorage/UI side effects.
+function mergeCloudPayloads(remote,local){
+  remote=remote||{};
+  const result={...local,books:{},studyPlans:{...local.studyPlans},studyTime:{days:{}}};
+  for(const book of ['book1','book2']){
+    const stats=mergeStatsTarget(mergeStatsTarget(emptyStats(),local.books?.[book]),remote.books?.[book]);
+    result.books[book]=compactStatsPayload(stats);
+  }
+  result.game={xp:Math.max(local.game?.xp||0,remote.game?.xp||0),lastBonusDay:[local.game?.lastBonusDay,remote.game?.lastBonusDay].filter(Boolean).sort().pop()||null};
+  result.studyPlans.shared=mergeStudyPlanBook(local.studyPlans?.shared,remote.studyPlans?.shared);
+  const ld=local.studyTime?.days||{},rd=remote.studyTime?.days||{};
+  for(const day of [...new Set([...Object.keys(ld),...Object.keys(rd)])].sort().slice(-400)){
+    const a=ld[day]||{},b=rd[day]||{};
+    result.studyTime.days[day]={...a,...b};
+    for(const key of new Set([...Object.keys(a),...Object.keys(b)]))if(typeof a[key]==='number'||typeof b[key]==='number')result.studyTime.days[day][key]=Math.max(a[key]||0,b[key]||0);
+  }
+  result.mockExams=mergeMockPayload(local.mockExams||{},remote.mockExams||{});
+  result.sessions=mergeSessionPayload(local.sessions||{},remote.sessions||{});
+  Object.assign(result,Object.fromEntries(Object.entries(result.books[local.activeBook]||{}).filter(([key])=>!['perQ','rankAttempts','lastDay'].includes(key))));
+  return JSON.parse(JSON.stringify(result));
+}
+let _syncT=null,_syncBusy=false,_syncDirty=false,_syncFailures=0;
+function cloudSyncSoon(immediate=false){
+  if(!(window.cbtUser&&window.cbtCloud?.save))return;
+  _syncDirty=true;clearTimeout(_syncT);
+  setCloudSyncState('pending');
+  if(!navigator.onLine||_syncBusy)return;
+  _syncT=setTimeout(runCloudSync,immediate?0:2000);
+}
+async function runCloudSync(){
+  if(_syncBusy||!navigator.onLine||!window.cbtUser)return;
+  _syncBusy=true;_syncDirty=false;
+  const uid=window.cbtUser.uid;
+  let timeout;
+  const operation=(async()=>{
+    ensureProgressBackup();
+    const latest=await window.cbtCloud.readLatest();
+    if(window.cbtUser?.uid!==uid)throw Error('ログインが変更されました');
+    if(latest)cbtMergeCloud(latest);
+    await window.cbtCloud.save(fullStatsPayload());
+    const confirmed=await window.cbtCloud.readLatest();
+    if(window.cbtUser?.uid!==uid)throw Error('ログインが変更されました');
+    if(confirmed)cbtMergeCloud(confirmed);
+  })();
+  // Keep the single-flight lock until the operation settles, even after a slow-network warning.
+  timeout=setTimeout(()=>setCloudSyncState('unavailable',{error:'通信に時間がかかっています。記録は端末に保持しています'}),20000);
+  try{
+    await operation;_syncFailures=0;
+    setCloudSyncState(_syncDirty?'pending':'ready',{savedAt:Date.now(),error:''});
+  }catch(error){
+    console.warn('cloud sync error',error);_syncFailures++;
+    setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'save failed')});
+  }finally{
+    clearTimeout(timeout);_syncBusy=false;
+    if(_syncDirty||_syncFailures)_syncT=setTimeout(runCloudSync,_syncFailures?Math.min(60000,2000*2**Math.min(_syncFailures,5)):0);
+  }
+}
+el('syncNowBtn').addEventListener('click',()=>cloudSyncSoon(true));
+el('exportProgressBtn').addEventListener('click',()=>{
+  try{
+    const before=localStorage.getItem('togo_sync_backup_20260923_'+(window.cbtUser?.uid||'local'));
+    const blob=new Blob([JSON.stringify({current:progressBackupData(),beforeSyncFix:before?JSON.parse(before):null},null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='toGO-progress-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);
+  }catch(error){toast('バックアップ失敗：'+error.message);}
+});
+window.cbtMergePayloads=mergeCloudPayloads;
+window.cbtSyncNow=()=>cloudSyncSoon(true);
 window.addEventListener('online',()=>{
   if(window.cbtCloud&&window.cbtCloud.save){cloudSyncSoon();toast('オンラインに戻りました。学習記録を同期します');}
   renderOfflineStatus();renderCloudStatus();
@@ -3633,14 +3748,16 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   // メインアプリから使うクラウドAPI
   window.cbtCloud = {
     save: async function(payload){
-      if(!window.cbtUser) return;
-      const body = Object.assign({
-        username: window.cbtUser.username || '',
-        email: window.cbtUser.email || '',
-        avatar: safeAvatar(window.cbtUser.avatar),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, payload||{});
-      await db.collection('users').doc(window.cbtUser.uid).set(body, {merge:true});
+      if(!window.cbtUser)throw Error('未ログインです');
+      const user={...window.cbtUser},ref=db.collection('users').doc(user.uid);
+      const clean=JSON.parse(JSON.stringify(payload||{}));
+      await db.runTransaction(async function(transaction){
+        const snapshot=await transaction.get(ref);
+        const merged=window.cbtMergePayloads(snapshot.exists?snapshot.data():{},clean);
+        const body=Object.assign({username:user.username||'',email:user.email||'',avatar:safeAvatar(user.avatar),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},merged);
+        // Replace merged top-level maps so old session tombstones/fields cannot linger recursively.
+        transaction.set(ref,body,{mergeFields:Object.keys(body)});
+      });
     },
     // cache ではなく Firestore サーバーから読む。同期表示を「保存要求を出した」だけで
     // 完了にせず、別端末の回答も含む確定値へ統合するために使う。
@@ -3653,7 +3770,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       const snap = await db.collection('users').get();
       const arr = [];
       snap.forEach(function(d){
-        const x=d.data();x.uid=d.id;delete x.perQ;delete x.studyPlans;
+        const x=d.data();x.uid=d.id;delete x.perQ;delete x.studyPlans;delete x.mockExams;delete x.sessions;
         if(x.books){
           x.books=Object.fromEntries(Object.entries(x.books).map(function(entry){
             const summary=Object.assign({},entry[1]);delete summary.perQ;delete summary.rankAttempts;return [entry[0],summary];
@@ -3676,11 +3793,11 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     if(stopCloudSubscription){try{stopCloudSubscription();}catch(_){ }stopCloudSubscription=null;}
     if(!(window.cbtCloud&&window.cbtCloud.subscribe&&window.cbtUser))return;
     stopCloudSubscription=window.cbtCloud.subscribe(function(data,metadata){
-      // ローカルで保存中の通知も届く。統合処理は回数と時刻を比較するため、二重適用しても記録は増えない。
+      if(metadata?.fromCache||metadata?.hasPendingWrites)return;
+      // A server notification confirms a read, not that this device's pending writes succeeded.
       afterAppReady(function(){
         try{
           if(window.cbtMergeCloud)window.cbtMergeCloud(data);
-          setCloudSyncState('ready',{savedAt:Date.now(),error:''});
         }catch(error){
           console.warn('cloud merge error',error);
           setCloudSyncState('unavailable',{error:String(error?.message||'merge failed')});
@@ -3738,21 +3855,10 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     reveal();
     startCloudSubscription();
     // アプリ準備完了後：クラウド→ローカル統合 → 統合結果を書き戻す（数字は消えない）
-    afterAppReady(async function(){
+    afterAppReady(function(){
       try{ if(cloudData && window.cbtMergeCloud) window.cbtMergeCloud(cloudData); }
       catch(error){console.warn('initial cloud merge error',error);setCloudSyncState('unavailable',{error:String(error?.message||'merge failed')});}
-      try{
-        if(window.cbtFullPayload){
-          await window.cbtCloud.save(window.cbtFullPayload());
-          // 初回起動時も、書き込み直後のサーバー値を取り込んでから同期済みにする。
-          const latest=await window.cbtCloud.readLatest();
-          if(latest&&window.cbtMergeCloud)window.cbtMergeCloud(latest);
-          setCloudSyncState('ready',{savedAt:Date.now(),error:''});
-        }
-      }catch(error){
-        console.warn('initial cloud save error',error);
-        setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'save failed')});
-      }
+      window.cbtSyncNow();
     });
   });
 })();
