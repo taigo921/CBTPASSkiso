@@ -597,7 +597,7 @@
     <div class="book-switch" role="tablist" aria-label="問題集を切り替える">
       <button class="book-tab on" data-book="book1" role="tab" aria-selected="true"><b>問題集1</b><span>基礎系</span></button>
       <button class="book-tab" data-book="book2" role="tab" aria-selected="false"><b>問題集2</b><span>臨床系</span></button>
-      <button class="book-tab" data-book="mock" role="tab" aria-selected="false"><b>模試</b><span>麻布2026</span></button>
+      <button class="book-tab" data-book="mock" role="tab" aria-selected="false"><b>2026 9/19</b><span>麻布模試</span></button>
     </div>
     <div id="mockHome" class="hidden">
       <div class="sec-h">ブロックを選ぶ</div>
@@ -776,7 +776,7 @@
   <!-- MOCK EXAM: kept separate until each source question has been checked. -->
   <section id="mockExam" class="hidden mock-exam">
     <div class="mock-exam-head">
-      <div><h1 id="mockExamTitle">CBT模擬試験2026</h1><p id="mockExamProgress">問題を準備中</p></div>
+      <div><h1 id="mockExamTitle">2026 9/19 麻布模試</h1><p id="mockExamProgress">問題を準備中</p></div>
       <div class="mock-exam-clock">経過 <span id="mockExamClock">00:00</span></div>
     </div>
     <div class="mock-exam-card">
@@ -1006,9 +1006,9 @@ function renderMockHome(){
   const ready=mockQuestions().length>0;
   el('mockBlockContent').classList.toggle('hidden',!ready);
   el('mockBlockNotice').classList.toggle('hidden',ready);
-  el('bookTitle').textContent='模試';
+  el('bookTitle').textContent='2026 9/19 麻布模試';
   if(!ready){
-    el('qcount').textContent=`2026 麻布模試・ブロック${selectedMockBlock}`;
+    el('qcount').textContent=`2026 9/19 麻布模試・ブロック${selectedMockBlock}`;
     el('mockBlockNotice').textContent=`ブロック${selectedMockBlock}は準備中です。問題の取り込みが終わると、ここから開始できます。`;
     return;
   }
@@ -1016,7 +1016,7 @@ function renderMockHome(){
   const qs=mockQuestions(),total=qs.length,linked=mockForwardOnly(),complete=mockFrontier()===total;
   const answered=qs.filter(q=>mockProgress.answers[q.no]?.answered);
   const correct=answered.filter(q=>mockProgress.answers[q.no].picked===q.answer).length;
-  el('bookTitle').textContent='模試';el('qcount').textContent=`2026 麻布模試・ブロック${selectedMockBlock} 全${total}問`;
+  el('bookTitle').textContent='2026 9/19 麻布模試';el('qcount').textContent=`ブロック${selectedMockBlock} 全${total}問`;
   el('mockResumeBtn').disabled=linked&&complete;
   el('mockResumeTitle').textContent=linked&&complete?'全問終了':Object.keys(mockProgress.answers).length?'続きから再開':`ブロック${selectedMockBlock}を始める`;
   el('mockResumeInfo').textContent=linked&&complete?'下の一覧から解説を確認できます':`問${mockProgress.index+1}から ・ 解答済み ${answered.length}/${total}問`;
@@ -2195,7 +2195,7 @@ function renderMockExam(){
   mockExamState.picked=saved?.picked||null;mockExamState.answered=!!saved?.answered;mockExamState.startedAt=Date.now();
   saveMockProgress();el('mockPrevBtn').disabled=mockForwardOnly()||mockExamState.index===0;el('mockNextBtn').disabled=mockForwardOnly()||mockExamState.index===qs.length-1;
   el('mockPrevBtn').classList.toggle('hidden',mockForwardOnly());el('mockNextBtn').classList.toggle('hidden',mockForwardOnly());
-  el('mockExamTitle').textContent=`CBT模擬試験2026：ブロック${selectedMockBlock}`;
+  el('mockExamTitle').textContent=`2026 9/19 麻布模試：ブロック${selectedMockBlock}`;
   el('mockExamNumber').textContent=`問${q.no}`;
   el('mockExamProgress').textContent=`${mockExamState.index+1} / ${qs.length}問${mockForwardOnly()?' ・ 連問：確定すると戻れません':''}`;
   el('mockExamImage').src=q.image;
@@ -2249,7 +2249,7 @@ function openMockExplanation(q){
   if(!mockForwardOnly()||mockFrontier()!==mockQuestions().length)return;
   showOnly('mockExam');el('footer').classList.add('hidden');
   for(const id of ['mockExamImage','mockExamChoices','mockExamSubmit','mockExamZoom','mockPrevBtn','mockNextBtn'])el(id).classList.add('hidden');
-  el('mockExamTitle').textContent=`ブロック${selectedMockBlock}：終了後の解説`;
+  el('mockExamTitle').textContent=`2026 9/19 麻布模試：ブロック${selectedMockBlock}の解説`;
   el('mockExamNumber').textContent=`問${q.no}`;el('mockExamProgress').textContent='回答は確定済みです。変更はできません。';
   const a=mockProgress.answers[q.no],result=el('mockExamResult');result.classList.remove('hidden');result.classList.toggle('bad',a.picked!==q.answer);result.textContent=`あなたの回答：${a.picked} ／ 正解：${q.answer}`;
   renderMockExplanationImages(q);window.scrollTo({top:0,behavior:'smooth'});
