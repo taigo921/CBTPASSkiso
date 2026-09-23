@@ -669,7 +669,7 @@
     <div class="cloud-status pending" id="cloudStatus" aria-live="polite">☁️ 学習記録の同期を確認中…</div>
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
-    <p class="mock-note">同期診断版：9/23-3（この表示で更新を確認できます）</p>
+    <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1049,7 +1049,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20260923-progress-sync-3';
+const SERVICE_WORKER_BUILD='20260923-progress-packed-4';
 // 一時休止中。再開時は true に戻すだけで、ランキング記録はそのまま利用できる。
 const LEADERBOARD_ENABLED=false;
 const offlineCacheWrites=[];
@@ -3160,6 +3160,7 @@ function mergeStudyPlanBook(local,cloud){
 }
 function cbtMergeCloud(cd){
   if(!cd)return;
+  cd=decodeCloudProgress(cd);
   ensureProgressBackup();
   const oldMockAnswer=JSON.stringify(mockProgress.answers?.[mockExamState.index+1]||null),oldMockFrontier=mockFrontier();
   const mergedMocks=mergeMockPayload(localMockPayload(),cd.mockExams||{});
@@ -3213,7 +3214,7 @@ function mergeMockPayload(local,remote){
       const old=answers[no];
       if(!old||(!old.answered&&answer.answered)||(!!old.answered===!!answer.answered&&(answer.updatedAt||0)>(old.updatedAt||0)))answers[no]=answer;
     }
-    result[block]={...((b.updatedAt||0)>(a.updatedAt||0)?b:a),answers,updatedAt:Math.max(a.updatedAt||0,b.updatedAt||0)};
+    result[block]={...(!local[block]||(b.updatedAt||0)>(a.updatedAt||0)?b:a),answers,updatedAt:Math.max(a.updatedAt||0,b.updatedAt||0)};
     if(block>=5){let index=0;while(index<40&&answers[index+1]?.answered)index++;result[block].index=index;}
   }
   return result;
@@ -3254,7 +3255,7 @@ function ensureProgressBackup(){
 // Transaction callback: pure merge, with no LocalStorage/UI side effects.
 function mergeCloudPayloads(remote,local){
   remote=remote||{};
-  const result={...local,books:{},studyPlans:{...local.studyPlans},studyTime:{days:{}}};
+  const result={...local,books:{},studyPlans:{...remote.studyPlans,...local.studyPlans},studyTime:{days:{}}};
   for(const book of ['book1','book2']){
     const stats=mergeStatsTarget(mergeStatsTarget(emptyStats(),local.books?.[book]),remote.books?.[book]);
     result.books[book]=compactStatsPayload(stats);
@@ -3271,6 +3272,28 @@ function mergeCloudPayloads(remote,local){
   result.sessions=mergeSessionPayload(local.sessions||{},remote.sessions||{});
   Object.assign(result,Object.fromEntries(Object.entries(result.books[local.activeBook]||{}).filter(([key])=>!['perQ','rankAttempts','lastDay'].includes(key))));
   return JSON.parse(JSON.stringify(result));
+}
+// Detailed progress is loaded by UID, never queried by its nested fields.
+// Keep it losslessly in JSON to avoid tens of thousands of automatic index entries.
+function encodeCloudProgress(payload){
+  const result={...payload},data={};
+  for(const key of ['books','studyPlans','mockExams','sessions']){
+    if(payload[key]!==undefined)data[key]=payload[key];
+    delete result[key];
+  }
+  result.progressDataV1=JSON.stringify({version:1,data});
+  result.books=Object.fromEntries(Object.entries(payload.books||{}).map(([book,value])=>[book,Object.fromEntries(Object.entries(value).filter(([key])=>!['perQ','rankAttempts'].includes(key)))]));
+  return result;
+}
+function decodeCloudProgress(document){
+  if(document.progressDataV1===undefined)return document;
+  let packed;
+  try{packed=JSON.parse(document.progressDataV1);}catch(_){throw Error('クラウドの詳細記録を読み取れません。端末の記録は保持しています');}
+  if(packed?.version!==1||!packed.data||typeof packed.data!=='object')throw Error('未対応のクラウド保存形式です。更新してください');
+  const legacy={...document};delete legacy.progressDataV1;
+  if(!legacy.studyPlans&&!legacy.mockExams&&!legacy.sessions&&!Object.values(legacy.books||{}).some(book=>book.perQ||book.rankAttempts))return {...legacy,...packed.data};
+  // An old client may still write legacy maps. Merge those too, never discard its newer answers.
+  return {...legacy,...mergeCloudPayloads({...legacy,...packed.data},legacy)};
 }
 function cloudErrorDetail(error){
   return [...new Set([error?.code,error?.message].filter(Boolean).map(String))].join('：')||'原因不明の通信エラー';
@@ -3762,8 +3785,10 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       const clean=JSON.parse(JSON.stringify(payload||{}));
       await db.runTransaction(async function(transaction){
         const snapshot=await transaction.get(ref);
-        const merged=window.cbtMergePayloads(snapshot.exists?snapshot.data():{},clean);
-        const body=Object.assign({username:user.username||'',email:user.email||'',avatar:safeAvatar(user.avatar),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},merged);
+        const merged=window.cbtMergePayloads(snapshot.exists?decodeCloudProgress(snapshot.data()):{},clean);
+        const body=Object.assign({username:user.username||'',email:user.email||'',avatar:safeAvatar(user.avatar),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},encodeCloudProgress(merged));
+        // Atomically replace legacy detailed maps only after all their data is in progressDataV1.
+        for(const key of ['studyPlans','mockExams','sessions','perQ','rankAttempts'])body[key]=firebase.firestore.FieldValue.delete();
         // Replace merged top-level maps so old session tombstones/fields cannot linger recursively.
         transaction.set(ref,body,{mergeFields:Object.keys(body)});
       });
@@ -3779,7 +3804,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       const snap = await db.collection('users').get();
       const arr = [];
       snap.forEach(function(d){
-        const x=d.data();x.uid=d.id;delete x.perQ;delete x.studyPlans;delete x.mockExams;delete x.sessions;
+        const x=d.data();x.uid=d.id;delete x.perQ;delete x.studyPlans;delete x.mockExams;delete x.sessions;delete x.progressDataV1;
         if(x.books){
           x.books=Object.fromEntries(Object.entries(x.books).map(function(entry){
             const summary=Object.assign({},entry[1]);delete summary.perQ;delete summary.rankAttempts;return [entry[0],summary];
