@@ -1,5 +1,5 @@
 const CACHE_NAME='cbtpass-offline-v1';
-const APP_SHELL=['./','./index.html'];
+const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js'];
 const FIREBASE_SDKS=[
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',

@@ -776,7 +776,7 @@
   <!-- MOCK EXAM: kept separate until each source question has been checked. -->
   <section id="mockExam" class="hidden mock-exam">
     <div class="mock-exam-head">
-      <div><h1>CBT模擬試験2026：ブロック1</h1><p id="mockExamProgress">問題を準備中</p></div>
+      <div><h1 id="mockExamTitle">CBT模擬試験2026</h1><p id="mockExamProgress">問題を準備中</p></div>
       <div class="mock-exam-clock">経過 <span id="mockExamClock">00:00</span></div>
     </div>
     <div class="mock-exam-card">
@@ -787,8 +787,9 @@
       <button type="button" class="mock-submit" id="mockExamSubmit" disabled>回答する</button>
       <div class="mock-result hidden" id="mockExamResult"></div>
       <img id="mockExplanationImage" class="mock-explanation-source hidden" alt="公式の解答と解説">
+      <div id="mockExtraExplanations"></div>
     </div>
-    <p class="mock-note">自分が解いた時の選択マークは使わず、公式の解答・解説を確認した全60問を表示します。模試の成績は通常の問題集・忘却曲線には混ぜません。</p>
+    <p class="mock-note">正答は公式の解答・解説に基づきます。模試の成績は通常の問題集・忘却曲線には混ぜません。連問のブロック5・6は回答確定後に戻れず、全問終了後に解説を確認できます。</p>
   </section>
 
   <!-- FINISH / REVIEW -->
@@ -906,6 +907,7 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="mock-assets/azabu-2026/blocks.js"></script>
 <script>
 const BOOKS = {
   book1: {
@@ -975,15 +977,21 @@ const AZABU_MOCK_2026_BLOCK1=[{
 let mockExamState={index:0,picked:null,answered:false,startedAt:0,clock:null};
 let mockHomeSelected=false,mockListFilter='all',mockProgress={index:0,answers:{}};
 let selectedMockBlock=1;
-function mockStorageKey(){return 'togo_mock_azabu2026_block1_v1_'+(window.cbtUser?.uid||'local');}
+function mockQuestions(block=selectedMockBlock){return block===1?AZABU_MOCK_2026_BLOCK1:(window.TOGO_MOCK_BLOCKS?.[block]||[]);}
+function mockForwardOnly(){return selectedMockBlock===5||selectedMockBlock===6;}
+function mockFrontier(){const i=mockQuestions().findIndex(q=>!mockProgress.answers[q.no]?.answered);return i<0?mockQuestions().length:i;}
+function mockStorageKey(){return `togo_mock_azabu2026_block${selectedMockBlock}_v1_`+(window.cbtUser?.uid||'local');}
 function loadMockProgress(){
   const saved=safeGet(mockStorageKey())||{};
-  mockProgress={index:Number.isInteger(saved.index)?Math.max(0,Math.min(59,saved.index)):0,answers:{}};
-  for(const q of AZABU_MOCK_2026_BLOCK1){const a=saved.answers?.[q.no];if(a&&/^[A-E]$/.test(a.picked))mockProgress.answers[q.no]={picked:a.picked,answered:a.answered===true};}
+  mockProgress={index:Number.isInteger(saved.index)?Math.max(0,Math.min(mockQuestions().length-1,saved.index)):0,answers:{}};
+  for(const q of mockQuestions()){const a=saved.answers?.[q.no];if(a&&typeof a.picked==='string'&&a.picked.length===1&&(q.choices||'ABCDE').includes(a.picked))mockProgress.answers[q.no]={picked:a.picked,answered:a.answered===true};}
+  if(mockForwardOnly())mockProgress.index=mockFrontier();
 }
 function saveMockProgress(){
   mockProgress.index=mockExamState.index;
-  if(mockExamState.picked)mockProgress.answers[AZABU_MOCK_2026_BLOCK1[mockExamState.index].no]={picked:mockExamState.picked,answered:mockExamState.answered};
+  const q=mockQuestions()[mockExamState.index];
+  if(q&&mockExamState.picked&&!(mockForwardOnly()&&mockProgress.answers[q.no]?.answered))mockProgress.answers[q.no]={picked:mockExamState.picked,answered:mockExamState.answered};
+  if(mockForwardOnly())mockProgress.index=mockFrontier();
   safeSet(mockStorageKey(),mockProgress);
 }
 function renderMockHome(){
@@ -992,10 +1000,10 @@ function renderMockHome(){
     const button=document.createElement('button');button.type='button';button.className='mock-choice';
     button.classList.toggle('selected',block===selectedMockBlock);
     button.setAttribute('aria-pressed',String(block===selectedMockBlock));
-    button.textContent=`ブロック${block}　${block===1?'60問':'準備中'}`;
+    button.textContent=`ブロック${block}　${mockQuestions(block).length}問${block>=5?'（連問）':''}`;
     button.addEventListener('click',()=>{selectedMockBlock=block;mockListFilter='all';renderMockHome();});selector.appendChild(button);
   }
-  const ready=selectedMockBlock===1;
+  const ready=mockQuestions().length>0;
   el('mockBlockContent').classList.toggle('hidden',!ready);
   el('mockBlockNotice').classList.toggle('hidden',ready);
   el('bookTitle').textContent='模試';
@@ -1005,21 +1013,24 @@ function renderMockHome(){
     return;
   }
   loadMockProgress();
-  const answered=AZABU_MOCK_2026_BLOCK1.filter(q=>mockProgress.answers[q.no]?.answered);
+  const qs=mockQuestions(),total=qs.length,linked=mockForwardOnly(),complete=mockFrontier()===total;
+  const answered=qs.filter(q=>mockProgress.answers[q.no]?.answered);
   const correct=answered.filter(q=>mockProgress.answers[q.no].picked===q.answer).length;
-  el('bookTitle').textContent='模試';el('qcount').textContent='2026 麻布模試・ブロック1 全60問';
-  el('mockResumeTitle').textContent=Object.keys(mockProgress.answers).length?'続きから再開':'ブロック1を始める';
-  el('mockResumeInfo').textContent=`問${mockProgress.index+1}から ・ 解答済み ${answered.length}/60問`;
-  el('mockSummary').textContent=`解答済み ${answered.length}問 ／ 未解答 ${60-answered.length}問 ／ 正解 ${correct}問`;
+  el('bookTitle').textContent='模試';el('qcount').textContent=`2026 麻布模試・ブロック${selectedMockBlock} 全${total}問`;
+  el('mockResumeBtn').disabled=linked&&complete;
+  el('mockResumeTitle').textContent=linked&&complete?'全問終了':Object.keys(mockProgress.answers).length?'続きから再開':`ブロック${selectedMockBlock}を始める`;
+  el('mockResumeInfo').textContent=linked&&complete?'下の一覧から解説を確認できます':`問${mockProgress.index+1}から ・ 解答済み ${answered.length}/${total}問`;
+  el('mockSummary').textContent=`解答済み ${answered.length}問 ／ 未解答 ${total-answered.length}問`+(!linked||complete?` ／ 正解 ${correct}問`:' ／ 連問：回答確定後は戻れません。正誤・解説は全問終了後に表示します。');
   document.querySelectorAll('[data-mock-filter]').forEach(b=>b.classList.toggle('on',b.dataset.mockFilter===mockListFilter));
   const list=el('mockQuestionList');list.innerHTML='';
-  for(const q of AZABU_MOCK_2026_BLOCK1){
+  for(const q of qs){
     const a=mockProgress.answers[q.no],done=!!a?.answered,correct=done&&a.picked===q.answer;
-    if(mockListFilter==='unanswered'&&done||mockListFilter==='wrong'&&(!done||correct))continue;
+    if(mockListFilter==='unanswered'&&done||mockListFilter==='wrong'&&(!done||correct||linked&&!complete))continue;
     const button=document.createElement('button');button.type='button';button.className='mock-choice';
-    if(done)button.classList.add(correct?'correct':'wrong');
-    button.textContent=`問${q.no}　${done?(correct?'○ 正解':'× 不正解'):(a?'選択中':'未解答')}`;
-    button.addEventListener('click',()=>openMockExam(q.no-1));list.appendChild(button);
+    if(done&&(!linked||complete))button.classList.add(correct?'correct':'wrong');
+    button.textContent=`問${q.no}　${done?(linked&&!complete?'確定済み':(correct?'○ 正解':'× 不正解')):(a?'選択中':'未解答')}${linked&&complete?'・解説':''}`;
+    button.disabled=linked&&!complete&&q.no-1!==mockFrontier();
+    button.addEventListener('click',()=>linked&&complete?openMockExplanation(q):openMockExam(q.no-1));list.appendChild(button);
   }
   if(!list.children.length)list.textContent='該当する問題はありません。';
 }
@@ -1028,7 +1039,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20260920-guide-zoom-1';
+const SERVICE_WORKER_BUILD='20260922-mock-all-blocks-1';
 // 一時休止中。再開時は true に戻すだけで、ランキング記録はそのまま利用できる。
 const LEADERBOARD_ENABLED=false;
 const offlineCacheWrites=[];
@@ -2175,20 +2186,25 @@ function formatMockExamTime(seconds){
   return String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
 }
 function renderMockExam(){
-  const q=AZABU_MOCK_2026_BLOCK1[mockExamState.index];
+  if(mockForwardOnly())mockExamState.index=mockFrontier();
+  const qs=mockQuestions(),q=qs[mockExamState.index];
   if(!q){renderHome();return;}
   showOnly('mockExam');el('footer').classList.add('hidden');
+  el('mockExamImage').classList.remove('hidden');el('mockExamChoices').classList.remove('hidden');el('mockExamSubmit').classList.remove('hidden');el('mockExamZoom').classList.remove('hidden');
   const saved=mockProgress.answers[q.no];
   mockExamState.picked=saved?.picked||null;mockExamState.answered=!!saved?.answered;mockExamState.startedAt=Date.now();
-  saveMockProgress();el('mockPrevBtn').disabled=mockExamState.index===0;el('mockNextBtn').disabled=mockExamState.index===59;
+  saveMockProgress();el('mockPrevBtn').disabled=mockForwardOnly()||mockExamState.index===0;el('mockNextBtn').disabled=mockForwardOnly()||mockExamState.index===qs.length-1;
+  el('mockPrevBtn').classList.toggle('hidden',mockForwardOnly());el('mockNextBtn').classList.toggle('hidden',mockForwardOnly());
+  el('mockExamTitle').textContent=`CBT模擬試験2026：ブロック${selectedMockBlock}`;
   el('mockExamNumber').textContent=`問${q.no}`;
-  el('mockExamProgress').textContent=`ブロック1 ・ ${mockExamState.index+1} / ${AZABU_MOCK_2026_BLOCK1.length}問`;
+  el('mockExamProgress').textContent=`${mockExamState.index+1} / ${qs.length}問${mockForwardOnly()?' ・ 連問：確定すると戻れません':''}`;
   el('mockExamImage').src=q.image;
   el('mockExamResult').classList.add('hidden');el('mockExamResult').textContent='';
   el('mockExplanationImage').classList.add('hidden');el('mockExplanationImage').removeAttribute('src');
-  el('mockExamSubmit').disabled=!mockExamState.picked;el('mockExamSubmit').textContent='回答する';
+  el('mockExtraExplanations').innerHTML='';
+  el('mockExamSubmit').disabled=!mockExamState.picked;el('mockExamSubmit').textContent=mockForwardOnly()?'回答を確定して次へ（変更不可）':'回答する';
   const choices=el('mockExamChoices');choices.innerHTML='';
-  ['A','B','C','D','E'].forEach(key=>{
+  [...(q.choices||'ABCDE')].forEach(key=>{
     const button=document.createElement('button');button.type='button';button.className='mock-choice';button.textContent=key;
     button.classList.toggle('selected',mockExamState.picked===key);
     button.addEventListener('click',()=>{
@@ -2206,21 +2222,41 @@ function renderMockExam(){
   if(mockExamState.answered)showMockResult();
   window.scrollTo({top:0,behavior:'smooth'});
 }
-function openMockExam(index){loadMockProgress();mockHomeSelected=true;mockExamState.index=Number.isInteger(index)?Math.max(0,Math.min(59,index)):mockProgress.index;renderMockExam();}
+function openMockExam(index){loadMockProgress();mockHomeSelected=true;mockExamState.index=mockForwardOnly()?mockFrontier():Number.isInteger(index)?Math.max(0,Math.min(mockQuestions().length-1,index)):mockProgress.index;renderMockExam();}
+function moveMockQuestion(direction){if(mockForwardOnly())return;saveMockProgress();mockExamState.index=Math.max(0,Math.min(mockQuestions().length-1,mockExamState.index+direction));renderMockExam();}
 function submitMockExam(){
-  const q=AZABU_MOCK_2026_BLOCK1[mockExamState.index];
+  const q=mockQuestions()[mockExamState.index];
   if(!q)return;
   if(mockExamState.answered){
-    if(mockExamState.index<AZABU_MOCK_2026_BLOCK1.length-1){mockExamState.index++;renderMockExam();}
+    if(mockExamState.index<mockQuestions().length-1){mockExamState.index++;renderMockExam();}
     else {renderHome();toast('模試の問題一覧に戻りました');}
     return;
   }
   if(!mockExamState.picked)return;
   mockExamState.answered=true;
-  saveMockProgress();showMockResult();
+  saveMockProgress();
+  if(mockForwardOnly()){mockExamState.index=mockFrontier();renderMockExam();}
+  else showMockResult();
+}
+function renderMockExplanationImages(q){
+  const images=q.explanationImages||(q.explanationImage?[q.explanationImage]:[]);
+  el('mockExtraExplanations').innerHTML='';
+  el('mockExplanationImage').classList.toggle('hidden',!images.length);
+  if(images.length)el('mockExplanationImage').src=images[0];
+  for(const src of images.slice(1)){const img=document.createElement('img');img.src=src;img.alt='公式の解答と解説（続き）';img.className='mock-explanation-source';img.addEventListener('click',()=>openImageZoom(src,img.alt));el('mockExtraExplanations').appendChild(img);}
+}
+function openMockExplanation(q){
+  if(!mockForwardOnly()||mockFrontier()!==mockQuestions().length)return;
+  showOnly('mockExam');el('footer').classList.add('hidden');
+  for(const id of ['mockExamImage','mockExamChoices','mockExamSubmit','mockExamZoom','mockPrevBtn','mockNextBtn'])el(id).classList.add('hidden');
+  el('mockExamTitle').textContent=`ブロック${selectedMockBlock}：終了後の解説`;
+  el('mockExamNumber').textContent=`問${q.no}`;el('mockExamProgress').textContent='回答は確定済みです。変更はできません。';
+  const a=mockProgress.answers[q.no],result=el('mockExamResult');result.classList.remove('hidden');result.classList.toggle('bad',a.picked!==q.answer);result.textContent=`あなたの回答：${a.picked} ／ 正解：${q.answer}`;
+  renderMockExplanationImages(q);window.scrollTo({top:0,behavior:'smooth'});
 }
 function showMockResult(){
-  const q=AZABU_MOCK_2026_BLOCK1[mockExamState.index];
+  if(mockForwardOnly())return;
+  const q=mockQuestions()[mockExamState.index];
   const correct=mockExamState.picked===q.answer;
   el('mockExamChoices').querySelectorAll('button').forEach(button=>{
     button.disabled=true;
@@ -2230,13 +2266,9 @@ function showMockResult(){
   const result=el('mockExamResult');result.classList.toggle('bad',!correct);
   result.textContent=(correct?'正解！':'不正解。')+` 正解は ${q.answer}。${q.explanation}`;
   result.classList.remove('hidden');
-  if(q.explanationImage){
-    const explanationImage=el('mockExplanationImage');
-    explanationImage.src=q.explanationImage;
-    explanationImage.classList.remove('hidden');
-  }
+  renderMockExplanationImages(q);
   el('mockExamSubmit').disabled=false;
-  el('mockExamSubmit').textContent=mockExamState.index<AZABU_MOCK_2026_BLOCK1.length-1?'次の問題へ':'ブロック1を終了';
+  el('mockExamSubmit').textContent=mockExamState.index<mockQuestions().length-1?'次の問題へ':`ブロック${selectedMockBlock}を終了`;
   clearInterval(mockExamState.clock);mockExamState.clock=null;
 }
 function setProgress(p){el('pbarFill').style.width=Math.max(0,Math.min(100,p))+'%';}
@@ -2303,7 +2335,7 @@ function renderHome(){
     const on=tab.dataset.book===(mockHomeSelected?'mock':activeBook);
     tab.classList.toggle('on',on);tab.setAttribute('aria-selected',on?'true':'false');
   });
-  const logoSmall=document.querySelector('.logo small');if(logoSmall)logoSmall.textContent=book.title;
+  const logoSmall=document.querySelector('.logo small');if(logoSmall)logoSmall.textContent=mockHomeSelected?'模試':book.title;
   console.log(`[${book.title}] 総問題数:`, QUESTIONS.length);
   console.log('[問題集] has_image=true:', QUESTIONS.filter(q=>q.has_image).length);
   console.log('[問題集] imageあり:', QUESTIONS.filter(q=>q.image).length);
@@ -2911,8 +2943,8 @@ el('listBtn').addEventListener('click',openList);
 el('planModeBtn').addEventListener('click',openStudyPlan);
 el('mockResumeBtn').addEventListener('click',()=>openMockExam());
 el('mockListBtn').addEventListener('click',()=>{saveMockProgress();renderHome();});
-el('mockPrevBtn').addEventListener('click',()=>{saveMockProgress();if(mockExamState.index>0){mockExamState.index--;renderMockExam();}});
-el('mockNextBtn').addEventListener('click',()=>{saveMockProgress();if(mockExamState.index<59){mockExamState.index++;renderMockExam();}});
+el('mockPrevBtn').addEventListener('click',()=>moveMockQuestion(-1));
+el('mockNextBtn').addEventListener('click',()=>moveMockQuestion(1));
 el('mockFilters').addEventListener('click',event=>{const b=event.target.closest('[data-mock-filter]');if(b){mockListFilter=b.dataset.mockFilter;renderMockHome();}});
 el('mockExamSubmit').addEventListener('click',submitMockExam);
 el('mockExamZoom').addEventListener('click',()=>openImageZoom(el('mockExamImage').currentSrc||el('mockExamImage').src,'CBT模試の問題'));
