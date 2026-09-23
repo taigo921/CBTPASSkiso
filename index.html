@@ -1048,7 +1048,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20260923-progress-sync-1';
+const SERVICE_WORKER_BUILD='20260923-progress-sync-2';
 // 一時休止中。再開時は true に戻すだけで、ランキング記録はそのまま利用できる。
 const LEADERBOARD_ENABLED=false;
 const offlineCacheWrites=[];
@@ -3271,6 +3271,9 @@ function mergeCloudPayloads(remote,local){
   Object.assign(result,Object.fromEntries(Object.entries(result.books[local.activeBook]||{}).filter(([key])=>!['perQ','rankAttempts','lastDay'].includes(key))));
   return JSON.parse(JSON.stringify(result));
 }
+function cloudErrorDetail(error){
+  return [...new Set([error?.code,error?.message].filter(Boolean).map(String))].join('：')||'原因不明の通信エラー';
+}
 let _syncT=null,_syncBusy=false,_syncDirty=false,_syncFailures=0;
 function cloudSyncSoon(immediate=false){
   if(!(window.cbtUser&&window.cbtCloud?.save))return;
@@ -3283,13 +3286,18 @@ async function runCloudSync(){
   if(_syncBusy||!navigator.onLine||!window.cbtUser)return;
   _syncBusy=true;_syncDirty=false;
   const uid=window.cbtUser.uid;
-  let timeout;
+  let timeout,stage='端末バックアップ',payloadBytes=0;
   const operation=(async()=>{
     ensureProgressBackup();
+    stage='サーバー読込';
     const latest=await window.cbtCloud.readLatest();
     if(window.cbtUser?.uid!==uid)throw Error('ログインが変更されました');
     if(latest)cbtMergeCloud(latest);
-    await window.cbtCloud.save(fullStatsPayload());
+    stage='進捗の保存';
+    const payload=fullStatsPayload();
+    payloadBytes=new Blob([JSON.stringify(payload)]).size;
+    await window.cbtCloud.save(payload);
+    stage='保存後の確認';
     const confirmed=await window.cbtCloud.readLatest();
     if(window.cbtUser?.uid!==uid)throw Error('ログインが変更されました');
     if(confirmed)cbtMergeCloud(confirmed);
@@ -3301,7 +3309,7 @@ async function runCloudSync(){
     setCloudSyncState(_syncDirty?'pending':'ready',{savedAt:Date.now(),error:''});
   }catch(error){
     console.warn('cloud sync error',error);_syncFailures++;
-    setCloudSyncState('unavailable',{error:String(error?.code||error?.message||'save failed')});
+    setCloudSyncState('unavailable',{error:`${stage}：${cloudErrorDetail(error)}${payloadBytes?`（送信JSON 約${Math.ceil(payloadBytes/1024)}KB）`:''}`});
   }finally{
     clearTimeout(timeout);_syncBusy=false;
     if(_syncDirty||_syncFailures)_syncT=setTimeout(runCloudSync,_syncFailures?Math.min(60000,2000*2**Math.min(_syncFailures,5)):0);
