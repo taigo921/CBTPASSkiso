@@ -1,5 +1,7 @@
 const CACHE_NAME='cbtpass-offline-v1';
 const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js'];
+// Refresh only the files containing the five corrected figures on this update.
+const CORRECTED_FIGURE_FILES=['./data/175-204.json','./data/C3-034-118.json','./data/C3-119-204.json'];
 const FIREBASE_SDKS=[
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
@@ -23,6 +25,10 @@ async function warmCache(urls){
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
     await warmCache([...APP_SHELL,...FIREBASE_SDKS]);
+    const cache=await caches.open(CACHE_NAME);
+    await Promise.all(CORRECTED_FIGURE_FILES.map(async url=>{
+      try{const request=new Request(new URL(url,self.location.href));await putIfCacheable(cache,request,await fetch(request,{cache:'reload'}));}catch(_){}
+    }));
     await self.skipWaiting();
   })());
 });
