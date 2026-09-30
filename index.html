@@ -671,7 +671,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：9/30-3・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/1-1・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -710,6 +710,8 @@
     <div class="plan-whitepass hidden" id="planWhitePassBox"><b>📘 今日の新規問題の前に読む白パス</b><div class="plan-whitepass-units" id="planWhitePassUnits">対象分野：—</div><p id="planWhitePassNote">問題になっていない部分も含め、この範囲を通して読んでください。</p><button type="button" id="planWhitePassOpen">白パスを開く</button></div>
     <button class="mode primary" id="planStartBtn"><div class="ic">▶️</div><div class="t"><b>今日の指定課題を始める</b><span id="planStartInfo">—</span></div><div class="arr">›</div></button>
     <div class="plan-today-status" id="planTodayStatus">今日のノルマはまだ開始していません</div>
+    <button class="mode" id="planReviewBtn"><div class="ic">🔁</div><div class="t"><b>復習問題だけ解く</b><span id="planReviewInfo">解いたことがある問題のみ・新規なし</span></div><div class="arr">›</div></button>
+    <p class="mock-note">問題集1・2の解答済み問題から、期限が来た問題・直近の不正解を優先。回答成績は記録しますが、任意の復習なので指定課題や復習予定日は変更しません。途中から再開できます。</p>
     <div class="plan-extra hidden" id="planExtraBox"><b>🔥 まだ余裕がある人へ</b><p id="planExtraNote">追加した問題も正式な進捗になり、翌日以降のノルマを自動で軽くします。</p><div class="plan-extra-actions"><button type="button" id="planExtraEndless">♾️ 飽きるまで続ける</button><button type="button" data-extra-count="10">＋10問</button><button type="button" data-extra-count="25">＋25問</button><button type="button" data-extra-count="50">＋50問</button><button type="button" class="hidden" id="planExtraResume">追加学習の続き</button></div></div>
     <div class="setting">
       <label>CBT本番 <input type="date" id="planExamDate"></label>
@@ -1051,7 +1053,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20260930-admin-ranking-3';
+const SERVICE_WORKER_BUILD='20261001-route-review-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 function isLeaderboardAdmin(user=window.cbtUser){
@@ -1062,7 +1064,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accountStatus').textContent='表示版：9/30-3・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/1-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   leaderboardUsersCache=null;
   el('lbBody').textContent='';el('lbMe').textContent='';
 }
@@ -1520,8 +1522,9 @@ const saveGame=()=>safeSet(STORE_GAME,game);
 const saveSettings=()=>safeSet(STORE_SET,settings);
 const sessionStoreKey=(book=activeBook)=>STORE_SES_PREFIX+book;
 const sharedPlanSessionKey=()=>STORE_SES_PREFIX+'shared-plan';
-const saveSession=()=>{if(session&&!session.single){session.book=activeBook;session.updatedAt=Date.now();safeSet(session.mode==='plan'?sharedPlanSessionKey():sessionStoreKey(),session);cloudSyncSoon();}};
-const clearSession=()=>{safeRemove(session&&session.mode==='plan'?sharedPlanSessionKey():sessionStoreKey());};
+const routeReviewSessionKey=()=>STORE_SES_PREFIX+'route-review';
+const saveSession=()=>{if(session&&!session.single){session.book=activeBook;session.updatedAt=Date.now();safeSet(session.mode==='routeReview'?routeReviewSessionKey():(session.mode==='plan'?sharedPlanSessionKey():sessionStoreKey()),session);cloudSyncSoon();}};
+const clearSession=()=>{safeRemove(session?.mode==='routeReview'?routeReviewSessionKey():(session&&session.mode==='plan'?sharedPlanSessionKey():sessionStoreKey()));};
 function savedExtraSessionForToday(){
   const saved=safeGet(sharedPlanSessionKey());
   if(!saved?.extra)return null;
@@ -1956,6 +1959,10 @@ function renderPlanCalendar(p){
 }
 function renderStudyPlan(){
   const s=studyPlanSummary();
+  const reviewSaved=safeGet(routeReviewSessionKey()),reviewAt=reviewSaved?.resumeIdx??reviewSaved?.idx??0,reviewRemaining=reviewSaved?.mode==='routeReview'?Math.max(0,reviewSaved.uids.length-reviewAt):0,reviewCount=routeReviewUids().length;
+  el('planReviewBtn').disabled=!reviewRemaining&&!reviewCount;
+  el('planReviewBtn').querySelector('b').textContent=reviewRemaining?'復習だけモードの続き':'復習問題だけ解く';
+  el('planReviewInfo').textContent=reviewRemaining?`残り ${reviewRemaining}問・新規なし`:(reviewCount?`解答済み ${reviewCount}問から復習・新規なし`:'まだ解答済みの問題がありません');
   const bufferDays=Math.max(0,Math.round((new Date(s.p.examDate+'T12:00:00')-new Date(s.finishDate+'T12:00:00'))/86400000));
   el('planBookTitle').textContent=`問題集1 → 問題集2 ・ 仕上げ ${formatPlanDate(s.finishDate)}`;
   const todayAssignment=s.p.assignments[s.today],todayDone=!!todayAssignment&&(!!todayAssignment.done||planAssignmentProgress(todayAssignment).done);
@@ -2039,6 +2046,26 @@ function startExtraStudy(count,endless=false){
   if(!uids.length){toast('新規問題はすべて1周目を終えています');return;}
   session={mode:'plan',extra:true,endless:!!endless,uids,planFreshUids:uids.slice(),bookByUid:Object.fromEntries(uids.map(uid=>[uid,planBookForUid(uid)])),assignmentDate:s.today,idx:0,resumeIdx:0,records:[],sessionCorrect:0};
   saveSession();el('footer').classList.remove('hidden');toast(endless?'♾️ 無限演習を開始。好きなところで終了できます':`追加学習 ${uids.length}問を開始`);renderQuestion();
+}
+
+function routeReviewUids(){
+  const p=planFor(),today=dateKey();
+  return planQuestions().map(qkey).filter(uid=>{
+    const r=planRecord(uid);return r&&((r.correct||0)+(r.wrong||0)>0);
+  }).sort((a,b)=>{
+    const dueA=p.items?.[a]?.due||'',dueB=p.items?.[b]?.due||'';
+    return Number(!!dueB&&dueB<=today)-Number(!!dueA&&dueA<=today)
+      ||Number(planRecord(b)?.last==='wrong')-Number(planRecord(a)?.last==='wrong')
+      ||dueA.localeCompare(dueB);
+  });
+}
+function startRouteReview(){
+  const saved=safeGet(routeReviewSessionKey());
+  if(saved?.mode==='routeReview'&&(saved.resumeIdx??saved.idx??0)<saved.uids.length){resumeSession(saved);return;}
+  const uids=routeReviewUids();
+  if(!uids.length){toast('解答済みの問題がまだありません');return;}
+  session={mode:'routeReview',uids,bookByUid:Object.fromEntries(uids.map(uid=>[uid,planBookForUid(uid)])),idx:0,resumeIdx:0,records:[],sessionCorrect:0};
+  saveSession();el('footer').classList.remove('hidden');renderQuestion();
 }
 
 function resolveQuestions(){
@@ -2420,7 +2447,7 @@ async function switchBook(book){
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function byUid(uid){return QUESTIONS.find(q=>qkey(q)===uid)||planQuestion(uid);}
 function activatePlanQuestion(uid){
-  if(!session||session.mode!=='plan')return;
+  if(!session||!['plan','routeReview'].includes(session.mode))return;
   const book=(session.bookByUid||{})[uid]||planBookForUid(uid);if(!book||book===activeBook)return;
   saveStats();activeBook=book;stats=statsByBook[book];QUESTIONS=resolveQuestions();settings.activeBook=book;saveSettings();
   const url=new URL(location.href);url.searchParams.set('book',book);history.replaceState(null,'',url);
@@ -2440,9 +2467,9 @@ function startSession(mode){
   el('footer').classList.remove('hidden');
   renderQuestion();
 }
-function resumeSession(){
+function resumeSession(savedOverride=null){
   savedExtraSessionForToday();
-  const ses=safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey());
+  const ses=savedOverride?.mode?savedOverride:(safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey()));
   if(!ses){renderHome();return;}
   if(ses.mode==='plan'){const ps=studyPlanSummary();const assignment=!ses.extra?ps.p.assignments?.[ses.assignmentDate||ps.today]:null;if(assignment&&planAssignmentProgress(assignment).done){safeRemove(sharedPlanSessionKey());renderHome();toast('今日のノルマは達成済みです');return;}if(!ps.studyToday){renderHome();toast('今日はルートの休み日です');return;}if(ses.extra&&ps.lightDay){renderHome();toast('模試・試験日のため追加学習は翌日に再開できます');return;}if(!ses.extra&&(ps.lightDay||ps.augustPrep)){openStudyPlan();startStudyPlan();return;}const oldIdx=Number.isInteger(ses.resumeIdx)?ses.resumeIdx:(Number.isInteger(ses.idx)?ses.idx:0),done=ses.uids.slice(0,oldIdx).filter(uid=>planRouteAllows(uid,ps)),completedUids=assignment?.completedUids||{},declaredFresh=Array.isArray(ses.planFreshUids)?ses.planFreshUids:(Array.isArray(assignment?.freshUids)?assignment.freshUids:null),remaining=planRouteOrder(ses.uids.slice(oldIdx).filter(uid=>!completedUids[uid]),ps,declaredFresh);if(Array.isArray(declaredFresh))ses.planFreshUids=declaredFresh;ses.uids=[...done,...remaining];ses.idx=done.length;ses.resumeIdx=done.length;ses.bookByUid=Object.fromEntries(ses.uids.map(uid=>[uid,planBookForUid(uid)]));}
   ses.uids=ses.uids.filter(byUid);
@@ -2503,7 +2530,8 @@ function renderQuestion(){
   const planRemaining=el('qPlanRemaining'),assignment=session.mode==='plan'&&!session.extra?planFor().assignments[session.assignmentDate||dateKey()]:null,assignmentProgress=planAssignmentProgress(assignment);
   if(assignment)planRemaining.textContent=`残り ${assignmentProgress.remaining}問`;
   else if(session.endless)planRemaining.textContent=`∞ 追加演習 ${session.records.length+1}問目`;
-  planRemaining.classList.toggle('hidden',!assignment&&!session.endless);
+  else if(session.mode==='routeReview')planRemaining.textContent=`復習のみ・残り ${session.uids.length-session.idx}問`;
+  planRemaining.classList.toggle('hidden',!assignment&&!session.endless&&session.mode!=='routeReview');
   el('qEndlessStop').classList.toggle('hidden',!session.endless);
   el('qText').textContent=q.question;
 
@@ -2703,7 +2731,7 @@ function finish(){
   showOnly('finish');el('footer').classList.add('hidden');setProgress(100);
   el('timerChip').classList.remove('show');clearInterval(timer.iv);
   const n=session.records.length,c=session.sessionCorrect;
-  const nm=session.extra?'追加学習':({random:'ランダム出題',order:'順番に解く',review:'間違い復習',fav:'お気に入り',image:'図・画像問題',noback:'戻れない連問',plan:'今日の学習計画'}[session.mode]||'');
+  const nm=session.extra?'追加学習':({routeReview:'復習問題だけ',random:'ランダム出題',order:'順番に解く',review:'間違い復習',fav:'お気に入り',image:'図・画像問題',noback:'戻れない連問',plan:'今日の学習計画'}[session.mode]||'');
   const answerT=session.records.reduce((s,r)=>s+(+r.time||0),0),explanationT=session.records.reduce((s,r)=>s+(+r.explanationTime||0),0),totT=answerT+explanationT;
   const totalTime=formatMinutesSeconds(totT);
   el('finScore').textContent=`${c} / ${n}`;
@@ -2980,6 +3008,7 @@ el('mockExamZoom').addEventListener('click',()=>openImageZoom(el('mockExamImage'
 el('mockExamImage').addEventListener('click',()=>openImageZoom(el('mockExamImage').currentSrc||el('mockExamImage').src,'CBT模試の問題'));
 el('mockExplanationImage').addEventListener('click',()=>openImageZoom(el('mockExplanationImage').currentSrc||el('mockExplanationImage').src,'公式の解答と解説'));
 el('planStartBtn').addEventListener('click',startStudyPlan);
+el('planReviewBtn').addEventListener('click',startRouteReview);
 el('planExtraBox').addEventListener('click',event=>{
   const button=event.target.closest('[data-extra-count]');if(button)startExtraStudy(button.dataset.extraCount);
 });
@@ -3068,7 +3097,7 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!el('imageZ
 el('homeBtn').addEventListener('click',()=>{ if(session&&session.records&&session.idx<session.uids.length){saveSession();} renderHome(); });
 el('slowSec').addEventListener('change',e=>{let v=parseInt(e.target.value)||60;v=Math.max(5,Math.min(600,v));settings.slowSec=v;e.target.value=v;saveSettings();toast(`基準を ${v}秒 に設定`);});
 el('resetStatsBtn').addEventListener('click',()=>{if(confirm(`${BOOKS[activeBook].title}の回答履歴・正答率・お気に入り・ランク履歴・学習記録を消します。共通レベルとXPは残ります。よろしいですか？`)){stats=emptyStats();statsByBook[activeBook]=stats;const p=planFor();Object.keys(p.items||{}).forEach(uid=>{if(planBookForUid(uid)===activeBook)delete p.items[uid];});p.updatedAt=Date.now();saveStats();saveStudyPlans();renderHome();toast(`${BOOKS[activeBook].title}の成績をリセットしました`);}});
-el('clearResumeBtn').addEventListener('click',()=>{safeRemove(sharedPlanSessionKey());safeRemove(sessionStoreKey());renderHome();toast('中断データを消しました');});
+el('clearResumeBtn').addEventListener('click',()=>{safeRemove(sharedPlanSessionKey());safeRemove(sessionStoreKey());safeRemove(routeReviewSessionKey());renderHome();toast('中断データを消しました');});
 el('levelUp').addEventListener('click',()=>{el('levelUp').classList.remove('show');el('levelUp').setAttribute('aria-hidden','true');});
 
 /* ============ ランキング（クラウド同期） ============ */
@@ -3236,7 +3265,7 @@ function mergeMockPayload(local,remote){
 }
 function localSessionPayload(){
   const result={};
-  for(const book of ['book1','book2','shared-plan']){
+  for(const book of ['book1','book2','shared-plan','route-review']){
     const key=STORE_SES_PREFIX+book,value=safeGet(key),deleted=+safeGet(key+'_deleted')||0;
     if(value&&(value.updatedAt||0)>=deleted)result[book]=value;
     else if(deleted)result[book]={deleted:true,updatedAt:deleted};
@@ -3245,7 +3274,7 @@ function localSessionPayload(){
 }
 function mergeSessionPayload(local,remote){
   const result={...local};
-  for(const book of ['book1','book2','shared-plan'])if(remote[book]&&(!result[book]||(remote[book].updatedAt||0)>(result[book].updatedAt||0)))result[book]=remote[book];
+  for(const book of ['book1','book2','shared-plan','route-review'])if(remote[book]&&(!result[book]||(remote[book].updatedAt||0)>(result[book].updatedAt||0)))result[book]=remote[book];
   return result;
 }
 function progressBackupData(){
