@@ -671,7 +671,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：9/30-2・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：9/30-3・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1051,18 +1051,18 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20260930-admin-ranking-2';
+const SERVICE_WORKER_BUILD='20260930-admin-ranking-3';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 function isLeaderboardAdmin(user=window.cbtUser){
-  return !!(LEADERBOARD_ENABLED&&user&&user.email==='taigo921@gmail.com');
+  return !!(LEADERBOARD_ENABLED&&user&&user.email==='itaigo921@gmail.com');
 }
 function canViewLeaderboard(user=window.cbtUser){
   return !!(isLeaderboardAdmin(user)&&user.emailVerified===true);
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accountStatus').textContent='表示版：9/30-2・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：9/30-3・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   leaderboardUsersCache=null;
   el('lbBody').textContent='';el('lbMe').textContent='';
 }
@@ -3426,7 +3426,7 @@ async function openLeaderboard(){
     try{
       await window.cbtCloud.refreshAdminVerification();
       if(!canViewLeaderboard()){
-        if(confirm('管理者メールが未確認です。taigo921@gmail.com に確認メールを送りますか？\nメールのリンクを開いた後、もう一度ランキングを押してください。')){
+        if(confirm('管理者メールが未確認です。itaigo921@gmail.com に確認メールを送りますか？\nメールのリンクを開いた後、もう一度ランキングを押してください。')){
           await window.cbtCloud.sendAdminVerification();toast('確認メールを送りました。迷惑メールも確認してください');
         }
         return;
@@ -3845,7 +3845,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       const user=auth.currentUser;
       if(!canViewLeaderboard(user))throw Error('管理者専用です');
       const token=await user.getIdTokenResult();
-      if(token.claims.email!=='taigo921@gmail.com'||token.claims.email_verified!==true)throw Error('管理者メールの確認が必要です');
+      if(token.claims.email!=='itaigo921@gmail.com'||token.claims.email_verified!==true)throw Error('管理者メールの確認が必要です');
       const snap = await db.collection('users').get({source:'server'});
       if(auth.currentUser?.uid!==user.uid)throw Error('ログインが変更されました');
       const arr = [];

@@ -1,11 +1,11 @@
-// Published by the project owner in Firebase Console; screenshot confirmed 2026-09-30.
+// Admin email corrected 2026-09-30; owner must publish this correction in Firebase Console.
 // No CLI deployment configuration is included. Keep changes coordinated with the console.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
       return request.auth != null
-        && request.auth.token.email == 'taigo921@gmail.com'
+        && request.auth.token.email == 'itaigo921@gmail.com'
         && request.auth.token.email_verified == true;
     }
     match /users/{uid} {
