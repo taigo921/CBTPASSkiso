@@ -1,0 +1,18 @@
+// Published by the project owner in Firebase Console; screenshot confirmed 2026-09-30.
+// No CLI deployment configuration is included. Keep changes coordinated with the console.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'taigo921@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    match /users/{uid} {
+      allow get: if request.auth != null
+        && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
