@@ -671,6 +671,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
+    <p class="mock-note" id="accountStatus">表示版：9/30-2・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1050,14 +1051,18 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20260930-admin-ranking-1';
-// 一時休止中。再開時は true に戻すだけで、ランキング記録はそのまま利用できる。
+const SERVICE_WORKER_BUILD='20260930-admin-ranking-2';
+// Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
+function isLeaderboardAdmin(user=window.cbtUser){
+  return !!(LEADERBOARD_ENABLED&&user&&user.email==='taigo921@gmail.com');
+}
 function canViewLeaderboard(user=window.cbtUser){
-  return !!(LEADERBOARD_ENABLED&&user&&user.email==='taigo921@gmail.com'&&user.emailVerified===true);
+  return !!(isLeaderboardAdmin(user)&&user.emailVerified===true);
 }
 function updateLeaderboardAccess(){
-  el('rankBtn').classList.toggle('hidden',!canViewLeaderboard());
+  el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
+  el('accountStatus').textContent='表示版：9/30-2・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   leaderboardUsersCache=null;
   el('lbBody').textContent='';el('lbMe').textContent='';
 }
@@ -2348,7 +2353,7 @@ function favList(){return QUESTIONS.filter(q=>{const r=stats.perQ[qkey(q)];retur
 function imageList(){return QUESTIONS.filter(q=>q.has_image||q.image||q.image_base64).map(qkey);}
 
 function renderHome(){
-  el('rankBtn').classList.toggle('hidden',!canViewLeaderboard());
+  el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
   commitExplanationTime();timer.active=false;timer.running=false;
   el('timerChip').classList.remove('show'); clearInterval(timer.iv);
   const book=BOOKS[activeBook];
@@ -3417,6 +3422,17 @@ function closeAvatarCrop(){
   el('avatarCropModal').classList.remove('show');el('avatarCropFrame').classList.remove('dragging');avatarCropState=null;
 }
 async function openLeaderboard(){
+  if(isLeaderboardAdmin()&&!canViewLeaderboard()){
+    try{
+      await window.cbtCloud.refreshAdminVerification();
+      if(!canViewLeaderboard()){
+        if(confirm('管理者メールが未確認です。taigo921@gmail.com に確認メールを送りますか？\nメールのリンクを開いた後、もう一度ランキングを押してください。')){
+          await window.cbtCloud.sendAdminVerification();toast('確認メールを送りました。迷惑メールも確認してください');
+        }
+        return;
+      }
+    }catch(e){toast('メール確認に失敗しました。通信状態を確認して再度お試しください');return;}
+  }
   if(!canViewLeaderboard()){toast('ランキングは確認済みの管理者アカウント専用です');return;}
   el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
   showOnly('leaderboard');
@@ -3812,6 +3828,18 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       if(!window.cbtUser)return null;
       const snap=await db.collection('users').doc(window.cbtUser.uid).get({source:'server'});
       return snap.exists?snap.data():null;
+    },
+    refreshAdminVerification: async function(){
+      const user=auth.currentUser;
+      if(!isLeaderboardAdmin(user))throw Error('管理者専用です');
+      await user.reload();await user.getIdToken(true);
+      if(auth.currentUser?.uid!==user.uid||window.cbtUser?.uid!==user.uid)throw Error('ログインが変更されました');
+      window.cbtUser.emailVerified=user.emailVerified===true;updateLeaderboardAccess();
+    },
+    sendAdminVerification: async function(){
+      const user=auth.currentUser;
+      if(!isLeaderboardAdmin(user))throw Error('管理者専用です');
+      await user.sendEmailVerification();
     },
     fetchLeaderboard: async function(){
       const user=auth.currentUser;

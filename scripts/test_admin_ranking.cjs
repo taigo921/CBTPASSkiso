@@ -9,7 +9,7 @@ for(const [user,allowed] of [[null,false],[{email:'other@example.com',emailVerif
  context.window.cbtUser=user;
  assert.equal(context.canViewLeaderboard(),allowed);
  context.updateLeaderboardAccess();
- assert.equal(nodes.rankBtn.classList.hidden,!allowed);
+ assert.equal(nodes.rankBtn.classList.hidden,!(user&&user.email==='taigo921@gmail.com'));
  assert.equal(nodes.lbBody.textContent,'');
  assert.equal(vm.runInContext('leaderboardUsersCache',context),null);
 }
