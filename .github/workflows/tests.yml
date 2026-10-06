@@ -1,0 +1,41 @@
+name: Regression tests
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Existing regression tests
+        run: |
+          set -euo pipefail
+          node scripts/test_sync.cjs
+          node scripts/test_mock_exam.cjs
+          node scripts/test_admin_ranking.cjs
+          node scripts/test_route_review.cjs
+          git diff --check
+          python3 - <<'PY'
+          import json, pathlib
+          files = list(pathlib.Path('data').glob('*.json'))
+          assert files, 'No question data found'
+          for file in files:
+              json.loads(file.read_text())
+          print(f'PASS: {len(files)} JSON files')
+          PY
+      - name: Install isolated browser test dependency
+        run: |
+          npm install --prefix "$RUNNER_TEMP/cbt-browser" --no-audit --no-fund playwright@1.58.2
+          "$RUNNER_TEMP/cbt-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Isolated two-device browser test
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/cbt-browser/node_modules/playwright
+        run: node scripts/test_sync_browser.cjs
