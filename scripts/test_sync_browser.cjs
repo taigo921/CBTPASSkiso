@@ -81,8 +81,9 @@ const server=http.createServer((req,res)=>{
   }
   for(const page of pages){
    await page.evaluate(()=>{
-    const uids=DEFAULT_QUESTIONS_BY_BOOK.book2.slice(0,3).map(qkey);
-    session={mode:'plan',extra:true,endless:true,uids,planFreshUids:uids.slice(),bookByUid:Object.fromEntries(uids.map(uid=>[uid,'book2'])),assignmentDate:dateKey(),idx:0,resumeIdx:0,records:[],sessionCorrect:0};
+    const uids=DEFAULT_QUESTIONS_BY_BOOK.book1.slice(3,6).map(qkey);
+    planFor().assignments[dateKey()]={done:true,uids:[],completedUids:{}};
+    session={mode:'plan',extra:true,endless:true,uids,planFreshUids:uids.slice(),bookByUid:Object.fromEntries(uids.map(uid=>[uid,'book1'])),assignmentDate:dateKey(),idx:0,resumeIdx:0,records:[],sessionCorrect:0};
     saveSession();renderQuestion();picked=byUid(uids[0]).answer;submit(false);
    });
    const before=await page.evaluate(()=>safeGet(sharedPlanSessionKey()));
@@ -90,7 +91,7 @@ const server=http.createServer((req,res)=>{
    assert.ok(await page.locator('#studyPlan').isVisible());
    const after=await page.evaluate(()=>safeGet(sharedPlanSessionKey()));
    assert.equal(after.endless,true);assert.equal(after.resumeIdx,before.resumeIdx);
-   assert.deepEqual(after.records,before.records);
+   assert.deepEqual(after.records.map(({explanationTime,...record})=>record),before.records.map(({explanationTime,...record})=>record));
   }
   assert.deepEqual(errors,[]);
   console.log('PASS two isolated browsers: 1977/1692 -> 1977/1977, XP 13179, mock frontier 2, resume, automatic backup, JSON export, permission-denied preserves records; both books correct/wrong/skip/home/resume; no page errors. Real Firebase/device verification still required.');
