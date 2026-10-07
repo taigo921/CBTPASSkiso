@@ -56,6 +56,42 @@ const server=http.createServer((req,res)=>{
    },book);
    assert.deepEqual(result,{correct:true,wrong:true,skipped:true,count:3,resumed:3});
   }
+  for(const page of pages){
+   await page.evaluate(()=>{
+    window.cbtCloud=null;clearTimeout(_syncT);
+    for(const q of DEFAULT_QUESTIONS_BY_BOOK.book1.slice(0,3)){
+    const uid=qkey(q);
+    statsByBook.book1.perQ[uid]={correct:1,wrong:0,last:'correct',times:[],history:[]};
+    }
+    openStudyPlan();startRouteReview();
+   });
+   await page.locator('#routeBackBtn').waitFor({state:'visible'});
+   await page.evaluate(()=>{picked=byUid(session.uids[session.idx]).answer;submit(false);});
+   const before=await page.evaluate(()=>({saved:safeGet(routeReviewSessionKey()),plan:JSON.stringify(studyPlans)}));
+   await page.locator('#routeBackBtn').click();
+   assert.ok(await page.locator('#studyPlan').isVisible());
+   assert.ok(await page.locator('#footer').isHidden());
+   assert.ok(await page.locator('#routeBackBtn').isHidden());
+   const after=await page.evaluate(()=>({saved:safeGet(routeReviewSessionKey()),plan:JSON.stringify(studyPlans),running:timer.running}));
+   assert.equal(after.saved.resumeIdx,before.saved.resumeIdx);
+   assert.equal(after.saved.records.length,before.saved.records.length);
+   assert.equal(after.plan,before.plan);assert.equal(after.running,false);
+   await page.locator('#planReviewBtn').click();
+   assert.equal(await page.evaluate(()=>session.idx),before.saved.resumeIdx);
+  }
+  for(const page of pages){
+   await page.evaluate(()=>{
+    const uids=DEFAULT_QUESTIONS_BY_BOOK.book2.slice(0,3).map(qkey);
+    session={mode:'plan',extra:true,endless:true,uids,planFreshUids:uids.slice(),bookByUid:Object.fromEntries(uids.map(uid=>[uid,'book2'])),assignmentDate:dateKey(),idx:0,resumeIdx:0,records:[],sessionCorrect:0};
+    saveSession();renderQuestion();picked=byUid(uids[0]).answer;submit(false);
+   });
+   const before=await page.evaluate(()=>safeGet(sharedPlanSessionKey()));
+   await page.locator('#routeBackBtn').click();
+   assert.ok(await page.locator('#studyPlan').isVisible());
+   const after=await page.evaluate(()=>safeGet(sharedPlanSessionKey()));
+   assert.equal(after.endless,true);assert.equal(after.resumeIdx,before.resumeIdx);
+   assert.deepEqual(after.records,before.records);
+  }
   assert.deepEqual(errors,[]);
   console.log('PASS two isolated browsers: 1977/1692 -> 1977/1977, XP 13179, mock frontier 2, resume, automatic backup, JSON export, permission-denied preserves records; both books correct/wrong/skip/home/resume; no page errors. Real Firebase/device verification still required.');
  }finally{await browser.close();server.close();}

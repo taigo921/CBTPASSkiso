@@ -580,6 +580,7 @@
     <div class="logo">toGO<small>クイズ</small></div>
     <div class="head-spacer"></div>
     <div class="timer-chip" id="timerChip">⏱ <span id="timerVal">0.0</span>s</div>
+    <button class="ghost-btn hidden" id="routeBackBtn" type="button">ルートへ</button>
     <button class="ghost-btn" id="homeBtn">ホーム</button>
   </div>
   <div class="pbar"><i id="pbarFill"></i></div>
@@ -671,7 +672,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/1-1・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/7-1・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1053,7 +1054,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261001-route-review-1';
+const SERVICE_WORKER_BUILD='20261007-route-back-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 function isLeaderboardAdmin(user=window.cbtUser){
@@ -1064,7 +1065,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accountStatus').textContent='表示版：10/1-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/7-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   leaderboardUsersCache=null;
   el('lbBody').textContent='';el('lbMe').textContent='';
 }
@@ -2232,6 +2233,7 @@ function migrateGameData(){
 
 function toast(m){const t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
 function showOnly(id){
+  el('routeBackBtn').classList.toggle('hidden',id!=='quiz');
   ['home','studyPlan','quiz','mockExam','finish','stats','list','sectionList','sectionStart','leaderboard'].forEach(s=>el(s).classList.toggle('hidden',s!==id));
   if(id!=='mockExam'&&mockExamState.clock){clearInterval(mockExamState.clock);mockExamState.clock=null;}
 }
@@ -3094,6 +3096,11 @@ function endImageZoomPointer(event){
 el('imageZoomStage').addEventListener('pointerup',endImageZoomPointer);
 el('imageZoomStage').addEventListener('pointercancel',endImageZoomPointer);
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!el('imageZoomViewer').classList.contains('hidden'))closeImageZoom();});
+el('routeBackBtn').addEventListener('click',()=>{
+  commitExplanationTime();timer.active=false;timer.running=false;clearInterval(timer.iv);
+  if(session&&session.records&&session.idx<session.uids.length)saveSession();
+  openStudyPlan();
+});
 el('homeBtn').addEventListener('click',()=>{ if(session&&session.records&&session.idx<session.uids.length){saveSession();} renderHome(); });
 el('slowSec').addEventListener('change',e=>{let v=parseInt(e.target.value)||60;v=Math.max(5,Math.min(600,v));settings.slowSec=v;e.target.value=v;saveSettings();toast(`基準を ${v}秒 に設定`);});
 el('resetStatsBtn').addEventListener('click',()=>{if(confirm(`${BOOKS[activeBook].title}の回答履歴・正答率・お気に入り・ランク履歴・学習記録を消します。共通レベルとXPは残ります。よろしいですか？`)){stats=emptyStats();statsByBook[activeBook]=stats;const p=planFor();Object.keys(p.items||{}).forEach(uid=>{if(planBookForUid(uid)===activeBook)delete p.items[uid];});p.updatedAt=Date.now();saveStats();saveStudyPlans();renderHome();toast(`${BOOKS[activeBook].title}の成績をリセットしました`);}});
