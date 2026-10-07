@@ -93,6 +93,20 @@ const server=http.createServer((req,res)=>{
    assert.equal(after.endless,true);assert.equal(after.resumeIdx,before.resumeIdx);
    assert.deepEqual(after.records.map(({explanationTime,...record})=>record),before.records.map(({explanationTime,...record})=>record));
   }
+  for(const page of pages){
+   const values=await page.evaluate(async()=>{
+    window.cbtUser={uid:'ranking-test',email:'itaigo921@gmail.com',emailVerified:true};
+    leaderboardUsersCache=null;
+    window.cbtCloud={fetchLeaderboard:async()=>[{uid:'ranking-test',username:'Test',books:{book1:{answered:10,correct:9},book2:{answered:30,correct:15}}}]};
+    const result=[];
+    for(const book of ['book1','book2']){
+     activeBook=book;lbMetric='answered';await renderLeaderboard();result.push(el('lbBody').querySelector('.lb-val').textContent);
+     lbMetric='accuracy';await renderLeaderboard();result.push(el('lbBody').querySelector('.lb-val').textContent);
+    }
+    return result;
+   });
+   assert.deepEqual(values,['40問','60%','40問','60%']);
+  }
   assert.deepEqual(errors,[]);
   console.log('PASS two isolated browsers: 1977/1692 -> 1977/1977, XP 13179, mock frontier 2, resume, automatic backup, JSON export, permission-denied preserves records; both books correct/wrong/skip/home/resume; no page errors. Real Firebase/device verification still required.');
  }finally{await browser.close();server.close();}

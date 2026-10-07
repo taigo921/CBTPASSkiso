@@ -672,7 +672,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/7-1・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/7-2・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -883,7 +883,7 @@
 
   <!-- LEADERBOARD -->
   <section id="leaderboard" class="hidden">
-    <div class="hero"><h1 style="font-size:24px;">🏆 みんなでランキング</h1><p id="lbMe"></p></div>
+    <div class="hero"><h1 style="font-size:24px;">🏆 みんなでランキング</h1><p id="lbMe"></p><p class="mock-note">問題集1・2の合計（模試は対象外）。連続正解は両問題集の最高記録、連続使用は最新利用日の問題集の記録です。</p></div>
     <div class="lb-tabs">
       <button class="lb-tab on" data-metric="accuracy">正答率</button>
       <button class="lb-tab" data-metric="correct">正解数</button>
@@ -1054,7 +1054,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261007-route-back-1';
+const SERVICE_WORKER_BUILD='20261007-combined-ranking-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 function isLeaderboardAdmin(user=window.cbtUser){
@@ -1065,7 +1065,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accountStatus').textContent='表示版：10/7-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/7-2・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   leaderboardUsersCache=null;
   el('lbBody').textContent='';el('lbMe').textContent='';
 }
@@ -3480,6 +3480,16 @@ async function openLeaderboard(){
   renderLeaderboard();
 }
 let leaderboardUsersCache=null;
+function combinedLeaderboardStats(user){
+  const books=['book1','book2'].map(book=>user.books?.[book]).filter(Boolean);
+  if(!books.length)return {...user}; // Legacy records have only root summaries.
+  const answered=books.reduce((sum,book)=>sum+(book.answered||0),0);
+  const correct=books.reduce((sum,book)=>sum+(book.correct||0),0);
+  const lastDay=books.reduce((latest,book)=>String(book.lastDay||'')>latest?String(book.lastDay):latest,'');
+  return {...user,answered,correct,accuracy:answered?Math.round(correct/answered*1000)/10:0,
+    bestStreak:Math.max(...books.map(book=>book.bestStreak||0)),lastDay:lastDay||null,
+    dayStreak:Math.max(0,...books.filter(book=>book.lastDay===lastDay).map(book=>book.dayStreak||0))};
+}
 async function renderLeaderboard(){
   const body=el('lbBody');
   if(!canViewLeaderboard()){leaderboardUsersCache=null;body.textContent='管理者専用です';el('lbMe').textContent='';return;}
@@ -3497,10 +3507,7 @@ async function renderLeaderboard(){
     }
     catch(e){ body.textContent=navigator.onLine?'読み込みに失敗しました。管理者メールの確認状態とログインを確認してください。':'オフライン中はランキングを表示できません';el('lbMe').textContent='';return; }
   }
-  users=users.map(u=>{
-    const bookStats=u.books&&u.books[activeBook];
-    return Object.assign({},u,bookStats||(activeBook==='book1'?u:{}));
-  });
+  users=users.map(combinedLeaderboardStats);
   const meUid=window.cbtUser&&window.cbtUser.uid;
   const currentUsageStreak=u=>{
     if(!u.lastDay)return 0;
