@@ -22,6 +22,7 @@ jobs:
           node scripts/test_mock_exam.cjs
           node scripts/test_admin_ranking.cjs
           node scripts/test_route_review.cjs
+          node scripts/test_rank_progression.cjs
           git diff --check
           python3 - <<'PY'
           import json, pathlib
