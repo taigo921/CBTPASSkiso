@@ -13,6 +13,16 @@ for(const [user,allowed] of [[null,false],[{email:'other@example.com',emailVerif
  assert.equal(nodes.lbBody.textContent,'');
  assert.equal(vm.runInContext('leaderboardUsersCache',context),null);
 }
+vm.runInContext(source.slice(source.indexOf('function combinedLeaderboardStats('),source.indexOf('async function renderLeaderboard(')),context);
+const legacy={answered:12,correct:9,accuracy:75,game:{xp:100}};
+assert.equal(context.combinedLeaderboardStats(legacy).answered,12);
+const original={uid:'test',answered:999,correct:999,game:{xp:100},books:{book1:{answered:10,correct:9,accuracy:90,bestStreak:6,lastDay:'2026-10-06',dayStreak:8},book2:{answered:30,correct:15,accuracy:50,bestStreak:4,lastDay:'2026-10-07',dayStreak:2}},mockExams:{answered:100}};
+const snapshot=JSON.stringify(original),combined=context.combinedLeaderboardStats(original);
+assert.equal(combined.answered,40);assert.equal(combined.correct,24);assert.equal(combined.accuracy,60);
+assert.equal(combined.bestStreak,6);assert.equal(combined.lastDay,'2026-10-07');assert.equal(combined.dayStreak,2);
+assert.equal(combined.game.xp,100);assert.equal(JSON.stringify(original),snapshot);
+assert.equal(context.combinedLeaderboardStats({books:{book2:{answered:20,correct:5}}}).accuracy,25);
+assert.equal(context.combinedLeaderboardStats({books:{book1:{answered:0,correct:0}}}).accuracy,0);
 const fetchCode=source.slice(source.indexOf('fetchLeaderboard: async function(){'),source.indexOf('\n    subscribe:',source.indexOf('fetchLeaderboard: async function(){'))).trim().replace(/,$/,'');
 let reads=0;
 context.auth={currentUser:null};
