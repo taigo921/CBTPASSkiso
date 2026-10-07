@@ -21,6 +21,13 @@ const server=http.createServer((req,res)=>{
    const context=await browser.newContext({viewport:{width:count===1977?390:1024,height:844},serviceWorkers:'block'});
    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
    await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.waitForFunction(()=>window.cbtAppReady);
+   const initialRank=await page.evaluate(()=>{
+    game.xp=23609;renderGameCard();
+    return {rank:el('gameRank').textContent,level:el('gameLevel').textContent,xp:game.xp,rows:el('rankGuideRows').children.length,thresholds:rankStepsWithXp().map(step=>step.xp)};
+   });
+   assert.equal(initialRank.rank,'シルバー3');assert.equal(initialRank.level,'41');assert.equal(initialRank.xp,23609);assert.equal(initialRank.rows,32);
+   const loadedRank=await page.evaluate(async()=>{await loadBookQuestions('book2');renderGameCard();return {rank:el('gameRank').textContent,thresholds:rankStepsWithXp().map(step=>step.xp)};});
+   assert.equal(loadedRank.rank,initialRank.rank);assert.deepEqual(loadedRank.thresholds,initialRank.thresholds);
    await page.evaluate(count=>{
     statsByBook.book1=emptyStats();statsByBook.book1.perQ.test={correct:count,wrong:0,xpV:true,times:[],history:[]};statsByBook.book1.answered=count;statsByBook.book1.correct=count;stats=statsByBook.book1;saveStats();
     game.xp=count===1977?13179:11294;saveGame();

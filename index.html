@@ -638,7 +638,7 @@
         <p class="game-guide-note">レベル2は100 XP。次のレベルまでの必要XPは、100・125・150…と25 XPずつ増えます。</p>
         <table class="game-guide-table"><thead><tr><th>レベル</th><th>累計XP</th></tr></thead><tbody id="levelGuideRows"></tbody></table>
         <h3>ランク</h3>
-        <p class="game-guide-note">ランクは累計XPで決まり、周回数は目安です。初回学習・連続学習ボーナスにより到達時期は前後します。</p>
+        <p class="game-guide-note">ランクは問題集1・2の合計問題数を基準にした累計XPで決まります。ブロンズ〜プロは各1〜5、プロ5の次はマスターです。周回数は目安で、初回学習・連続学習ボーナスにより到達時期は前後します。基準変更後も獲得済みXPは保持され、現在のランクは新基準で表示されます。</p>
         <table class="game-guide-table"><thead><tr><th>ランク</th><th>周回目安</th><th>必要XP</th></tr></thead><tbody id="rankGuideRows"></tbody></table>
       </div>
     </details>
@@ -672,7 +672,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/7-2・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/7-3・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -919,7 +919,7 @@
 <script>
 const BOOKS = {
   book1: {
-    title:'問題集1', subtitle:'基礎系',
+    title:'問題集1', subtitle:'基礎系', questionCount:943,
     files:[
       "data/1-60.json", "data/61-90.json", "data/91-120.json",
       "data/121-144.json", "data/145-174.json", "data/175-204.json",
@@ -929,7 +929,7 @@ const BOOKS = {
     ]
   },
   book2: {
-    title:'問題集2', subtitle:'臨床系',
+    title:'問題集2', subtitle:'臨床系', questionCount:1009,
     files:["data/E1.json", "data/E2.json", "data/E3.json", "data/E4.json", "data/E5.json"]
   }
 };
@@ -1054,7 +1054,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261007-combined-ranking-1';
+const SERVICE_WORKER_BUILD='20261007-rank-five-pro-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 function isLeaderboardAdmin(user=window.cbtUser){
@@ -1065,7 +1065,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accountStatus').textContent='表示版：10/7-2・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/7-3・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   leaderboardUsersCache=null;
   el('lbBody').textContent='';el('lbMe').textContent='';
 }
@@ -2090,22 +2090,9 @@ function levelInfo(xp=game.xp||0){
 }
 const RANK_STEPS=[
   {name:'ルーキー',laps:0},
-  {name:'ブロンズ1',laps:.10},
-  {name:'ブロンズ2',laps:.20},
-  {name:'ブロンズ3',laps:.35},
-  {name:'シルバー1',laps:.50},
-  {name:'シルバー2',laps:.70},
-  {name:'シルバー3',laps:.85},
-  {name:'ゴールド1',laps:1},
-  {name:'ゴールド2',laps:1.35},
-  {name:'ゴールド3',laps:1.70},
-  {name:'プラチナ1',laps:2},
-  {name:'プラチナ2',laps:2.35},
-  {name:'プラチナ3',laps:2.70},
-  {name:'ダイヤ1',laps:3},
-  {name:'ダイヤ2',laps:3.35},
-  {name:'ダイヤ3',laps:3.70},
-  {name:'マスター',laps:4}
+  ...['ブロンズ','シルバー','ゴールド','プラチナ','ダイヤ','プロ'].flatMap((name,tier)=>
+    Array.from({length:5},(_,index)=>({name:name+(index+1),laps:Math.round((tier<2?(tier*5+index+1)*.1:1+(tier-2)*1+(index+1)*.2)*100)/100}))),
+  {name:'マスター',laps:6}
 ];
 function rankInfo(){
   const xp=game.xp||0;
@@ -2118,7 +2105,8 @@ function rankInfo(){
   return {name:steps[tier].name,xp,next,remaining:next?Math.max(0,next.xp-xp):0};
 }
 function rankStepsWithXp(){
-  const total=DEFAULT_QUESTIONS_BY_BOOK.book1.length||QUESTIONS.length||1;
+  // Use both configured books so thresholds stay stable before lazy loading book2.
+  const total=Object.values(BOOKS).reduce((sum,book)=>sum+book.questionCount,0);
   return RANK_STEPS.map(step=>{
     const perQuestion=step.laps<=1?15*step.laps:15+5*(step.laps-1);
     return Object.assign({},step,{xp:Math.round(total*perQuestion)});
