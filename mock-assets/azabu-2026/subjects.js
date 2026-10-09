@@ -1,0 +1,3 @@
+// 科目はユーザー提供の2026麻布模試「解答・科目一覧」（ブロック1〜6）を転記。
+// 各文字はそのブロックの問1からの掲載順。正解キーは変更しない。
+window.TOGO_MOCK_SUBJECTS={"names":{"M":"歯科理工学／材料学","P":"小児歯科学","Y":"歯科薬理学","O":"口腔病理学","S":"口腔外科学","H":"衛生学","B":"口腔微生物学","T":"歯周病学","F":"全部床義歯学","I":"口腔生理学","A":"口腔解剖学／組織学","R":"歯科矯正学","N":"歯科麻酔学","C":"口腔生化学","E":"高齢者","X":"歯科放射線学","D":"保存修復学","W":"摂食嚥下","G":"冠橋義歯学","L":"インプラント","J":"歯内療法学"},"blocks":{"1":"MPYOSHBTBHFIBHTRONIMABAACAIYHAEHCBRICXAMCAHDBIOYWIHYYCATOHAO","2":"MIBOHAHGHOHNLHIHCWIAPYSHOJCIIHHDMOGIOCOCABBHHJAMSCMCABHMHMIH","3":"MAYOHSIAHPMHMHICAHTIPGCMIYYMYHDHDOJIIHHSHABHHOCCCXHAIHCHCIHO","4":"HROCHRYCDABOHCYOHWOHCHPHIHAXHGACHHMAOAHMDHMOYHHMIIOBTOHAHHSM","5":"FFXXJJGGDDNNPPTTSSRRSSTTFFPPDDNNTTGGRRSS","6":"SSSSGGGGPPPPJJJJFFFFTTTTRRRRLLLLSSSSPPPP"}};

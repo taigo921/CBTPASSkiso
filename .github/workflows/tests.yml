@@ -20,6 +20,7 @@ jobs:
           set -euo pipefail
           node scripts/test_sync.cjs
           node scripts/test_mock_exam.cjs
+          node scripts/test_mock_subjects.cjs
           node scripts/test_admin_ranking.cjs
           node scripts/test_route_review.cjs
           node scripts/test_rank_progression.cjs

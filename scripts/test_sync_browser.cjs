@@ -101,6 +101,47 @@ const server=http.createServer((req,res)=>{
    assert.deepEqual(after.records.map(({explanationTime,...record})=>record),before.records.map(({explanationTime,...record})=>record));
   }
   for(const page of pages){
+   await page.evaluate(()=>{window.cbtCloud=null;clearTimeout(_syncT);});
+   await page.evaluate(()=>switchBook('mock'));
+   assert.equal(await page.locator('#mockSubjectSelect option').count(),22);
+   await page.locator('#mockSubjectSelect').selectOption('冠橋義歯学');
+   const sourceBefore=await page.evaluate(()=>JSON.stringify([1,2,3,4,5,6].map(block=>safeGet(mockKeyFor(block)))));
+   await page.locator('#mockSubjectStart').click();
+   assert.ok(await page.locator('#mockSubjectPractice').isVisible());
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'subject practice fits viewport');
+   assert.ok(await page.locator('#mockSubjectResult').isHidden());
+   const firstAnswer=await page.evaluate(()=>mockSubjectSession.qs[0].answer);
+   await page.locator('#mockSubjectChoices button').filter({hasText:new RegExp('^'+firstAnswer+'$')}).click();
+   await page.locator('#mockSubjectBack').click();
+   await page.locator('#mockSubjectStart').click();
+   assert.equal(await page.locator('#mockSubjectChoices .selected').textContent(),firstAnswer);
+   await page.locator('#mockSubjectSubmit').click();
+   await page.reload();await page.waitForFunction(()=>window.cbtAppReady);
+   await page.evaluate(()=>switchBook('mock'));
+   await page.locator('#mockSubjectSelect').selectOption('冠橋義歯学');
+   await page.locator('#mockSubjectStart').click();
+   assert.equal(await page.evaluate(()=>Object.values(mockSubjectSession.answers).filter(a=>a.answered).length),1);
+   assert.ok(await page.locator('#mockSubjectResult').isHidden());
+   const remaining=await page.evaluate(()=>mockSubjectSession.qs.length-1);
+   for(let i=0;i<remaining;i++){
+    const answer=await page.evaluate(()=>{const s=mockSubjectSession;return s.qs.find(q=>!s.answers[q.key]?.answered).answer;});
+    await page.locator('#mockSubjectChoices button').filter({hasText:new RegExp('^'+answer+'$')}).click();
+    await page.locator('#mockSubjectSubmit').click();
+    if(i<remaining-1)assert.ok(await page.locator('#mockSubjectResult').isHidden());
+   }
+   assert.ok(await page.locator('#mockSubjectResult').isVisible());
+   assert.ok(await page.locator('#mockSubjectSubmit').isHidden());
+   assert.match(await page.locator('#mockSubjectProgress').textContent(),/終了/);
+   await page.locator('#mockSubjectReview button').last().click();
+   assert.equal(await page.locator('#mockSubjectChoices button:enabled').count(),0);
+   assert.equal(await page.evaluate(()=>JSON.stringify([1,2,3,4,5,6].map(block=>safeGet(mockKeyFor(block))))),sourceBefore);
+   assert.ok(await page.locator('#mockSubjectExplanations img').count()>0);
+   await page.locator('#mockSubjectBack').click();
+   await page.evaluate(()=>{window.cbtUser={uid:'another-user'};renderMockHome();});
+   await page.locator('#mockSubjectSelect').selectOption('冠橋義歯学');
+   assert.equal(await page.locator('#mockSubjectStart').textContent(),'この科目を解く');
+  }
+  for(const page of pages){
    const values=await page.evaluate(async()=>{
     window.cbtUser={uid:'ranking-test',email:'itaigo921@gmail.com',emailVerified:true};
     leaderboardUsersCache=null;
