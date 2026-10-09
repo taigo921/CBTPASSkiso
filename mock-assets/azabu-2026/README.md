@@ -27,3 +27,9 @@ Progress is stored locally, separately for each block and signed-in UID, under `
 Run `node scripts/test_mock_exam.cjs`: 2,049 assertions cover catalog counts, image paths, answer choices, block/user isolation, interrupted selection and answer restoration, all 80 linked confirmations, navigation locks, and read-only review. All inline JavaScript is syntax-checked.
 
 A separate local Chromium smoke test passed at tablet (1024px) and phone (390px) widths, including reload/resume, all 40 answers in each linked block, list locking, block 2 previous/next, and no page JavaScript errors. Authentication was isolated with a test user; production cloud data was not touched. iPhone/iPad hardware and real authentication were not tested by that smoke test.
+
+## Subject practice
+
+The user-provided answer/subject tables for all six blocks classify all 320 questions into 21 subjects. `subjects.js` preserves table order; it adds metadata without changing answer keys or source images. The mock tab can collect the chosen subject across blocks. Every linked group stays complete and in order; correctness and explanation pages become available only when the entire subject practice is finished.
+
+Practice answers use separate per-subject, per-user local storage keys (`togo_mock_subject_v1_...`). They do not overwrite the original block results or change XP, normal study progress, or cloud records. This practice mode is local to the device and is not included in cloud sync/export. Run `node scripts/test_mock_subjects.cjs` and the browser smoke test in addition to existing regression checks.

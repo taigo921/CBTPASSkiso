@@ -1,5 +1,5 @@
 const CACHE_NAME='cbtpass-offline-v1';
-const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js'];
+const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js'];
 // Refresh only the files containing the five corrected figures on this update.
 const CORRECTED_FIGURE_FILES=['./data/175-204.json','./data/C3-034-118.json','./data/C3-119-204.json'];
 const FIREBASE_SDKS=[
