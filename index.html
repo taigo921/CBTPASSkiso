@@ -576,6 +576,10 @@
   </div>
 </div>
 
+<div id="storageWarning" class="hidden" role="alert" style="padding:12px;background:#fff2d8;color:#704800;font-size:13px;">
+  この端末に保存できていません。画面を閉じる前に進捗をバックアップし、オンラインなら同期の状態を確認してください。
+  <button type="button" id="storageBackupBtn" class="ghost-btn">進捗をバックアップ</button>
+</div>
 <header>
   <div class="head-row">
     <div class="logo">toGO<small>クイズ</small></div>
@@ -677,7 +681,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/9-1・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/13-1・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1137,7 +1141,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261009-mock-subject-1';
+const SERVICE_WORKER_BUILD='20261013-progress-preserve-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 function isLeaderboardAdmin(user=window.cbtUser){
@@ -1148,7 +1152,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accountStatus').textContent='表示版：10/9-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/13-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   leaderboardUsersCache=null;
   el('lbBody').textContent='';el('lbMe').textContent='';
 }
@@ -1548,17 +1552,25 @@ function _lsAvail(){
   catch(e){_lsOk=false;}
   return _lsOk;
 }
+const _failedStorageKeys=new Set();
+function updateStorageWarning(){
+  const node=typeof document!=='undefined'&&document.getElementById?.('storageWarning');
+  if(node)node.classList.toggle('hidden',_failedStorageKeys.size===0);
+}
 function safeGet(k){
-  try{
-    if(_lsAvail()){const v=localStorage.getItem(k);return v?JSON.parse(v):null;}
-    return _memStore[k]??null;
-  }catch(e){return _memStore[k]??null;}
+  // A failed persistent write must never be replaced by an older disk value.
+  if(Object.prototype.hasOwnProperty.call(_memStore,k))return _memStore[k];
+  try{if(_lsAvail()){const v=localStorage.getItem(k);return v?JSON.parse(v):null;}}
+  catch(e){}
+  return null;
 }
 function safeSet(k,v){
   try{
-    if(_lsAvail()){localStorage.setItem(k,JSON.stringify(v));return;}
-    _memStore[k]=v;
-  }catch(e){_memStore[k]=v;}
+    if(_lsAvail()){
+      localStorage.setItem(k,JSON.stringify(v));delete _memStore[k];_failedStorageKeys.delete(k);updateStorageWarning();return true;
+    }
+  }catch(e){}
+  _memStore[k]=v;_failedStorageKeys.add(k);updateStorageWarning();return false;
 }
 function safeRemove(k){
   if(k.startsWith('cbt_session_v3_')){
@@ -1566,7 +1578,7 @@ function safeRemove(k){
     if(typeof cloudSyncSoon==='function')cloudSyncSoon();
   }
   try{if(_lsAvail())localStorage.removeItem(k);}catch(e){}
-  delete _memStore[k];
+  delete _memStore[k];_failedStorageKeys.delete(k);updateStorageWarning();
 }
 
 function load(){
@@ -1971,8 +1983,8 @@ function planAssignmentProgress(assignment){
   if(!assignment)return {assigned:0,completed:0,remaining:0,done:false};
   const uids=[...new Set(assignment.uids||[])],completedUids=assignment.completedUids||{};
   const assigned=Math.max(uids.length,+assignment.assigned||0);
-  const completed=Math.min(assigned,Math.max(uids.filter(uid=>completedUids[uid]).length,+assignment.completed||0));
-  return {assigned,completed,remaining:Math.max(0,assigned-completed),done:assigned>0&&completed>=assigned};
+  const completed=assignment.done===true?assigned:Math.min(assigned,Math.max(uids.filter(uid=>completedUids[uid]).length,+assignment.completed||0));
+  return {assigned,completed,remaining:Math.max(0,assigned-completed),done:assignment.done===true||assigned>0&&completed>=assigned};
 }
 function markPlanAssignment(uid){
   if(!session||session.mode!=='plan'||session.extra)return null;
@@ -3177,6 +3189,7 @@ el('routeBackBtn').addEventListener('click',()=>{
   if(session&&session.records&&session.idx<session.uids.length)saveSession();
   openStudyPlan();
 });
+el('storageBackupBtn').addEventListener('click',()=>el('exportProgressBtn').click());
 el('homeBtn').addEventListener('click',()=>{ if(session&&session.records&&session.idx<session.uids.length){saveSession();} renderHome(); });
 el('slowSec').addEventListener('change',e=>{let v=parseInt(e.target.value)||60;v=Math.max(5,Math.min(600,v));settings.slowSec=v;e.target.value=v;saveSettings();toast(`基準を ${v}秒 に設定`);});
 el('resetStatsBtn').addEventListener('click',()=>{if(confirm(`${BOOKS[activeBook].title}の回答履歴・正答率・お気に入り・ランク履歴・学習記録を消します。共通レベルとXPは残ります。よろしいですか？`)){stats=emptyStats();statsByBook[activeBook]=stats;const p=planFor();Object.keys(p.items||{}).forEach(uid=>{if(planBookForUid(uid)===activeBook)delete p.items[uid];});p.updatedAt=Date.now();saveStats();saveStudyPlans();renderHome();toast(`${BOOKS[activeBook].title}の成績をリセットしました`);}});
@@ -3275,9 +3288,13 @@ function mergeStudyPlanBook(local,cloud){
   merged.assignments=Object.assign({},local.assignments||{});
   Object.entries(cloud.assignments||{}).forEach(([key,assignment])=>{
     const current=merged.assignments[key];if(!current){merged.assignments[key]=assignment;return;}
-    const uids=[...new Set([...(current.uids||[]),...(assignment.uids||[])])],completedUids=Object.assign({},current.completedUids||{},assignment.completedUids||{});
-    merged.assignments[key]=Object.assign({},(assignment.updatedAt||0)>(current.updatedAt||0)?assignment:current,{uids,completedUids,assigned:uids.length,completed:uids.filter(uid=>completedUids[uid]).length,updatedAt:Math.max(current.updatedAt||0,assignment.updatedAt||0)});
-    merged.assignments[key].done=merged.assignments[key].completed>=merged.assignments[key].assigned;
+    const uids=[...new Set([...(current.uids||[]),...(assignment.uids||[])])],completedUids={...current.completedUids};
+    for(const [uid,value] of Object.entries(assignment.completedUids||{}))completedUids[uid]=!!(completedUids[uid]||value);
+    const assigned=Math.max(uids.length,+current.assigned||0,+assignment.assigned||0);
+    const completed=Math.min(assigned,Math.max(uids.filter(uid=>completedUids[uid]).length,+current.completed||0,+assignment.completed||0));
+    // A finished daily assignment is sealed; stale device tasks cannot reopen it.
+    const done=current.done===true||assignment.done===true||completed>=assigned;
+    merged.assignments[key]=Object.assign({},(assignment.updatedAt||0)>(current.updatedAt||0)?assignment:current,{uids,completedUids,assigned,completed,done,updatedAt:Math.max(current.updatedAt||0,assignment.updatedAt||0)});
   });
   const ld=local.daily||{},cd=cloud.daily||{};
   if((cd.date||'')>(ld.date||''))merged.daily=cd;
