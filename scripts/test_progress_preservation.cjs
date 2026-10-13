@@ -1,0 +1,29 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
+const disk={stats:JSON.stringify({answered:10})};let fail=true,warningHidden=true;
+const ctx={localStorage:{setItem(k,v){if(k==='stats'&&fail)throw Error('QuotaExceededError');disk[k]=v;},getItem:k=>disk[k]||null,removeItem:k=>delete disk[k]},document:{getElementById:()=>({classList:{toggle(_,hidden){warningHidden=hidden;}}})}};vm.createContext(ctx);
+vm.runInContext(source.slice(source.indexOf('const _memStore='),source.indexOf('function safeRemove(')),ctx);
+assert.equal(ctx.safeSet('stats',{answered:11}),false);assert.equal(ctx.safeGet('stats').answered,11);assert.equal(warningHidden,false);
+assert.equal(JSON.parse(disk.stats).answered,10,'no older disk data destroyed');
+fail=false;assert.equal(ctx.safeSet('stats',{answered:12}),true);assert.equal(ctx.safeGet('stats').answered,12);assert.equal(warningHidden,true);
+vm.runInContext(source.slice(source.indexOf('function mergeStudyPlanBook('),source.indexOf('function cbtMergeCloud('))+source.slice(source.indexOf('function planAssignmentProgress('),source.indexOf('function markPlanAssignment(')),ctx);
+const completed={updatedAt:20,assignments:{'2026-10-12':{uids:['a'],completedUids:{a:true},assigned:1,completed:1,done:true,updatedAt:20}}};
+const stale={updatedAt:10,assignments:{'2026-10-12':{uids:['a','b'],completedUids:{a:false},assigned:2,completed:0,done:false,updatedAt:10}}};
+for(const [a,b] of [[completed,stale],[stale,completed]]){
+ const before=JSON.stringify([a,b]),merged=ctx.mergeStudyPlanBook(a,b),day=merged.assignments['2026-10-12'];
+ assert.equal(day.done,true);assert.equal(day.completedUids.a,true);assert.equal(day.uids.length,2);
+ assert.equal(ctx.planAssignmentProgress(day).remaining,0);assert.equal(ctx.planAssignmentProgress(day).done,true);
+ assert.equal(JSON.stringify([a,b]),before,'merge does not mutate source records');
+ assert.equal(ctx.mergeStudyPlanBook(merged,stale).assignments['2026-10-12'].done,true);
+}
+const partialA={assignments:{day:{uids:['a','b'],completedUids:{a:true},done:false,completed:1}}};
+const partialB={assignments:{day:{uids:['a','b'],completedUids:{b:true},done:false,completed:1}}};
+assert.equal(ctx.mergeStudyPlanBook(partialA,partialB).assignments.day.done,true);
+assert.equal(ctx.mergeStudyPlanBook(partialA,{assignments:{day:{uids:['a','b'],completedUids:{},done:false,completed:0}}}).assignments.day.done,false);
+let day='2026-10-12';
+Object.assign(ctx,{studyPlans:{shared:{active:true,correctStreakTargetV:3,minimumFiveRoundsV:2,examDate:'2027-01-26',finishLeadDays:30,items:{},assignments:completed.assignments,daily:{date:day,count:1,effort:1}}},CAMPUS_SCHOOL_OFF:[],CAMPUS_LIGHT_DAYS:{},PLAN_CORRECT_STREAK_TARGET:3,PLAN_FINAL_REVIEW_VERSION:2,dateKey:()=>day,planFinishDate:()=> '2026-12-27'});
+vm.runInContext(source.slice(source.indexOf('function planFor('),source.indexOf('function saveStudyPlans(')),ctx);
+ctx.planFor();day='2026-10-13';ctx.planFor();
+assert.equal(ctx.studyPlans.shared.daily.count,0,'only the new day counter resets');
+assert.equal(ctx.studyPlans.shared.assignments['2026-10-12'].done,true,'yesterday remains complete after midnight');
+console.log('PASS preservation: quota fallback keeps latest values, visible warning and recovery, completed day survives stale sync in both directions, partial progress retained');

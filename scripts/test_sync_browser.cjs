@@ -155,6 +155,19 @@ const server=http.createServer((req,res)=>{
    });
    assert.deepEqual(values,['40問','60%','40問','60%']);
   }
+  for(const page of pages){
+   await page.evaluate(()=>{
+    localStorage.setItem('preservation-test',JSON.stringify({answered:10}));
+    window.originalStorageSet=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){if(key==='preservation-test')throw new DOMException('full','QuotaExceededError');return window.originalStorageSet.call(this,key,value);};
+    safeSet('preservation-test',{answered:11});
+   });
+   assert.ok(await page.locator('#storageWarning').isVisible());
+   assert.equal(await page.evaluate(()=>safeGet('preservation-test').answered),11);
+   const backup=page.waitForEvent('download');await page.locator('#storageBackupBtn').click();assert.match((await backup).suggestedFilename(),/^toGO-progress-/);
+   await page.evaluate(()=>{Storage.prototype.setItem=window.originalStorageSet;safeSet('preservation-test',{answered:11});safeRemove('preservation-test');});
+   assert.ok(await page.locator('#storageWarning').isHidden());
+  }
   assert.deepEqual(errors,[]);
   console.log('PASS two isolated browsers: 1977/1692 -> 1977/1977, XP 13179, mock frontier 2, resume, automatic backup, JSON export, permission-denied preserves records; both books correct/wrong/skip/home/resume; no page errors. Real Firebase/device verification still required.');
  }finally{await browser.close();server.close();}

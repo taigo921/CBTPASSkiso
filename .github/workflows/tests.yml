@@ -19,6 +19,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/test_sync.cjs
+          node scripts/test_progress_preservation.cjs
           node scripts/test_mock_exam.cjs
           node scripts/test_mock_subjects.cjs
           node scripts/test_admin_ranking.cjs
