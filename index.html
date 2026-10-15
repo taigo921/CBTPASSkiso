@@ -681,7 +681,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/13-1・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/15-1・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1141,7 +1141,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261013-progress-preserve-1';
+const SERVICE_WORKER_BUILD='20261015-approved-user-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 function isLeaderboardAdmin(user=window.cbtUser){
@@ -1152,7 +1152,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accountStatus').textContent='表示版：10/13-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/15-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   leaderboardUsersCache=null;
   el('lbBody').textContent='';el('lbMe').textContent='';
 }
@@ -3756,6 +3756,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     "53899441fa55d0708901eaa79322b4e728d97ec011dd301adf72d7cfd3867383", // 友達11
     "89d7ae2a35a33b58fc5e5ee343a28b4c2eadd71c82dcba2c2651cf92d9e57dad", // 友達12
     "00bb6be79512a3ed1c1f5ffa94def0690b031a07f1a97f1d46fe78fe4881239f", // 友達13
+    "052879fed32ec59c2707536d4b7d82ad566456f44df43371cf05d5f5383c222e", // 追加ユーザー（2026-10-15）
     // ↑ 友達のハッシュはこの下に足していく
   ];
   // ================
