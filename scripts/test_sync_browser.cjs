@@ -101,6 +101,20 @@ const server=http.createServer((req,res)=>{
    assert.deepEqual(after.records.map(({explanationTime,...record})=>record),before.records.map(({explanationTime,...record})=>record));
   }
   for(const page of pages){
+   await page.evaluate(()=>openStudyPlan());
+   const beforePaper=await page.evaluate(()=>JSON.stringify({stats:statsByBook,game,assignments:planFor().assignments,saved:safeGet(sharedPlanSessionKey())}));
+   await page.locator('#paperProgressPanel summary').click();
+   await page.locator('#paperBook').selectOption('book2');
+   await page.waitForFunction(()=>document.querySelector('#paperThrough option[value="E-1"]'));
+   await page.locator('#paperThrough').selectOption('E-1');
+   await page.locator('#paperMastery').selectOption('mastered');
+   await page.locator('#paperApply').click();
+   assert.ok((await page.locator('#paperRegistered').textContent()).includes('本の登録済み'));
+   assert.equal(await page.evaluate(()=>JSON.stringify({stats:statsByBook,game,assignments:planFor().assignments,saved:safeGet(sharedPlanSessionKey())})),beforePaper);
+   assert.ok(await page.evaluate(()=>Object.values(planFor().paperProgress).every(x=>x.round===5)));
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'paper controls fit viewport');
+  }
+  for(const page of pages){
    await page.evaluate(()=>{window.cbtCloud=null;clearTimeout(_syncT);});
    await page.evaluate(()=>switchBook('mock'));
    assert.equal(await page.locator('#mockSubjectSelect option').count(),22);
