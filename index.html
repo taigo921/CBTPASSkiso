@@ -681,7 +681,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/15-1・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/15-3・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -723,6 +723,17 @@
     <button class="mode" id="planReviewBtn"><div class="ic">🔁</div><div class="t"><b>復習問題だけ解く</b><span id="planReviewInfo">解いたことがある問題のみ・新規なし</span></div><div class="arr">›</div></button>
     <p class="mock-note">問題集1・2の解答済み問題から、期限が来た問題・直近の不正解を優先。回答成績は記録しますが、任意の復習なので指定課題や復習予定日は変更しません。途中から再開できます。</p>
     <div class="plan-extra hidden" id="planExtraBox"><b>🔥 まだ余裕がある人へ</b><p id="planExtraNote">追加した問題も正式な進捗になり、翌日以降のノルマを自動で軽くします。</p><div class="plan-extra-actions"><button type="button" id="planExtraEndless">♾️ 飽きるまで続ける</button><button type="button" data-extra-count="10">＋10問</button><button type="button" data-extra-count="25">＋25問</button><button type="button" data-extra-count="50">＋50問</button><button type="button" class="hidden" id="planExtraResume">追加学習の続き</button></div></div>
+    <details class="setting" id="paperProgressPanel">
+      <summary>📖 本で進めた範囲を登録</summary>
+      <p class="note">選んだ問題集の先頭から指定した章の終わりまでを登録します。範囲ごとに習熟度が違う場合は、手前の範囲から順に登録できます。</p>
+      <label>問題集 <select id="paperBook"><option value="book1">問題集1</option><option value="book2">問題集2</option></select></label>
+      <label>ここまで解いた <select id="paperThrough" aria-label="本で解いた最後の章"></select></label>
+      <label>習熟度 <select id="paperMastery"><option value="once">1回解いた（復習を続ける）</option><option value="mastered">何度も解いて完璧（仕上げ時に最終確認）</option></select></label>
+      <p class="note" id="paperPreview" role="status"></p>
+      <button type="button" class="ghost-btn" id="paperApply" disabled>本の進捗を反映してルートを更新</button>
+      <p class="note">本の自己申告は解答数・正答率・XPには加算しません。登録済みの習熟度は下げず、アプリの学習記録・開始済みの指定課題も残します。</p>
+      <p class="note" id="paperRegistered" role="status"></p>
+    </details>
     <div class="setting">
       <label>CBT本番 <input type="date" id="planExamDate"></label>
       <div class="note">現在は2027年1月26日です。</div>
@@ -1141,7 +1152,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261015-approved-user-1';
+const SERVICE_WORKER_BUILD='20261015-paper-progress-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 function isLeaderboardAdmin(user=window.cbtUser){
@@ -1152,7 +1163,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accountStatus').textContent='表示版：10/15-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/15-3・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   leaderboardUsersCache=null;
   el('lbBody').textContent='';el('lbMe').textContent='';
 }
@@ -1825,6 +1836,53 @@ function saveStudyPlans(sync=true){
   safeSet(STORE_PLAN,studyPlans);
   if(sync&&typeof cloudSyncSoon==='function')cloudSyncSoon();
 }
+// Paper learning is a route baseline, never an invented answer or XP award.
+function paperChapter(q){return (q.section||'').match(/^[A-Z]-\d+/)?.[0]||'';}
+function paperChapters(book){return [...new Set((DEFAULT_QUESTIONS_BY_BOOK[book]||[]).map(paperChapter).filter(Boolean))];}
+function paperRange(book,through){
+  const chapters=paperChapters(book),end=chapters.indexOf(through);
+  if(end<0)return [];
+  return (DEFAULT_QUESTIONS_BY_BOOK[book]||[]).filter(q=>chapters.indexOf(paperChapter(q))>=0&&chapters.indexOf(paperChapter(q))<=end).map(qkey);
+}
+function applyPaperBaseline(p){
+  for(const [uid,report] of Object.entries(p.paperProgress||{})){
+    if(![1,5].includes(report.round))continue;
+    const old=p.items[uid];
+    // Actual app attempts after a report remain authoritative, including mistakes.
+    if(old)continue;
+    const finalReviewDue=planFinalReviewDate(uid,p),mastered=report.round===5;
+    p.items[uid]={round:report.round,stage:report.round-1,due:mastered?finalReviewDue:report.date,last:report.date,mastered,completed:mastered,explained:false,correctStreak:0,finalReviewDue,finalReviewDone:false,updatedAt:report.updatedAt,paperBaseline:true};
+  }
+}
+function registerPaperProgress(book,through,mastery){
+  const uids=paperRange(book,through);
+  if(!uids.length||!['once','mastered'].includes(mastery))return 0;
+  const p=ensureStudyPlan(),round=mastery==='mastered'?5:1,now=Date.now();
+  p.paperProgress=p.paperProgress||{};
+  for(const uid of uids){
+    const old=p.paperProgress[uid];
+    if(old&&old.round>=round)continue;
+    p.paperProgress[uid]={round,date:dateKey(),updatedAt:now};
+    // Only upgrade a previous paper baseline; never overwrite actual app learning.
+    if(p.items[uid]?.paperBaseline)delete p.items[uid];
+  }
+  applyPaperBaseline(p);p.updatedAt=now;saveStudyPlans();return uids.length;
+}
+function renderPaperPreview(){
+  const count=paperRange(el('paperBook').value,el('paperThrough').value).length;
+  el('paperPreview').textContent=count?`先頭〜${el('paperThrough').value}の末尾：${count}問。${el('paperMastery').value==='mastered'?'最終確認を残し、通常の繰り返しを減らします。':'新規から外し、復習対象にします。'}`:'章を選んでください。';
+  el('paperApply').disabled=!count;
+}
+async function loadPaperChoices(){
+  el('paperApply').disabled=true;
+  try{
+    await loadDefaultQuestions();
+    el('paperThrough').innerHTML=paperChapters(el('paperBook').value).map(ch=>`<option value="${ch}">${ch} まで</option>`).join('');
+    renderPaperPreview();
+    const reports=Object.values(planFor().paperProgress||{});
+    el('paperRegistered').textContent=reports.length?`本の登録済み：${reports.length}問（うち完璧 ${reports.filter(x=>x.round===5).length}問）`:'';
+  }catch(_){el('paperPreview').textContent='問題データを読み込めませんでした。閉じてから開き直してください。';}
+}
 function rebuildStudyPlan(showMessage=true){
   const old=planFor(),today=dateKey(),latest={};
   Object.values(statsByBook).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>{if(a&&a.u&&(!latest[a.u]||(a.a||0)>latest[a.u]))latest[a.u]=a.a||0;}));
@@ -1835,6 +1893,7 @@ function rebuildStudyPlan(showMessage=true){
     const round=Math.min(PLAN_MINIMUM_ROUNDS,(r.correct||0)+(r.wrong||0));
     p.items[uid]={round,stage:Math.max(0,round-1),due:addPlanDays(last,1),last,explained:false,correctStreak:0,correctStreakDate:null,mastered:false,completed:false,finalReviewDue:planFinalReviewDate(uid,p),finalReviewDone:false,updatedAt:Date.now()};
   }));
+  p.paperProgress=old.paperProgress||{};applyPaperBaseline(p);
   studyPlans.shared=p;saveStudyPlans();
   if(showMessage)toast('学習計画を作成しました');
   return p;
@@ -3082,6 +3141,14 @@ document.querySelectorAll('.book-tab').forEach(b=>b.addEventListener('click',()=
 el('statsBtn').addEventListener('click',openStats);
 document.querySelectorAll('[data-study-range]').forEach(button=>button.addEventListener('click',()=>{studyChartRange=+button.dataset.studyRange||7;renderStudyTime();}));
 el('listBtn').addEventListener('click',openList);
+el('paperProgressPanel').addEventListener('toggle',()=>{if(el('paperProgressPanel').open)loadPaperChoices();});
+el('paperBook').addEventListener('change',loadPaperChoices);
+el('paperThrough').addEventListener('change',renderPaperPreview);
+el('paperMastery').addEventListener('change',renderPaperPreview);
+el('paperApply').addEventListener('click',()=>{
+  const count=registerPaperProgress(el('paperBook').value,el('paperThrough').value,el('paperMastery').value);
+  if(count){renderStudyPlan();loadPaperChoices();toast('本の進捗をルートに反映しました');}
+});
 el('planModeBtn').addEventListener('click',openStudyPlan);
 el('mockSubjectSelect').addEventListener('change',updateMockSubjectStart);
 el('mockSubjectStart').addEventListener('click',startMockSubjectPractice);
@@ -3269,6 +3336,15 @@ function mergeStatsTarget(target,cd){
   return target;
 }
 function mergeStudyPlanBook(local,cloud){
+function mergePaperProgress(local={},cloud={}){
+  const result={...local};
+  for(const [uid,value] of Object.entries(cloud)){
+    const old=result[uid];
+    if(!old||value.round>old.round||(value.round===old.round&&value.updatedAt>old.updatedAt))result[uid]=value;
+  }
+  return result;
+}
+
   if(!cloud)return local;
   if(!local)return cloud;
   const merged=Object.assign({},local);
@@ -3285,6 +3361,7 @@ function mergeStudyPlanBook(local,cloud){
   Object.entries(cloud.items||{}).forEach(([uid,item])=>{
     if(!merged.items[uid]||(item.updatedAt||0)>(merged.items[uid].updatedAt||0))merged.items[uid]=item;
   });
+  merged.paperProgress=mergePaperProgress(local.paperProgress,cloud.paperProgress);
   merged.assignments=Object.assign({},local.assignments||{});
   Object.entries(cloud.assignments||{}).forEach(([key,assignment])=>{
     const current=merged.assignments[key];if(!current){merged.assignments[key]=assignment;return;}
