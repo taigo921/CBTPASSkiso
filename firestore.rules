@@ -63,8 +63,10 @@ service cloud.firestore {
     }
     match /leaderboard/{uid} {
       allow get, list: if approvedMember();
-      allow create, update: if approvedMember() && request.auth.uid==uid && validLeaderboard();
-      allow delete: if approvedMember() && request.auth.uid==uid;
+      allow create, update: if approvedMember() && request.auth.uid==uid
+        && getAfter(/databases/$(database)/documents/users/$(uid)).data.leaderboardVisible==true
+        && validLeaderboard();
+      allow delete: if request.auth != null && request.auth.uid==uid;
     }
   }
 }

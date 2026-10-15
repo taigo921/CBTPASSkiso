@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const modules=process.env.FIREBASE_TEST_MODULES;
 const dependency=name=>require(modules?path.join(modules,name):name);
 const {initializeTestEnvironment,assertSucceeds,assertFails}=dependency('@firebase/rules-unit-testing');
-const {doc,getDoc,getDocs,collection,setDoc,updateDoc,serverTimestamp}=dependency('firebase/firestore');
+const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,writeBatch,serverTimestamp}=dependency('firebase/firestore');
 const root=path.resolve(__dirname,'..');
 (async()=>{
  assert.ok(process.env.FIRESTORE_EMULATOR_HOST,'Firestore emulator is required');
@@ -20,6 +20,8 @@ const root=path.resolve(__dirname,'..');
   });
   const learner=env.authenticatedContext('learner',{email:'i.taigo921+ranking@gmail.com',email_verified:true}).firestore();
   await assertSucceeds(getDocs(collection(learner,'leaderboard')));
+  await assertFails(setDoc(doc(learner,'leaderboard','learner'),profile()));
+  const optIn=writeBatch(learner);optIn.set(doc(learner,'users','learner'),{leaderboardVisible:true},{merge:true});optIn.set(doc(learner,'leaderboard','learner'),profile());await assertSucceeds(optIn.commit());
   await assertSucceeds(setDoc(doc(learner,'leaderboard','learner'),profile()));
   await assertFails(getDoc(doc(learner,'users','other')));await assertFails(getDocs(collection(learner,'users')));
   await assertFails(setDoc(doc(learner,'leaderboard','other'),profile()));
@@ -36,6 +38,13 @@ const root=path.resolve(__dirname,'..');
    await assertFails(getDocs(collection(db,'leaderboard')));await assertFails(setDoc(doc(db,'leaderboard',uid),profile()));
   }
   await assertFails(getDocs(collection(env.unauthenticatedContext().firestore(),'leaderboard')));
+  const optOut=writeBatch(learner);optOut.set(doc(learner,'users','learner'),{leaderboardVisible:false},{merge:true});optOut.delete(doc(learner,'leaderboard','learner'));await assertSucceeds(optOut.commit());
+  assert.equal((await getDoc(doc(learner,'leaderboard','learner'))).exists(),false);
+  await assertFails(setDoc(doc(learner,'leaderboard','learner'),profile()));
+  const optInAgain=writeBatch(learner);optInAgain.set(doc(learner,'users','learner'),{leaderboardVisible:true},{merge:true});optInAgain.set(doc(learner,'leaderboard','learner'),profile());await assertSucceeds(optInAgain.commit());
+  const unverifiedOwner=env.authenticatedContext('learner',{email:'itaigo921@gmail.com',email_verified:false}).firestore();
+  const remove=writeBatch(unverifiedOwner);remove.set(doc(unverifiedOwner,'users','learner'),{leaderboardVisible:false},{merge:true});remove.delete(doc(unverifiedOwner,'leaderboard','learner'));await assertSucceeds(remove.commit());
+  await assertFails(deleteDoc(doc(learner,'leaderboard','other')));
   const alias=env.authenticatedContext('alias',{email:'itaigo921@googlemail.com',email_verified:true}).firestore();
   await assertSucceeds(getDocs(collection(alias,'leaderboard')));
   const admin=env.authenticatedContext('admin',{email:'itaigo921@gmail.com',email_verified:true}).firestore();
