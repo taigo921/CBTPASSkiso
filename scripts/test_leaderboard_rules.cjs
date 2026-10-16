@@ -1,23 +1,31 @@
-// Retired public leaderboard must stay unreadable, even for an old member client.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const dep=n=>require(process.env.FIREBASE_TEST_MODULES?path.join(process.env.FIREBASE_TEST_MODULES,n):n);
 const {initializeTestEnvironment,assertSucceeds:ok,assertFails:no}=dep('@firebase/rules-unit-testing');
-const {doc,getDoc,getDocs,collection,setDoc,deleteDoc}=dep('firebase/firestore');
+const {doc,getDoc,getDocs,collection,setDoc,deleteDoc,serverTimestamp}=dep('firebase/firestore');
 (async()=>{
- assert.ok(process.env.FIRESTORE_EMULATOR_HOST,'Local emulator required');
- const [host,port]=process.env.FIRESTORE_EMULATOR_HOST.split(':');
- const env=await initializeTestEnvironment({projectId:'demo-cbtpass-access',firestore:{host,port:+port,rules:fs.readFileSync(path.join(__dirname,'../firestore.rules'),'utf8')}});
+ assert.ok(process.env.FIRESTORE_EMULATOR_HOST);const [host,port]=process.env.FIRESTORE_EMULATOR_HOST.split(':');
+ const rules=fs.readFileSync(path.join(__dirname,'../firestore.rules'),'utf8'),html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const hashes=s=>[...s.matchAll(/["']([a-f0-9]{64})["']/g)].map(m=>m[1]).sort();assert.deepEqual(hashes(rules),hashes(html.slice(html.indexOf('const ALLOW ='),html.indexOf('// ================',html.indexOf('const ALLOW =')))));
+ const env=await initializeTestEnvironment({projectId:'demo-cbtpass-access',firestore:{host,port:+port,rules}});
+ const summary=()=>({username:'Test',avatar:'',answered:40,correct:24,accuracy:60,bestStreak:0,dayStreak:0,lastDay:null,game:{xp:100},updatedAt:serverTimestamp()});
  try{
-  await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();await setDoc(doc(db,'users','learner'),{username:'Test',progressDataV1:'preserved'});await setDoc(doc(db,'leaderboard','learner'),{username:'Old summary'});});
+  await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'users','member'),{leaderboardVisible:false,progressDataV1:'private'});await setDoc(doc(c.firestore(),'users','other'),{progressDataV1:'private'});});
   const admin=env.authenticatedContext('owner',{email:'itaigo921@gmail.com',email_verified:true}).firestore();
-  const member=env.authenticatedContext('learner',{email:'itaigo921@gmail.com',email_verified:false}).firestore();
-  const other=env.authenticatedContext('other',{email:'other@example.test',email_verified:true}).firestore();
-  for(const db of [admin,member,other,env.unauthenticatedContext().firestore()]){
-   await no(getDocs(collection(db,'leaderboard')));await no(getDoc(doc(db,'leaderboard','learner')));await no(setDoc(doc(db,'leaderboard','learner'),{username:'republish'}));
+  const member=env.authenticatedContext('member',{email:'i.taigo921+member@gmail.com',email_verified:true}).firestore();
+  await ok(getDocs(collection(member,'leaderboard')));await ok(setDoc(doc(member,'leaderboard','member'),summary()));
+  await no(deleteDoc(doc(member,'leaderboard','member')));await no(setDoc(doc(member,'leaderboard','other'),summary()));
+  await no(getDocs(collection(member,'users')));await no(getDoc(doc(member,'users','other')));await no(getDocs(collection(member,'accessControl')));
+  await no(setDoc(doc(member,'leaderboard','member'),{...summary(),email:'private@test'}));
+  await ok(setDoc(doc(admin,'leaderboard','other'),summary()));
+  for(const [uid,email,verified] of [['outside','no@example.test',true],['unverified','itaigo921@gmail.com',false]]){
+   const db=env.authenticatedContext(uid,{email,email_verified:verified}).firestore();await no(getDocs(collection(db,'leaderboard')));await no(setDoc(doc(db,'leaderboard',uid),summary()));
   }
-  await no(getDocs(collection(member,'users')));await no(getDocs(collection(other,'users')));
-  await ok(getDocs(collection(admin,'users')));assert.equal((await getDoc(doc(admin,'users','learner'))).data().progressDataV1,'preserved');
-  await no(deleteDoc(doc(other,'leaderboard','learner')));await ok(deleteDoc(doc(member,'leaderboard','learner')));await ok(deleteDoc(doc(admin,'leaderboard','learner')));
-  console.log('PASS retired ranking rules: old public reads and writes denied, admin private ranking retained, progress untouched, cleanup allowed');
+  await no(getDocs(collection(env.unauthenticatedContext().firestore(),'leaderboard')));
+  await ok(setDoc(doc(admin,'accessControl','member'),{blocked:true,updatedBy:'owner',updatedAt:serverTimestamp()}));
+  await no(getDocs(collection(member,'leaderboard')));await no(setDoc(doc(member,'leaderboard','member'),summary()));await no(setDoc(doc(admin,'leaderboard','member'),summary()));
+  await ok(deleteDoc(doc(admin,'leaderboard','member')));
+  await ok(setDoc(doc(admin,'accessControl','member'),{blocked:false,updatedBy:'owner',updatedAt:serverTimestamp()}));await ok(getDocs(collection(member,'leaderboard')));
+  assert.equal((await getDoc(doc(admin,'users','member'))).data().progressDataV1,'private');
+  console.log('PASS rules: all approved verified members, no opt-out, admin backfill, blocked user denial, private progress/access management protected');
  }finally{await env.cleanup();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
