@@ -49,6 +49,17 @@ const root=path.resolve(__dirname,'..');
   await assertSucceeds(getDocs(collection(alias,'leaderboard')));
   const admin=env.authenticatedContext('admin',{email:'itaigo921@gmail.com',email_verified:true}).firestore();
   await assertSucceeds(getDoc(doc(admin,'users','other')));await assertSucceeds(getDocs(collection(admin,'leaderboard')));
+  // Members can view rankings but cannot discover or manage other users' access.
+  await assertFails(getDocs(collection(learner,'accessControl')));
+  await assertFails(getDoc(doc(learner,'accessControl','other')));
+  await assertFails(setDoc(doc(learner,'accessControl','other'),{blocked:true,updatedBy:'learner',updatedAt:serverTimestamp()}));
+  const stop=writeBatch(admin);stop.set(doc(admin,'accessControl','learner'),{blocked:true,updatedBy:'admin',updatedAt:serverTimestamp()});stop.delete(doc(admin,'leaderboard','learner'));await assertSucceeds(stop.commit());
+  await assertSucceeds(getDoc(doc(learner,'accessControl','learner')));
+  await assertFails(getDocs(collection(learner,'leaderboard')));
+  await assertFails(getDoc(doc(learner,'users','learner')));
+  await assertFails(setDoc(doc(learner,'leaderboard','learner'),profile()));
+  await assertSucceeds(setDoc(doc(admin,'accessControl','learner'),{blocked:false,updatedBy:'admin',updatedAt:serverTimestamp()}));
+  await assertSucceeds(getDocs(collection(learner,'leaderboard')));
   console.log('PASS rules: approved verified members only, Gmail aliases, private progress isolated, owner-only whitelisted summaries, old admin access retained');
  }finally{await env.cleanup();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

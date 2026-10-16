@@ -1,4 +1,4 @@
-// Member leaderboard uses a separate collection. Publish these rules in Firebase Console before the app update.
+// Combined member ranking and admin-only access control. Publish before the app update.
 // No CLI deployment configuration is included. Keep changes coordinated with the console.
 rules_version = '2';
 service cloud.firestore {
@@ -7,6 +7,23 @@ service cloud.firestore {
       return request.auth != null
         && request.auth.token.email == 'itaigo921@gmail.com'
         && request.auth.token.email_verified == true;
+    }
+    function notBlocked(uid) {
+      return !exists(/databases/$(database)/documents/accessControl/$(uid))
+        || get(/databases/$(database)/documents/accessControl/$(uid)).data.blocked == false;
+    }
+    match /accessControl/{uid} {
+      // A blocked user can still receive their own stop notification.
+      allow get: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && request.auth.uid != uid
+        && request.resource.data.keys().hasAll(['blocked', 'updatedAt', 'updatedBy'])
+        && request.resource.data.keys().hasOnly(['blocked', 'updatedAt', 'updatedBy'])
+        && request.resource.data.blocked is bool
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time
+        && exists(/databases/$(database)/documents/users/$(uid));
+      allow delete: if false;
     }
     function approvedHashes() {
       return [
@@ -35,7 +52,7 @@ service cloud.firestore {
     }
     function approvedMember() {
       return request.auth != null && request.auth.token.email is string
-        && request.auth.token.email_verified == true
+        && request.auth.token.email_verified == true && notBlocked(request.auth.uid)
         && (hashing.sha256(request.auth.token.email.lower()).toHexString().lower() in approvedHashes()
           || hashing.sha256(canonicalEmail(request.auth.token.email)).toHexString().lower() in approvedHashes());
     }
@@ -57,16 +74,16 @@ service cloud.firestore {
     }
     match /users/{uid} {
       allow get: if request.auth != null
-        && (request.auth.uid == uid || isAdmin());
+        && (isAdmin() || (request.auth.uid == uid && notBlocked(uid)));
       allow list: if isAdmin();
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid && notBlocked(uid);
     }
     match /leaderboard/{uid} {
       allow get, list: if approvedMember();
       allow create, update: if approvedMember() && request.auth.uid==uid
         && getAfter(/databases/$(database)/documents/users/$(uid)).data.leaderboardVisible==true
         && validLeaderboard();
-      allow delete: if request.auth != null && request.auth.uid==uid;
+      allow delete: if isAdmin() || (request.auth != null && request.auth.uid==uid);
     }
   }
 }

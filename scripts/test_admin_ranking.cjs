@@ -2,13 +2,14 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const source=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
 for(const match of source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(match[1]);
 const nodes={};
-const context={window:{},el:id=>nodes[id]??=( {textContent:'old',classList:{toggle(name,value){this[name]=value;}}})};
+const context={window:{},el:id=>nodes[id]??=( {textContent:'old',addEventListener(){},classList:{toggle(name,value){this[name]=value;}}})};
 vm.createContext(context);
 vm.runInContext('let leaderboardUsersCache=[1];'+source.slice(source.indexOf('const LEADERBOARD_ENABLED='),source.indexOf('function updateLeaderboardAccess()'))+source.slice(source.indexOf('function updateLeaderboardAccess()'),source.indexOf('\n}',source.indexOf('function updateLeaderboardAccess()'))+2),context);
-vm.runInContext(source.slice(source.indexOf('let leaderboardVisibilityBusy='),source.indexOf('async function openLeaderboard(')),context);
+vm.runInContext(source.slice(source.indexOf('let leaderboardVisibilityBusy='),source.indexOf('async function openAccessAdmin(')),context);
 for(const [user,allowed,visible] of [[null,false,false],[{uid:'other',email:'other@example.test',allowed:false,emailVerified:true},false,false],[{uid:'member',email:'approved@example.test',allowed:true,emailVerified:false},false,true],[{uid:'member',email:'approved@example.test',allowed:true,emailVerified:true},true,true],[{uid:'admin',email:'itaigo921@gmail.com',allowed:true,emailVerified:true},true,true]]){
  context.window.cbtUser=user;assert.equal(context.canViewLeaderboard(),allowed);
  context.updateLeaderboardAccess();assert.equal(nodes.rankBtn.classList.hidden,!visible);
+ assert.equal(nodes.accessAdminBtn.classList.hidden,!(user?.email==='itaigo921@gmail.com'&&user?.emailVerified===true));
  assert.equal(nodes.lbBody.textContent,'');assert.equal(vm.runInContext('leaderboardUsersCache',context),null);
 }
 context.window.cbtUser={uid:'settings',allowed:true,emailVerified:true};context.updateLeaderboardVisibility();

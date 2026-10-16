@@ -22,7 +22,9 @@ jobs:
           node scripts/test_progress_preservation.cjs
           node scripts/test_mock_exam.cjs
           node scripts/test_mock_subjects.cjs
+          node scripts/test_access_control.cjs
           node scripts/test_admin_ranking.cjs
+          node scripts/test_paper_progress.cjs
           node scripts/test_route_review.cjs
           node scripts/test_rank_progression.cjs
           git diff --check
@@ -55,10 +57,10 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Install isolated emulator test dependencies
-        run: npm install --prefix "$RUNNER_TEMP/ranking-tools" --no-audit --no-fund firebase-tools@14.17.0 firebase@11.10.0 @firebase/rules-unit-testing@4.0.1
+        run: npm install --prefix "$RUNNER_TEMP/access-tools" --no-audit --no-fund firebase-tools@14.17.0 firebase@11.10.0 @firebase/rules-unit-testing@4.0.1
       - name: Verify Firestore permissions against a local demo project
         env:
-          FIREBASE_TEST_MODULES: ${{ runner.temp }}/ranking-tools/node_modules
+          FIREBASE_TEST_MODULES: ${{ runner.temp }}/access-tools/node_modules
           FIREBASE_EMULATORS_PATH: ${{ runner.temp }}/firebase-emulators
         run: |
           mkdir -p "$RUNNER_TEMP/firestore-run"
@@ -67,4 +69,4 @@ jobs:
           fs.writeFileSync(process.env.RUNNER_TEMP+'/firestore-run/firebase.json',JSON.stringify({firestore:{rules:process.env.GITHUB_WORKSPACE+'/firestore.rules'},emulators:{firestore:{host:'127.0.0.1',port:8080},ui:{enabled:false},singleProjectMode:true}}));
           JS
           cd "$RUNNER_TEMP/firestore-run"
-          "$RUNNER_TEMP/ranking-tools/node_modules/.bin/firebase" emulators:exec --only firestore --project demo-cbtpass-member-ranking --config firebase.json "node $GITHUB_WORKSPACE/scripts/test_leaderboard_rules.cjs"
+          "$RUNNER_TEMP/access-tools/node_modules/.bin/firebase" emulators:exec --only firestore --project demo-cbtpass-access --config firebase.json "node $GITHUB_WORKSPACE/scripts/test_access_rules.cjs && node $GITHUB_WORKSPACE/scripts/test_leaderboard_rules.cjs"

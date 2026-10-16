@@ -19,7 +19,7 @@
 このクラウド環境にはFirebase管理用の接続がありません。秘密鍵・トークンをチャットやGitHubに貼る必要はありません。
 
 1. Firebase Consoleの `cbtpass-a680e` → Firestore Database → ルールを開く。
-2. 既存の `/users/{uid}` が本人・従来の管理者以外を拒否することを確認し、このPRの `firestore.rules` にある `approvedHashes`・`canonicalEmail`・`approvedMember`・`validLeaderboard` と `/leaderboard/{uid}` のルールを反映する。既存の別用途のルールがあれば消さずに保持する。
+2. 既存の `/users/{uid}` が本人・従来の管理者以外を拒否することを確認し、このPRの最新版 `firestore.rules` 全文を反映する。2026-10-16版はアクセス停止ルールも統合済みで、`/accessControl/{uid}` と `notBlocked` を保持する。過去のランキング専用版を使わない。
 3. Firebase側でルールを公開したら、その旨を返信する。
 4. 共有する情報への公開承認後、アプリのPRをmainにマージしてPagesへ配備する。
 5. 許可・メール確認済みの実アカウントでログイン・同期し、ランキング表示を確認する。この実アカウント確認はクラウドの疑似ブラウザーテストとは別。
@@ -37,3 +37,10 @@
 通常の回帰テスト・ブラウザーテストに加え、CIの `firestore-rules` ジョブでFirebase Emulatorを使用します。プロジェクトIDは `demo-cbtpass-member-ranking` に固定し、実ユーザーや本番DBを操作しません。
 
 ローカルでは `FIREBASE_TEST_MODULES` にテスト用node_modulesを指定し、Firestore Emulator経由で `node scripts/test_leaderboard_rules.cjs` を実行します。エミュレーターがなければテストは失敗します。
+
+## 2026-10-16 アクセス管理との分離
+
+- ランキングは許可・メール確認済みユーザーに表示し、「管理者専用」の表記を削除。
+- アクセス管理の表示・画面・APIは独立したcanManageUsersで確認済みitaigo921@gmail.comだけに制限。一般ユーザーはランキングが見えても管理画面に入れず、一覧取得も権限変更も拒否する。
+- approvedMemberはnotBlockedも確認するため、停止中はランキング取得・掲載を禁止。管理者の停止操作は公開ランキングの本人行も同一トランザクションで削除する。解除後は本人が次回利用・同期したとき、参加設定がオンなら再掲載する。
+- 更新後のルールはこの版の全文を一度反映すればよい。今公開済みのアクセス管理ルールと両立し、アクセス管理の設定や学習記録は削除しない。

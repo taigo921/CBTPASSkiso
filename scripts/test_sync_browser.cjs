@@ -101,6 +101,20 @@ const server=http.createServer((req,res)=>{
    assert.deepEqual(after.records.map(({explanationTime,...record})=>record),before.records.map(({explanationTime,...record})=>record));
   }
   for(const page of pages){
+   await page.evaluate(()=>openStudyPlan());
+   const beforePaper=await page.evaluate(()=>JSON.stringify({stats:statsByBook,game,assignments:planFor().assignments,saved:safeGet(sharedPlanSessionKey())}));
+   await page.locator('#paperProgressPanel summary').click();
+   await page.locator('#paperBook').selectOption('book2');
+   await page.waitForFunction(()=>document.querySelector('#paperThrough option[value="E-1"]'));
+   await page.locator('#paperThrough').selectOption('E-1');
+   await page.locator('#paperMastery').selectOption('mastered');
+   await page.locator('#paperApply').click();
+   assert.ok((await page.locator('#paperRegistered').textContent()).includes('本の登録済み'));
+   assert.equal(await page.evaluate(()=>JSON.stringify({stats:statsByBook,game,assignments:planFor().assignments,saved:safeGet(sharedPlanSessionKey())})),beforePaper);
+   assert.ok(await page.evaluate(()=>Object.values(planFor().paperProgress).every(x=>x.round===5)));
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'paper controls fit viewport');
+  }
+  for(const page of pages){
    await page.evaluate(()=>{window.cbtCloud=null;clearTimeout(_syncT);});
    await page.evaluate(()=>switchBook('mock'));
    assert.equal(await page.locator('#mockSubjectSelect option').count(),22);
@@ -166,6 +180,10 @@ const server=http.createServer((req,res)=>{
    });
    await page.evaluate(()=>switchBook('book1'));
    assert.ok(await page.locator('#rankBtn').isVisible());
+   assert.ok(await page.locator('#accessAdminBtn').isHidden(),'members see rankings without access management');
+   assert.equal(await page.locator('#rankBtn').textContent().then(s=>s.includes('管理者専用')),false);
+   await page.evaluate(async()=>{window.accessProbeCalls=0;window.cbtCloud.fetchAccessUsers=async()=>{window.accessProbeCalls++;return [];};await openAccessAdmin();await renderAccessAdmin();});
+   assert.equal(await page.evaluate(()=>window.accessProbeCalls),0,'direct member navigation never reads access list');
    assert.equal(await page.locator('#lbVisibility').isChecked(),false);
    await page.locator('#rankBtn').click();
    await page.locator('#leaderboard .lb-row').waitFor({state:'visible'});
@@ -200,6 +218,33 @@ const server=http.createServer((req,res)=>{
    const backup=page.waitForEvent('download');await page.locator('#storageBackupBtn').click();assert.match((await backup).suggestedFilename(),/^toGO-progress-/);
    await page.evaluate(()=>{Storage.prototype.setItem=window.originalStorageSet;safeSet('preservation-test',{answered:11});safeRemove('preservation-test');});
    assert.ok(await page.locator('#storageWarning').isHidden());
+  }
+  for(const page of pages){
+   await page.evaluate(()=>switchBook('book1'));
+   await page.evaluate(()=>{
+    window.cbtUser={uid:'owner',email:'itaigo921@gmail.com',emailVerified:true};
+    window.accessTestCalls=[];window.accessTestBlocked=false;
+    window.cbtCloud={refreshAdminVerification:async()=>{},fetchAccessUsers:async()=>[
+      {uid:'owner',email:'itaigo921@gmail.com',username:'Owner',blocked:false},
+      {uid:'learner',email:'learner@example.test',username:'<img src=x onerror=alert(1)>',blocked:window.accessTestBlocked}
+    ],setUserBlocked:async(uid,blocked)=>{window.accessTestCalls.push([uid,blocked]);window.accessTestBlocked=blocked;}};
+    updateLeaderboardAccess();renderHome();
+   });
+   await page.locator('#accessAdminBtn').click();
+   await page.getByRole('button',{name:'アクセス停止',exact:true}).click();
+   await page.getByRole('button',{name:'アクセス解除',exact:true}).waitFor();
+   await page.getByRole('button',{name:'アクセス解除',exact:true}).click();
+   await page.getByRole('button',{name:'アクセス停止',exact:true}).waitFor();
+   assert.deepEqual(await page.evaluate(()=>window.accessTestCalls),[['learner',true],['learner',false]]);
+   assert.ok(await page.getByRole('button',{name:'管理者（停止できません）'}).isDisabled());
+   assert.equal(await page.locator('#accessAdminList img').count(),0,'names render as text');
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+   await page.evaluate(()=>{window.cbtCloud.setUserBlocked=async()=>{throw Error('permission-denied');};});
+   await page.getByRole('button',{name:'アクセス停止',exact:true}).click();
+   await page.waitForFunction(()=>document.getElementById('accessAdminStatus').textContent.includes('変更できません'));
+   assert.ok(await page.getByRole('button',{name:'アクセス停止',exact:true}).isEnabled());
+   await page.evaluate(()=>{window.cbtUser={uid:'learner',email:'learner@example.test',emailVerified:true};updateLeaderboardAccess();});
+   assert.ok(await page.locator('#accessAdminBtn').isHidden());assert.equal(await page.locator('#accessAdminList').textContent(),'');
   }
   assert.deepEqual(errors,[]);
   console.log('PASS two isolated browsers: 1977/1692 -> 1977/1977, XP 13179, mock frontier 2, resume, automatic backup, JSON export, permission-denied preserves records; both books correct/wrong/skip/home/resume; no page errors. Real Firebase/device verification still required.');
