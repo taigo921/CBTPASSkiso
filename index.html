@@ -45,7 +45,7 @@
   #authGate #emailLoginBtn{background:#1D4ED8;color:#fff;}
   #authGate #emailSetupBtn{background:#eaf2ff;color:#1D4ED8;}
   #authGate .auth-email-note{margin:9px 2px 0;color:#65758D;font-size:10.5px;line-height:1.55;}
-  #authGate #blockedLoginImage[hidden]{display:none;}
+  #authGate #blockedLoginImage[hidden]{display:none!important;}
   #authGate .auth-err{color:#d8453b;font-size:13px;margin-top:16px;min-height:18px;line-height:1.55;word-break:break-all;}
   #authGate .auth-foot{color:#8A98AD;font-size:11px;margin-top:22px;line-height:1.6;}
   #logoutBtn{position:fixed;left:12px;bottom:12px;z-index:9998;display:none;background:#fff;border:1px solid #E0E7F1;color:#52647F;font-size:12px;padding:7px 12px;border-radius:20px;box-shadow:0 2px 8px rgba(25,55,110,.12);cursor:pointer;}
@@ -1162,7 +1162,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261016-blocked-gif-1';
+const SERVICE_WORKER_BUILD='20261016-blocked-gif-2';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 let blockedLoginNotice=false;
