@@ -70,13 +70,5 @@ window.cbtCloud={readLatest:async()=>({count:serverCount}),save:async p=>{server
  vm.runInContext(`assert(states.at(-1)==='pending','new answer during sync is not falsely acknowledged');`,context);
  assert.match(source,/if\(metadata\?\.fromCache\|\|metadata\?\.hasPendingWrites\)return/);checks++;
  assert.match(source,/await db\.runTransaction/);checks++;
- let mirrorAttempts=0;
- context.canViewLeaderboard=()=>true;
- context.window.cbtCloud.publishLeaderboard=async()=>{mirrorAttempts++;throw {code:'permission-denied'};};
- context.window.cbtCloud.save=async()=>{};
- vm.runInContext('states=[];_syncDirty=false;',context);
- await vm.runInContext('runCloudSync()',context);await Promise.resolve();
- vm.runInContext("assert(states.at(-1)==='ready','public ranking failure never invalidates private sync');assert(localCount===1977,'ranking failure preserves private progress');",context);
- assert.equal(mirrorAttempts,1);checks++;
  console.log('PASS sync: '+checks+' checks (stale devices, two books, XP, study time, plans, linked mock, resume deletion, backup, save error, pending changes).');
 })().catch(e=>{console.error(e);process.exitCode=1;});
