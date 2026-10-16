@@ -7,10 +7,10 @@ const server=http.createServer((req,res)=>{
  if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.writeHead(404);res.end();return;}
  if(file.endsWith('index.html')){
   let html=fs.readFileSync(file,'utf8').replace(/<script src="https:[^>]+><\/script>/g,'');
-  html=html.replace(/<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->[\s\S]*?<\/script>/,'<script>window.cbtUser={uid:"sync-test"};document.getElementById("authGate").remove();</script>');
+  html=html.replace(/<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->[\s\S]*?<\/script>/,'<script>window.cbtUser={uid:"sync-test"};document.getElementById("authGate").classList.add("ok");</script>');
   res.setHeader('Content-Type','text/html');res.end(html);return;
  }
- res.setHeader('Content-Type',file.endsWith('.json')?'application/json':file.endsWith('.js')?'application/javascript':'application/octet-stream');fs.createReadStream(file).pipe(res);
+ res.setHeader('Content-Type',file.endsWith('.json')?'application/json':file.endsWith('.js')?'application/javascript':file.endsWith('.gif')?'image/gif':'application/octet-stream');fs.createReadStream(file).pipe(res);
 });
 (async()=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -226,6 +226,16 @@ const server=http.createServer((req,res)=>{
    assert.ok(await page.getByRole('button',{name:'アクセス停止',exact:true}).isEnabled());
    await page.evaluate(()=>{window.cbtUser={uid:'learner',email:'learner@example.test',emailVerified:true};updateLeaderboardAccess();});
    assert.ok(await page.locator('#accessAdminBtn').isHidden());assert.equal(await page.locator('#accessAdminList').textContent(),'');
+  }
+  for(const page of pages){
+   assert.ok(await page.locator('#blockedLoginImage').isHidden());
+   assert.equal(await page.locator('#blockedLoginImage').getAttribute('src'),null,'normal login does not download GIF');
+   await page.evaluate(()=>{setBlockedLoginImage(true);el('authGate').classList.remove('ok');el('authErr').textContent='管理者によりアクセスが停止されています。';});
+   await page.locator('#blockedLoginImage').waitFor({state:'visible'});
+   await page.waitForFunction(()=>document.getElementById('blockedLoginImage').naturalWidth===560);
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'blocked GIF fits mobile/tablet');
+   await page.evaluate(()=>{setBlockedLoginImage(false);el('authGate').classList.add('ok');});
+   assert.ok(await page.locator('#blockedLoginImage').isHidden());assert.equal(await page.locator('#blockedLoginImage').getAttribute('src'),null);
   }
   assert.deepEqual(errors,[]);
   console.log('PASS two isolated browsers: 1977/1692 -> 1977/1977, XP 13179, mock frontier 2, resume, automatic backup, JSON export, permission-denied preserves records; both books correct/wrong/skip/home/resume; no page errors. Real Firebase/device verification still required.');
