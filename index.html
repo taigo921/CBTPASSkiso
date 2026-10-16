@@ -690,7 +690,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/16-7・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/16-8・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1168,10 +1168,18 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261016-fullscreen-blocked-gif-1';
+const SERVICE_WORKER_BUILD='20261016-persist-blocked-gif-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
+const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
 let blockedLoginNotice=false;
+function hasBlockedLoginNotice(){
+  try{return localStorage.getItem(BLOCKED_LOGIN_NOTICE_KEY)==='1';}catch(_){return false;}
+}
+function rememberBlockedLoginNotice(blocked){
+  try{if(blocked)localStorage.setItem(BLOCKED_LOGIN_NOTICE_KEY,'1');else localStorage.removeItem(BLOCKED_LOGIN_NOTICE_KEY);}catch(_){}
+}
+function restoreBlockedLoginNotice(){setBlockedLoginImage(hasBlockedLoginNotice());}
 function setBlockedLoginImage(blocked){
   blockedLoginNotice=!!blocked;
   const image=document.getElementById('blockedLoginImage');if(!image)return;
@@ -1195,7 +1203,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
-  el('accountStatus').textContent='表示版：10/16-7・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/16-8・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   leaderboardUsersCache=null;
   el('accessAdminList').textContent='';el('accessAdminStatus').textContent='';
@@ -3861,6 +3869,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
 
 /* ============ 初期化 ============ */
 (async () => {
+  restoreBlockedLoginNotice();
   safeRemove(STORE_Q); // 古い手動読み込みデータを起動時に必ず消す
   // 旧形式の成績だけはUIDから問題集を判定するため、最初の一度だけ全問題を読む。
   // 通常起動は選択中の問題集だけでホームを出し、ログイン後のクラウド成績反映を待たせない。
@@ -3972,6 +3981,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   window.cbtHash = e => sha256(String(e).toLowerCase().trim());
 
   function reveal(){
+    rememberBlockedLoginNotice(false);setBlockedLoginImage(false);
     gate.classList.add('ok');
     const lo = document.getElementById('logoutBtn'); if(lo) lo.classList.add('show');
   }
@@ -4061,7 +4071,6 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     }catch(e){ errEl.textContent = 'ログインに失敗しました。'; console.warn(e); }
   }
   function initGis(){
-    if(!(window.google && google.accounts && google.accounts.id)){ return setTimeout(initGis, 150); }
     // iOSのホーム画面アプリは埋め込みブラウザ扱いになり、GoogleがOAuthを拒否する。
     // この場合は上のリンクからSafariへ移動してもらう。
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -4071,6 +4080,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       authEmailToggle.classList.add('hidden');
       return;
     }
+    if(!(window.google && google.accounts && google.accounts.id)){ return setTimeout(initGis, 150); }
     google.accounts.id.initialize({
       client_id: GIS_CLIENT_ID,
       callback: onGoogleCredential,
@@ -4266,6 +4276,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   let stopAccessSubscription=null,accessEpoch=0;
   function clearAccessSubscription(){if(stopAccessSubscription){stopAccessSubscription();stopAccessSubscription=null;}}
   function lockAccess(message,blocked=blockedLoginNotice){
+    if(blocked)rememberBlockedLoginNotice(true);
     setBlockedLoginImage(blocked);
     gate.classList.remove('ok');errEl.textContent=message;
     document.getElementById('logoutBtn')?.classList.remove('show');
