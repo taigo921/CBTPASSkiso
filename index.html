@@ -682,7 +682,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/16-4・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/16-5・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1160,7 +1160,7 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261016-all-member-ranking-1';
+const SERVICE_WORKER_BUILD='20261016-ranking-dates-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 function isAccessOwner(user=window.cbtUser){
@@ -1177,7 +1177,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
-  el('accountStatus').textContent='表示版：10/16-4・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/16-5・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   leaderboardUsersCache=null;
   el('accessAdminList').textContent='';el('accessAdminStatus').textContent='';
@@ -3702,17 +3702,28 @@ async function openLeaderboard(){
   if(!canViewLeaderboard()){toast('ランキングはメール確認済みの許可ユーザー専用です');return;}
   el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
   showOnly('leaderboard');leaderboardUsersCache=null;
-  try{
-    if(canManageUsers()&&window.cbtCloud.refreshLeaderboardMembers)await window.cbtCloud.refreshLeaderboardMembers();
-    if(window.cbtCloud.publishLeaderboard)await window.cbtCloud.publishLeaderboard();
-  }catch(error){console.warn('ranking refresh failed',error?.code||'unavailable');}
+  leaderboardRefreshFailure=null;
+  if(canManageUsers()&&window.cbtCloud.refreshLeaderboardMembers){
+    try{await window.cbtCloud.refreshLeaderboardMembers();}catch(error){leaderboardRefreshFailure=error;console.warn('ranking refresh failed',error?.code||'unavailable');}
+  }
+  if(window.cbtCloud.publishLeaderboard){
+    try{await window.cbtCloud.publishLeaderboard();}catch(error){leaderboardRefreshFailure=error;console.warn('ranking self publish failed',error?.code||'unavailable');}
+  }
   if(!canViewLeaderboard())return;
   await renderLeaderboard();
 }
 let leaderboardUsersCache=null;
+let leaderboardRefreshFailure=null;
+function leaderboardDateKey(value){
+  const match=String(value||'').match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(!match)return null;
+  const year=+match[1],month=+match[2],day=+match[3],date=new Date(Date.UTC(year,month-1,day));
+  if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month-1||date.getUTCDate()!==day)return null;
+  return `${match[1]}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
 function combinedLeaderboardStats(user){
-  const books=['book1','book2'].map(book=>user.books?.[book]).filter(Boolean);
-  if(!books.length)return {...user}; // Legacy records have only root summaries.
+  const books=['book1','book2'].map(book=>user.books?.[book]).filter(Boolean).map(book=>({...book,lastDay:leaderboardDateKey(book.lastDay)}));
+  if(!books.length)return {...user,lastDay:leaderboardDateKey(user.lastDay)}; // Preserve legacy root summaries.
   const answered=books.reduce((sum,book)=>sum+(book.answered||0),0);
   const correct=books.reduce((sum,book)=>sum+(book.correct||0),0);
   const lastDay=books.reduce((latest,book)=>String(book.lastDay||'')>latest?String(book.lastDay):latest,'');
@@ -3725,7 +3736,7 @@ function leaderboardPublicSummary(data){
   const answered=count(stats.answered),correct=Math.min(answered,count(stats.correct));
   return {username:String(data.username||'名無し').slice(0,16),avatar:safeAvatar(data.avatar),
     answered,correct,accuracy:answered?Math.round(correct/answered*1000)/10:0,
-    bestStreak:count(stats.bestStreak),dayStreak:count(stats.dayStreak),lastDay:stats.lastDay||null,
+    bestStreak:count(stats.bestStreak),dayStreak:count(stats.dayStreak),lastDay:leaderboardDateKey(stats.lastDay),
     game:{xp:count(data.game?.xp)}};
 }
 async function renderLeaderboard(){
@@ -3768,6 +3779,7 @@ async function renderLeaderboard(){
   let list=users.slice();
   if(lbMetric==='accuracy') list=list.filter(u=>(u.answered||0)>=10);
   list.sort((a,b)=> md.f(b)-md.f(a) || md.tie(b)-md.tie(a));
+  if(!list.length&&leaderboardRefreshFailure){body.textContent='ランキングへの成績反映に失敗しました。「更新」で再試行してください。原因：'+cloudErrorDetail(leaderboardRefreshFailure);el('lbMe').textContent='';return;}
   if(!list.length){ body.innerHTML='<div class="lb-empty">'+(lbMetric==='accuracy'?'10問以上解いた人がまだいません':'まだデータがありません')+'</div>'; el('lbMe').textContent=''; return; }
   body.innerHTML='';
   list.forEach((u,i)=>{
