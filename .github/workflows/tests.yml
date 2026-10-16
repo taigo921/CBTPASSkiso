@@ -44,7 +44,9 @@ jobs:
       - name: Isolated two-device browser test
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/cbt-browser/node_modules/playwright
-        run: node scripts/test_sync_browser.cjs
+        run: |
+          node scripts/test_sync_browser.cjs
+          node scripts/test_blocked_login_browser.cjs
   firestore-rules:
     runs-on: ubuntu-latest
     timeout-minutes: 15
