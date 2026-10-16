@@ -8,9 +8,13 @@ vm.runInContext('let leaderboardUsersCache=null;'+slice('const LEADERBOARD_ENABL
 for(const user of [null,{uid:'member',email:'approved@test',emailVerified:true,allowed:true},{uid:'owner',email:'itaigo921@gmail.com',emailVerified:true,allowed:true}]){
  ctx.window.cbtUser=user;ctx.updateLeaderboardAccess();assert.equal(nodes.rankBtn.classList.hidden,!user);assert.equal(nodes.accessAdminBtn.classList.hidden,user?.uid!=='owner');
 }
-ctx.safeAvatar=()=>'';vm.runInContext(slice('function combinedLeaderboardStats(','async function renderLeaderboard('),ctx);
-const data={username:'Test',email:'approved@test',leaderboardVisible:false,books:{book1:{answered:10,correct:9},book2:{answered:30,correct:15}},game:{xp:100},progressDataV1:'private'};
+ctx.safeAvatar=()=>'';vm.runInContext(slice('function leaderboardDateKey(','async function renderLeaderboard('),ctx);
+const data={username:'Test',email:'approved@test',leaderboardVisible:false,books:{book1:{answered:10,correct:9,lastDay:'2026-9-22',dayStreak:8},book2:{answered:30,correct:15,lastDay:'2026-10-16',dayStreak:2}},lastDay:'2026-9-22',game:{xp:100},progressDataV1:'private'};
 const publicData=ctx.leaderboardPublicSummary(data);assert.equal(publicData.answered,40);assert.equal(publicData.correct,24);assert.equal(publicData.email,undefined);assert.equal(publicData.progressDataV1,undefined);
+assert.equal(publicData.lastDay,'2026-10-16');assert.equal(publicData.dayStreak,2);
+assert.equal(ctx.leaderboardPublicSummary({username:'Old',lastDay:'2026-9-2'}).lastDay,'2026-09-02');
+assert.equal(ctx.leaderboardDateKey('2026-2-30'),null);assert.equal(ctx.leaderboardDateKey('invalid'),null);
+assert.equal(data.books.book1.lastDay,'2026-9-22','original progress dates unchanged');
 let reads=[],writes=[],deletes=[];const profiles={member:data,blocked:{...data,email:'blocked@test'},outsider:{...data,email:'no@test'}};
 const admin={uid:'owner',email:'itaigo921@gmail.com',emailVerified:true,allowed:true};const member={uid:'member',email:'approved@test',emailVerified:true,allowed:true,getIdTokenResult:async()=>({claims:{email:'approved@test',email_verified:true}})};
 ctx.auth={currentUser:member};ctx.window.cbtUser=member;ctx.isAllowedEmail=async e=>['approved@test','blocked@test'].includes(e);ctx.firebase={firestore:{FieldValue:{serverTimestamp:()=>42}}};

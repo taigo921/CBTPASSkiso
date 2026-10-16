@@ -177,6 +177,17 @@ const server=http.createServer((req,res)=>{
 
   }
   for(const page of pages){
+   const failure=await page.evaluate(async()=>{
+    window.cbtUser={uid:'owner',email:'itaigo921@gmail.com',emailVerified:true,allowed:true};
+    window.selfPublishAttempts=0;lbMetric='answered';
+    window.cbtCloud={refreshLeaderboardMembers:async()=>{throw {code:'permission-denied'};},publishLeaderboard:async()=>{window.selfPublishAttempts++;},fetchLeaderboard:async()=>[]};
+    await openLeaderboard();return {text:el('lbBody').textContent,attempts:window.selfPublishAttempts};
+   });
+   assert.match(failure.text,/成績反映に失敗/);assert.match(failure.text,/permission-denied/);assert.equal(failure.attempts,1,'self publication still attempted after seed failure');
+   await page.evaluate(async()=>{window.cbtCloud.refreshLeaderboardMembers=async()=>{};window.cbtCloud.fetchLeaderboard=async()=>[{uid:'owner',username:'Owner',answered:40,correct:24,lastDay:'2026-9-22'}];await openLeaderboard();});
+   assert.ok(await page.locator('#leaderboard .lb-row').isVisible());
+  }
+  for(const page of pages){
    await page.evaluate(()=>{
     localStorage.setItem('preservation-test',JSON.stringify({answered:10}));
     window.originalStorageSet=Storage.prototype.setItem;
