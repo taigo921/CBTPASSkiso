@@ -45,7 +45,12 @@
   #authGate #emailLoginBtn{background:#1D4ED8;color:#fff;}
   #authGate #emailSetupBtn{background:#eaf2ff;color:#1D4ED8;}
   #authGate .auth-email-note{margin:9px 2px 0;color:#65758D;font-size:10.5px;line-height:1.55;}
+  #authGate #blockedLoginImage{position:fixed;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;object-position:center;background:#000;}
   #authGate #blockedLoginImage[hidden]{display:none!important;}
+  #authGate.blocked-view .auth-card{display:none;}
+  #authGate #blockedLoginOverlay{position:fixed;inset:auto 0 0;z-index:2;padding:28px 20px calc(20px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff;text-align:center;}
+  #authGate #blockedLoginOverlay p{margin:0 0 12px;font-size:13px;}
+  #authGate #blockedLoginBack{padding:10px 18px;border:1px solid rgba(255,255,255,.6);border-radius:24px;background:rgba(0,0,0,.35);color:#fff;font:inherit;font-size:13px;cursor:pointer;}
   #authGate .auth-err{color:#d8453b;font-size:13px;margin-top:16px;min-height:18px;line-height:1.55;word-break:break-all;}
   #authGate .auth-foot{color:#8A98AD;font-size:11px;margin-top:22px;line-height:1.6;}
   #logoutBtn{position:fixed;left:12px;bottom:12px;z-index:9998;display:none;background:#fff;border:1px solid #E0E7F1;color:#52647F;font-size:12px;padding:7px 12px;border-radius:20px;box-shadow:0 2px 8px rgba(25,55,110,.12);cursor:pointer;}
@@ -508,6 +513,8 @@
 <body>
 <!-- ▼ ログイン関所（許可されたGoogleアカウントのみ解錠） -->
 <div id="authGate">
+  <img id="blockedLoginImage" hidden width="560" height="292" alt="泣いている人物のアニメーション">
+  <div id="blockedLoginOverlay" hidden><p>このアカウントのアクセスは停止されています。</p><button type="button" id="blockedLoginBack">ログイン画面に戻る</button></div>
   <div class="auth-card">
     <div class="auth-brand">toGO<span>クイズ</span></div>
     <p class="auth-lead">友達だけの限定アプリです。<br>許可されたメールアドレスでログインしてください。</p>
@@ -537,7 +544,6 @@
       ホーム画面のアプリ内ではなく、Safariでこのページを開いてからログインしてください。<br>
       <a href="https://taigo921.github.io/CBTPASSkiso/" target="_blank" rel="noopener">Safariで開く</a>
     </div>
-    <img id="blockedLoginImage" hidden width="560" height="292" alt="泣いている人物のアニメーション" style="display:block;width:100%;height:auto;border-radius:12px;margin-top:16px">
     <p class="auth-err" id="authErr"></p>
     <p class="auth-foot">※ログインは本人確認のためだけに使います。</p>
   </div>
@@ -684,7 +690,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/16-6・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/16-7・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1162,13 +1168,15 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261016-blocked-gif-2';
+const SERVICE_WORKER_BUILD='20261016-fullscreen-blocked-gif-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 let blockedLoginNotice=false;
 function setBlockedLoginImage(blocked){
   blockedLoginNotice=!!blocked;
   const image=document.getElementById('blockedLoginImage');if(!image)return;
+  document.getElementById('authGate')?.classList.toggle('blocked-view',blockedLoginNotice);
+  const overlay=document.getElementById('blockedLoginOverlay');if(overlay)overlay.hidden=!blockedLoginNotice;
   image.hidden=!blockedLoginNotice;
   if(blockedLoginNotice)image.src='./assets/blocked-login.gif';else image.removeAttribute('src');
 }
@@ -1187,7 +1195,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
-  el('accountStatus').textContent='表示版：10/16-6・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/16-7・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   leaderboardUsersCache=null;
   el('accessAdminList').textContent='';el('accessAdminStatus').textContent='';
@@ -3283,6 +3291,7 @@ el('routeBackBtn').addEventListener('click',()=>{
   if(session&&session.records&&session.idx<session.uids.length)saveSession();
   openStudyPlan();
 });
+el('blockedLoginBack').addEventListener('click',()=>setBlockedLoginImage(false));
 el('storageBackupBtn').addEventListener('click',()=>el('exportProgressBtn').click());
 el('homeBtn').addEventListener('click',()=>{ if(session&&session.records&&session.idx<session.uids.length){saveSession();} renderHome(); });
 el('slowSec').addEventListener('change',e=>{let v=parseInt(e.target.value)||60;v=Math.max(5,Math.min(600,v));settings.slowSec=v;e.target.value=v;saveSettings();toast(`基準を ${v}秒 に設定`);});

@@ -236,7 +236,14 @@ const server=http.createServer((req,res)=>{
    await page.locator('#blockedLoginImage').waitFor({state:'visible'});
    await page.waitForFunction(()=>document.getElementById('blockedLoginImage').naturalWidth===560);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'blocked GIF fits mobile/tablet');
-   await page.evaluate(()=>setBlockedLoginImage(false));
+   const bounds=await page.locator('#blockedLoginImage').boundingBox();
+   const viewport=page.viewportSize();assert.equal(bounds.x,0);assert.equal(bounds.y,0);assert.equal(bounds.width,viewport.width);assert.equal(bounds.height,viewport.height);
+   assert.equal(await page.locator('#blockedLoginImage').evaluate(img=>getComputedStyle(img).objectFit),'cover');
+   assert.ok(await page.locator('#authGate .auth-card').isHidden());
+   if(viewport.width===390)await page.screenshot({path:'/tmp/blocked-gif-fullscreen.png'});
+   await page.locator('#blockedLoginBack').click();
+   assert.ok(await page.locator('#authGate').isVisible(),'return button keeps login locked');
+   assert.ok(await page.locator('#authGate .auth-card').isVisible());
    assert.ok(await page.locator('#blockedLoginImage').isHidden());assert.equal(await page.locator('#blockedLoginImage').getAttribute('src'),null);
    await page.evaluate(()=>el('authGate').classList.add('ok'));
   }
