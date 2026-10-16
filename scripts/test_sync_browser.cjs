@@ -182,6 +182,33 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>{Storage.prototype.setItem=window.originalStorageSet;safeSet('preservation-test',{answered:11});safeRemove('preservation-test');});
    assert.ok(await page.locator('#storageWarning').isHidden());
   }
+  for(const page of pages){
+   await page.evaluate(()=>switchBook('book1'));
+   await page.evaluate(()=>{
+    window.cbtUser={uid:'owner',email:'itaigo921@gmail.com',emailVerified:true};
+    window.accessTestCalls=[];window.accessTestBlocked=false;
+    window.cbtCloud={refreshAdminVerification:async()=>{},fetchAccessUsers:async()=>[
+      {uid:'owner',email:'itaigo921@gmail.com',username:'Owner',blocked:false},
+      {uid:'learner',email:'learner@example.test',username:'<img src=x onerror=alert(1)>',blocked:window.accessTestBlocked}
+    ],setUserBlocked:async(uid,blocked)=>{window.accessTestCalls.push([uid,blocked]);window.accessTestBlocked=blocked;}};
+    updateLeaderboardAccess();renderHome();
+   });
+   await page.locator('#accessAdminBtn').click();
+   await page.getByRole('button',{name:'アクセス停止',exact:true}).click();
+   await page.getByRole('button',{name:'アクセス解除',exact:true}).waitFor();
+   await page.getByRole('button',{name:'アクセス解除',exact:true}).click();
+   await page.getByRole('button',{name:'アクセス停止',exact:true}).waitFor();
+   assert.deepEqual(await page.evaluate(()=>window.accessTestCalls),[['learner',true],['learner',false]]);
+   assert.ok(await page.getByRole('button',{name:'管理者（停止できません）'}).isDisabled());
+   assert.equal(await page.locator('#accessAdminList img').count(),0,'names render as text');
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+   await page.evaluate(()=>{window.cbtCloud.setUserBlocked=async()=>{throw Error('permission-denied');};});
+   await page.getByRole('button',{name:'アクセス停止',exact:true}).click();
+   await page.waitForFunction(()=>document.getElementById('accessAdminStatus').textContent.includes('変更できません'));
+   assert.ok(await page.getByRole('button',{name:'アクセス停止',exact:true}).isEnabled());
+   await page.evaluate(()=>{window.cbtUser={uid:'learner',email:'learner@example.test',emailVerified:true};updateLeaderboardAccess();});
+   assert.ok(await page.locator('#accessAdminBtn').isHidden());assert.equal(await page.locator('#accessAdminList').textContent(),'');
+  }
   assert.deepEqual(errors,[]);
   console.log('PASS two isolated browsers: 1977/1692 -> 1977/1977, XP 13179, mock frontier 2, resume, automatic backup, JSON export, permission-denied preserves records; both books correct/wrong/skip/home/resume; no page errors. Real Firebase/device verification still required.');
  }finally{await browser.close();server.close();}
