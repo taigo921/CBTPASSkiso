@@ -22,6 +22,7 @@ jobs:
           node scripts/test_progress_preservation.cjs
           node scripts/test_mock_exam.cjs
           node scripts/test_mock_subjects.cjs
+          node scripts/test_access_control.cjs
           node scripts/test_admin_ranking.cjs
           node scripts/test_paper_progress.cjs
           node scripts/test_route_review.cjs
@@ -43,3 +44,29 @@ jobs:
         env:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/cbt-browser/node_modules/playwright
         run: node scripts/test_sync_browser.cjs
+  firestore-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install isolated emulator test dependencies
+        run: npm install --prefix "$RUNNER_TEMP/access-tools" --no-audit --no-fund firebase-tools@14.17.0 firebase@11.10.0 @firebase/rules-unit-testing@4.0.1
+      - name: Verify Firestore permissions against a local demo project
+        env:
+          FIREBASE_TEST_MODULES: ${{ runner.temp }}/access-tools/node_modules
+          FIREBASE_EMULATORS_PATH: ${{ runner.temp }}/firebase-emulators
+        run: |
+          mkdir -p "$RUNNER_TEMP/firestore-run"
+          node - <<'JS'
+          const fs=require('node:fs');
+          fs.writeFileSync(process.env.RUNNER_TEMP+'/firestore-run/firebase.json',JSON.stringify({firestore:{rules:process.env.GITHUB_WORKSPACE+'/firestore.rules'},emulators:{firestore:{host:'127.0.0.1',port:8080},ui:{enabled:false},singleProjectMode:true}}));
+          JS
+          cd "$RUNNER_TEMP/firestore-run"
+          "$RUNNER_TEMP/access-tools/node_modules/.bin/firebase" emulators:exec --only firestore --project demo-cbtpass-access --config firebase.json "node $GITHUB_WORKSPACE/scripts/test_access_rules.cjs"
