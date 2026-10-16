@@ -228,14 +228,17 @@ const server=http.createServer((req,res)=>{
    assert.ok(await page.locator('#accessAdminBtn').isHidden());assert.equal(await page.locator('#accessAdminList').textContent(),'');
   }
   for(const page of pages){
+   await page.evaluate(()=>el('authGate').classList.remove('ok'));
+   assert.ok(await page.locator('#authGate').isVisible());
    assert.ok(await page.locator('#blockedLoginImage').isHidden());
    assert.equal(await page.locator('#blockedLoginImage').getAttribute('src'),null,'normal login does not download GIF');
    await page.evaluate(()=>{setBlockedLoginImage(true);el('authGate').classList.remove('ok');el('authErr').textContent='管理者によりアクセスが停止されています。';});
    await page.locator('#blockedLoginImage').waitFor({state:'visible'});
    await page.waitForFunction(()=>document.getElementById('blockedLoginImage').naturalWidth===560);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'blocked GIF fits mobile/tablet');
-   await page.evaluate(()=>{setBlockedLoginImage(false);el('authGate').classList.add('ok');});
+   await page.evaluate(()=>setBlockedLoginImage(false));
    assert.ok(await page.locator('#blockedLoginImage').isHidden());assert.equal(await page.locator('#blockedLoginImage').getAttribute('src'),null);
+   await page.evaluate(()=>el('authGate').classList.add('ok'));
   }
   assert.deepEqual(errors,[]);
   console.log('PASS two isolated browsers: 1977/1692 -> 1977/1977, XP 13179, mock frontier 2, resume, automatic backup, JSON export, permission-denied preserves records; both books correct/wrong/skip/home/resume; no page errors. Real Firebase/device verification still required.');
