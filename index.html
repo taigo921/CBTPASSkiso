@@ -675,14 +675,19 @@
       <button class="mode" id="listBtn"><div class="ic">📋</div><div class="t"><b>問題一覧から選ぶ</b><span>状態を見ながら1問ずつ解く</span></div><div class="arr">›</div></button>
       <button class="mode" id="statsBtn"><div class="ic">📊</div><div class="t"><b>学習分析・勉強時間</b><span id="studyTimeHome">今日の勉強時間 0分</span></div><div class="arr">›</div></button>
       <button class="mode hidden" id="accessAdminBtn"><div class="ic">🔒</div><div class="t"><b>ユーザーのアクセス管理</b><span>管理者専用・アクセス停止／解除</span></div><div class="arr">›</div></button>
-      <button class="mode hidden" id="rankBtn"><div class="ic">🏆</div><div class="t"><b>ランキング（管理者専用）</b><span>問題集ごとの成績・レベルを確認</span></div><div class="arr">›</div></button>
+      <button class="mode hidden" id="rankBtn"><div class="ic">🏆</div><div class="t"><b>みんなのランキング</b><span>問題集1・2の合計成績・レベルを比較</span></div><div class="arr">›</div></button>
+      <div class="hidden" id="leaderboardPrivacy">
+        <div class="setting"><label for="lbVisibility">自分をランキングに表示</label><input type="checkbox" id="lbVisibility" disabled></div>
+        <p class="mock-note" id="lbVisibilityStatus" role="status">表示設定を確認中です</p>
+        <p class="mock-note">参加は任意で、初期状態は非表示です。非表示でもランキングは見られます。オンにすると表示名・写真・合計成績・XPを共有します。</p>
+      </div>
     </div>
     <div class="offline-status pending" id="offlineStatus" aria-live="polite">📥 オフライン準備を確認中…</div>
     <div class="cloud-status pending" id="cloudStatus" aria-live="polite">☁️ 学習記録の同期を確認中…</div>
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/16-1・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/16-2・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -934,6 +939,8 @@
       <button class="lb-tab" data-metric="usage">連続使用</button>
       <button class="lb-tab" data-metric="level">レベル</button>
     </div>
+    <p class="mock-note">表示をオンにした人の表示名・写真・合計成績・XPを共有します。参加せずに見ることもできます。</p>
+    <button type="button" class="ghost-btn" id="lbPrivacyBack">自分の表示設定（ホーム）</button>
     <div id="lbBody"></div>
     <input class="hidden" id="lbAvatarInput" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
     <div class="row-btns"><button class="ghost-btn" id="lbRefresh">↻ 更新</button> <button class="ghost-btn" id="lbRename">✎ 名前</button> <button class="ghost-btn" id="lbAvatarBtn">📷 写真アイコン</button></div>
@@ -1159,19 +1166,26 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261016-access-control-1';
+const SERVICE_WORKER_BUILD='20261016-member-access-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
-function isLeaderboardAdmin(user=window.cbtUser){
-  return !!(LEADERBOARD_ENABLED&&user&&user.email==='itaigo921@gmail.com');
+function isAccessOwner(user=window.cbtUser){
+  return !!(user&&user.email==='itaigo921@gmail.com');
+}
+function canManageUsers(user=window.cbtUser){
+  return !!(user&&user.email==='itaigo921@gmail.com'&&user.emailVerified===true);
+}
+function isLeaderboardMember(user=window.cbtUser){
+  return !!(LEADERBOARD_ENABLED&&user?.uid&&window.cbtUser?.uid===user.uid&&window.cbtUser?.allowed===true);
 }
 function canViewLeaderboard(user=window.cbtUser){
-  return !!(isLeaderboardAdmin(user)&&user.emailVerified===true);
+  return !!(isLeaderboardMember(user)&&user.emailVerified===true);
 }
 function updateLeaderboardAccess(){
-  el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accessAdminBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accountStatus').textContent='表示版：10/16-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  updateLeaderboardVisibility();
+  el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
+  el('accountStatus').textContent='表示版：10/16-2・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   leaderboardUsersCache=null;
   el('accessAdminList').textContent='';el('accessAdminStatus').textContent='';
   el('lbBody').textContent='';el('lbMe').textContent='';
@@ -2533,8 +2547,9 @@ function favList(){return QUESTIONS.filter(q=>{const r=stats.perQ[qkey(q)];retur
 function imageList(){return QUESTIONS.filter(q=>q.has_image||q.image||q.image_base64).map(qkey);}
 
 function renderHome(){
-  el('rankBtn').classList.toggle('hidden',!isLeaderboardAdmin());
-  el('accessAdminBtn').classList.toggle('hidden',!isLeaderboardAdmin());
+  el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
+  updateLeaderboardVisibility();
+  el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   commitExplanationTime();timer.active=false;timer.running=false;
   el('timerChip').classList.remove('show'); clearInterval(timer.iv);
   const book=BOOKS[activeBook];
@@ -3561,6 +3576,10 @@ async function runCloudSync(){
   timeout=setTimeout(()=>setCloudSyncState('unavailable',{error:'通信に時間がかかっています。記録は端末に保持しています'}),20000);
   try{
     await operation;_syncFailures=0;
+    // Public summary publication is independent: its failure never invalidates private progress sync.
+    if(window.cbtUser?.uid===uid&&typeof canViewLeaderboard==='function'&&canViewLeaderboard()&&window.cbtCloud?.publishLeaderboard){
+      Promise.resolve().then(()=>{if(window.cbtUser?.uid===uid)return window.cbtCloud.publishLeaderboard();}).catch(error=>console.warn('leaderboard summary publish error',error?.code||'unavailable'));
+    }
     setCloudSyncState(_syncDirty?'pending':'ready',{savedAt:Date.now(),error:''});
   }catch(error){
     console.warn('cloud sync error',error);_syncFailures++;
@@ -3637,19 +3656,40 @@ async function openAvatarCrop(file){
 function closeAvatarCrop(){
   el('avatarCropModal').classList.remove('show');el('avatarCropFrame').classList.remove('dragging');avatarCropState=null;
 }
+let leaderboardVisibilityBusy=false;
+function updateLeaderboardVisibility(){
+  const user=window.cbtUser,member=isLeaderboardMember(),known=typeof user?.leaderboardVisible==='boolean',visible=user?.leaderboardVisible===true;
+  el('leaderboardPrivacy').classList.toggle('hidden',!member);
+  el('lbVisibility').checked=visible;
+  el('lbVisibility').disabled=leaderboardVisibilityBusy||!member||!known||(!visible&&!canViewLeaderboard());
+  el('lbVisibilityStatus').textContent=leaderboardVisibilityBusy?'表示設定を変更中です':!known?'表示設定を確認中です':visible?'現在：表示':'現在：非表示（ランキングは見られます）';
+}
+async function changeLeaderboardVisibility(){
+  const user=window.cbtUser;if(!isLeaderboardMember()||leaderboardVisibilityBusy)return;
+  const visible=el('lbVisibility').checked,uid=user.uid;
+  leaderboardVisibilityBusy=true;updateLeaderboardVisibility();el('lbVisibility').checked=visible;
+  try{
+    if(!window.cbtCloud?.setLeaderboardVisibility)throw Error('設定を保存できません');
+    await window.cbtCloud.setLeaderboardVisibility(visible);
+    if(window.cbtUser?.uid!==uid)return;
+    window.cbtUser.leaderboardVisible=visible;leaderboardUsersCache=null;
+    toast(visible?'ランキングへの表示をオンにしました':'ランキングの掲載を削除して非表示にしました');
+  }catch(error){if(window.cbtUser?.uid===uid)toast('表示設定を変更できませんでした。通信状態とFirebaseルールを確認してください');}
+  finally{leaderboardVisibilityBusy=false;updateLeaderboardVisibility();}
+}
 async function openAccessAdmin(){
-  if(!isLeaderboardAdmin())return;
+  if(!canManageUsers())return;
   try{await window.cbtCloud.refreshAdminVerification();}catch(_){toast('管理者の確認に失敗しました。通信状態を確認してください');return;}
-  if(!canViewLeaderboard()){toast('先にランキング画面で管理者メールの確認を完了してください');return;}
+  if(!canManageUsers()){toast('先にランキング画面で管理者メールの確認を完了してください');return;}
   el('footer').classList.add('hidden');showOnly('accessAdmin');await renderAccessAdmin();
 }
 async function renderAccessAdmin(){
   const list=el('accessAdminList'),status=el('accessAdminStatus');list.textContent='';
-  if(!canViewLeaderboard()){status.textContent='確認済みの管理者専用です';return;}
+  if(!canManageUsers()){status.textContent='確認済みの管理者専用です';return;}
   const viewer=window.cbtUser.uid;status.textContent='読み込み中…';
   try{
     const users=await window.cbtCloud.fetchAccessUsers();
-    if(!canViewLeaderboard()||window.cbtUser.uid!==viewer)return;
+    if(!canManageUsers()||window.cbtUser.uid!==viewer)return;
     status.textContent=`登録済み ${users.length}人`;
     for(const user of users){
       const row=document.createElement('div');row.className='setting';
@@ -3659,11 +3699,11 @@ async function renderAccessAdmin(){
       const self=user.uid===viewer;
       button.textContent=self?'管理者（停止できません）':user.blocked?'アクセス解除':'アクセス停止';button.disabled=self;
       button.onclick=async()=>{
-        if(!canViewLeaderboard()||window.cbtUser.uid!==viewer)return;
+        if(!canManageUsers()||window.cbtUser.uid!==viewer)return;
         button.disabled=true;status.textContent='変更を保存中…';
         try{
           await window.cbtCloud.setUserBlocked(user.uid,!user.blocked);
-          if(!canViewLeaderboard()||window.cbtUser.uid!==viewer)return;
+          if(!canManageUsers()||window.cbtUser.uid!==viewer)return;
           user.blocked=!user.blocked;button.textContent=user.blocked?'アクセス解除':'アクセス停止';
           status.textContent=`${user.username||user.email||'ユーザー'}のアクセスを${user.blocked?'停止':'解除'}しました`;
         }catch(_){status.textContent='変更できませんでした。一覧を更新し、Firebaseの権限設定・通信状態を確認してください。';}
@@ -3677,26 +3717,30 @@ el('accessAdminBtn').addEventListener('click',openAccessAdmin);
 el('accessAdminRefresh').addEventListener('click',renderAccessAdmin);
 el('accessAdminBack').addEventListener('click',renderHome);
 async function openLeaderboard(){
-  if(isLeaderboardAdmin()&&!canViewLeaderboard()){
+  if(isLeaderboardMember()&&!canViewLeaderboard()){
     try{
-      await window.cbtCloud.refreshAdminVerification();
+      await window.cbtCloud.refreshLeaderboardVerification();
       if(!canViewLeaderboard()){
-        if(confirm('管理者メールが未確認です。itaigo921@gmail.com に確認メールを送りますか？\nメールのリンクを開いた後、もう一度ランキングを押してください。')){
-          await window.cbtCloud.sendAdminVerification();toast('確認メールを送りました。迷惑メールも確認してください');
+        if(confirm('メールが未確認です。このアカウントに確認メールを送りますか？\nメールのリンクを開いた後、もう一度ランキングを押してください。')){
+          await window.cbtCloud.sendLeaderboardVerification();toast('確認メールを送りました。迷惑メールも確認してください');
         }
         return;
       }
     }catch(e){toast('メール確認に失敗しました。通信状態を確認して再度お試しください');return;}
   }
-  if(!canViewLeaderboard()){toast('ランキングは確認済みの管理者アカウント専用です');return;}
+  if(!canViewLeaderboard()){toast('ランキングはメール確認済みの許可ユーザー専用です');return;}
   el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
   showOnly('leaderboard');
-  // 成績の同期完了を待つと、順位取得までが直列になって遅くなる。保存は裏で進める。
-  if(window.cbtCloud&&window.cbtCloud.save){
-    const started=performance.now();
-    window.cbtCloud.save(fullStatsPayload()).then(()=>console.info(`[ランキング] 自分の成績同期 ${(performance.now()-started).toFixed(0)}ms`)).catch(()=>{});
+  try{
+    if(window.cbtCloud?.getLeaderboardVisibility){window.cbtUser.leaderboardVisible=await window.cbtCloud.getLeaderboardVisibility();updateLeaderboardVisibility();}
+    if(window.cbtCloud?.save)await window.cbtCloud.save(fullStatsPayload());
+    if(window.cbtCloud?.publishLeaderboard)await window.cbtCloud.publishLeaderboard();
+    leaderboardUsersCache=null;
+  }catch(error){
+    el('lbBody').textContent='ランキングを更新できません。メール確認とFirebaseのランキング用ルールを確認してください。';return;
   }
-  renderLeaderboard();
+  if(!canViewLeaderboard())return;
+  await renderLeaderboard();
 }
 let leaderboardUsersCache=null;
 function combinedLeaderboardStats(user){
@@ -3709,9 +3753,17 @@ function combinedLeaderboardStats(user){
     bestStreak:Math.max(...books.map(book=>book.bestStreak||0)),lastDay:lastDay||null,
     dayStreak:Math.max(0,...books.filter(book=>book.lastDay===lastDay).map(book=>book.dayStreak||0))};
 }
+function leaderboardPublicSummary(data){
+  const stats=combinedLeaderboardStats(data),count=value=>Number.isFinite(+value)?Math.max(0,Math.floor(+value)):0;
+  const answered=count(stats.answered),correct=Math.min(answered,count(stats.correct));
+  return {username:String(data.username||'名無し').slice(0,16),avatar:safeAvatar(data.avatar),
+    answered,correct,accuracy:answered?Math.round(correct/answered*1000)/10:0,
+    bestStreak:count(stats.bestStreak),dayStreak:count(stats.dayStreak),lastDay:stats.lastDay||null,
+    game:{xp:count(data.game?.xp)}};
+}
 async function renderLeaderboard(){
   const body=el('lbBody');
-  if(!canViewLeaderboard()){leaderboardUsersCache=null;body.textContent='管理者専用です';el('lbMe').textContent='';return;}
+  if(!canViewLeaderboard()){leaderboardUsersCache=null;body.textContent='メール確認済みの許可ユーザー専用です';el('lbMe').textContent='';return;}
   const viewerUid=window.cbtUser.uid;
   if(!(window.cbtCloud&&window.cbtCloud.fetchLeaderboard)){ body.innerHTML='<div class="lb-empty">ログインすると表示されます</div>'; el('lbMe').textContent=''; return; }
   let users=leaderboardUsersCache;
@@ -3724,7 +3776,7 @@ async function renderLeaderboard(){
       leaderboardUsersCache=users;
       console.info(`[ランキング] Firestore取得 ${(performance.now()-started).toFixed(0)}ms / ${users.length}人`);
     }
-    catch(e){ body.textContent=navigator.onLine?'読み込みに失敗しました。管理者メールの確認状態とログインを確認してください。':'オフライン中はランキングを表示できません';el('lbMe').textContent='';return; }
+    catch(e){ body.textContent=navigator.onLine?'読み込みに失敗しました。メール確認・ログイン・Firebaseのランキング用ルールを確認してください。':'オフライン中はランキングを表示できません';el('lbMe').textContent='';return; }
   }
   users=users.map(combinedLeaderboardStats);
   const meUid=window.cbtUser&&window.cbtUser.uid;
@@ -3762,6 +3814,8 @@ async function renderLeaderboard(){
   const meIdx=list.findIndex(u=>u.uid===meUid);
   el('lbMe').textContent = meIdx>=0? ('あなたは '+list.length+'人中 '+(meIdx+1)+'位') : (lbMetric==='accuracy'?'あなたはまだ10問未満（正答率ランキング対象外）':'');
 }
+el('lbVisibility').addEventListener('change',changeLeaderboardVisibility);
+el('lbPrivacyBack').addEventListener('click',renderHome);
 const rankButton=el('rankBtn');if(LEADERBOARD_ENABLED&&rankButton)rankButton.addEventListener('click',openLeaderboard);
 el('lbRefresh').addEventListener('click',()=>{leaderboardUsersCache=null;renderLeaderboard();});
 el('lbRename').addEventListener('click',()=>{ if(window.cbtRename)window.cbtRename(); });
@@ -4056,7 +4110,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     if(!window.cbtUser) return;
     const v = await askUsername(window.cbtUser.username);
     window.cbtUser.username = v;
-    try{ await db.collection('users').doc(window.cbtUser.uid).set({username:v}, {merge:true}); }catch(e){}
+    try{ await db.collection('users').doc(window.cbtUser.uid).set({username:v}, {merge:true});if(canViewLeaderboard()&&window.cbtCloud?.publishLeaderboard)await window.cbtCloud.publishLeaderboard(); }catch(e){}
     if(typeof toast==='function') toast('名前を変更しました');
     leaderboardUsersCache=null;
     if(typeof renderLeaderboard==='function') renderLeaderboard();
@@ -4066,6 +4120,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     if(!safeAvatar(avatar))throw new Error('写真を設定できませんでした');
     await db.collection('users').doc(window.cbtUser.uid).set({avatar:avatar}, {merge:true});
     window.cbtUser.avatar=avatar;
+    if(canViewLeaderboard()&&window.cbtCloud?.publishLeaderboard){try{await window.cbtCloud.publishLeaderboard();}catch(error){console.warn('leaderboard avatar publish error',error?.code||'unavailable');}}
     leaderboardUsersCache=null;
   };
 
@@ -4079,6 +4134,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
         const snapshot=await transaction.get(ref);
         const merged=window.cbtMergePayloads(snapshot.exists?decodeCloudProgress(snapshot.data()):{},clean);
         const body=Object.assign({username:user.username||'',email:user.email||'',avatar:safeAvatar(user.avatar),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},encodeCloudProgress(merged));
+        // Visibility is a server-side per-account preference, never overwritten by progress sync.
+        delete body.leaderboardVisible;
         // Atomically replace legacy detailed maps only after all their data is in progressDataV1.
         for(const key of ['studyPlans','mockExams','sessions','perQ','rankAttempts'])body[key]=firebase.firestore.FieldValue.delete();
         // Replace merged top-level maps so old session tombstones/fields cannot linger recursively.
@@ -4094,19 +4151,56 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     },
     refreshAdminVerification: async function(){
       const user=auth.currentUser;
-      if(!isLeaderboardAdmin(user))throw Error('管理者専用です');
+      if(!isAccessOwner(user))throw Error('管理者専用です');
       await user.reload();await user.getIdToken(true);
       if(auth.currentUser?.uid!==user.uid||window.cbtUser?.uid!==user.uid)throw Error('ログインが変更されました');
       window.cbtUser.emailVerified=user.emailVerified===true;updateLeaderboardAccess();
     },
-    sendAdminVerification: async function(){
+    refreshLeaderboardVerification: async function(){
       const user=auth.currentUser;
-      if(!isLeaderboardAdmin(user))throw Error('管理者専用です');
+      if(!isLeaderboardMember(user)||!await isAllowedEmail(user.email))throw Error('許可ユーザー専用です');
+      await user.reload();await user.getIdToken(true);
+      if(auth.currentUser?.uid!==user.uid||window.cbtUser?.uid!==user.uid)throw Error('ログインが変更されました');
+      window.cbtUser.emailVerified=user.emailVerified===true;updateLeaderboardAccess();
+    },
+    sendLeaderboardVerification: async function(){
+      const user=auth.currentUser;
+      if(!isLeaderboardMember(user)||!await isAllowedEmail(user.email))throw Error('許可ユーザー専用です');
       await user.sendEmailVerification();
+    },
+    getLeaderboardVisibility: async function(){
+      const user=auth.currentUser;
+      if(!isLeaderboardMember(user)||!await isAllowedEmail(user.email))throw Error('許可ユーザー専用です');
+      const snapshot=await db.collection('users').doc(user.uid).get({source:'server'});
+      if(auth.currentUser?.uid!==user.uid)throw Error('ログインが変更されました');
+      return snapshot.exists&&snapshot.data().leaderboardVisible===true;
+    },
+    setLeaderboardVisibility: async function(visible){
+      const user=auth.currentUser;
+      if(typeof visible!=='boolean'||!isLeaderboardMember(user)||!await isAllowedEmail(user.email))throw Error('許可ユーザー専用です');
+      if(visible&&!canViewLeaderboard(user))throw Error('メール確認が必要です');
+      const ref=db.collection('users').doc(user.uid),publicRef=db.collection('leaderboard').doc(user.uid);
+      await db.runTransaction(async transaction=>{
+        const snapshot=await transaction.get(ref);
+        transaction.set(ref,{leaderboardVisible:visible},{merge:true});
+        if(visible){const summary=leaderboardPublicSummary(snapshot.exists?snapshot.data():{username:window.cbtUser?.username||'名無し'});summary.updatedAt=firebase.firestore.FieldValue.serverTimestamp();transaction.set(publicRef,summary);}
+        else transaction.delete(publicRef);
+      });
+    },
+    publishLeaderboard: async function(){
+      const user=auth.currentUser;
+      if(!canViewLeaderboard(user)||!await isAllowedEmail(user.email))return;
+      const ref=db.collection('users').doc(user.uid),publicRef=db.collection('leaderboard').doc(user.uid);
+      await db.runTransaction(async transaction=>{
+        const snapshot=await transaction.get(ref);
+        if(auth.currentUser?.uid!==user.uid)throw Error('ログインが変更されました');
+        if(!snapshot.exists||snapshot.data().leaderboardVisible!==true){transaction.delete(publicRef);return;}
+        const summary=leaderboardPublicSummary(snapshot.data());summary.updatedAt=firebase.firestore.FieldValue.serverTimestamp();transaction.set(publicRef,summary);
+      });
     },
     fetchAccessUsers: async function(){
       const user=auth.currentUser;
-      if(!canViewLeaderboard(user))throw Error('確認済み管理者専用です');
+      if(!canManageUsers(user))throw Error('確認済み管理者専用です');
       const [profiles,controls]=await Promise.all([db.collection('users').get({source:'server'}),db.collection('accessControl').get({source:'server'})]);
       if(auth.currentUser?.uid!==user.uid)throw Error('ログインが変更されました');
       const blocked=new Map();controls.forEach(d=>blocked.set(d.id,d.data().blocked===true));
@@ -4115,36 +4209,33 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     },
     setUserBlocked: async function(uid,blocked){
       const user=auth.currentUser;
-      if(!canViewLeaderboard(user)||typeof uid!=='string'||!uid||uid.includes('/')||typeof blocked!=='boolean'||uid===user.uid)throw Error('この操作はできません');
+      if(!canManageUsers(user)||typeof uid!=='string'||!uid||uid.includes('/')||typeof blocked!=='boolean'||uid===user.uid)throw Error('この操作はできません');
       const ref=db.collection('accessControl').doc(uid);
       await db.runTransaction(async transaction=>{
         const profile=await transaction.get(db.collection('users').doc(uid));
         if(!profile.exists||auth.currentUser?.uid!==user.uid)throw Error('対象ユーザーまたはログインを確認してください');
         transaction.set(ref,{blocked,updatedBy:user.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+        if(blocked)transaction.delete(db.collection('leaderboard').doc(uid));
       });
     },
     fetchLeaderboard: async function(){
       const user=auth.currentUser;
-      if(!canViewLeaderboard(user))throw Error('管理者専用です');
+      if(!canViewLeaderboard(user)||!await isAllowedEmail(user.email))throw Error('許可ユーザー専用です');
       const token=await user.getIdTokenResult();
-      if(token.claims.email!=='itaigo921@gmail.com'||token.claims.email_verified!==true)throw Error('管理者メールの確認が必要です');
-      const snap = await db.collection('users').get({source:'server'});
+      if(token.claims.email_verified!==true||!await isAllowedEmail(token.claims.email))throw Error('メール確認が必要です');
+      const snap=await db.collection('leaderboard').get({source:'server'});
       if(auth.currentUser?.uid!==user.uid)throw Error('ログインが変更されました');
-      const arr = [];
-      snap.forEach(function(d){
-        const x=d.data();x.uid=d.id;delete x.perQ;delete x.studyPlans;delete x.mockExams;delete x.sessions;delete x.progressDataV1;
-        if(x.books){
-          x.books=Object.fromEntries(Object.entries(x.books).map(function(entry){
-            const summary=Object.assign({},entry[1]);delete summary.perQ;delete summary.rankAttempts;return [entry[0],summary];
-          }));
-        }
-        arr.push(x);
-      });
-      return arr;
+      const arr=[];snap.forEach(d=>arr.push({...leaderboardPublicSummary(d.data()),uid:d.id}));return arr;
     },
     subscribe: function(onData,onError){
       if(!window.cbtUser)return function(){};
-      return db.collection('users').doc(window.cbtUser.uid).onSnapshot(function(snapshot){
+      const uid=window.cbtUser.uid;
+      return db.collection('users').doc(uid).onSnapshot(function(snapshot){
+        if(window.cbtUser?.uid!==uid)return;
+        if(snapshot.exists&&!snapshot.metadata?.fromCache&&!snapshot.metadata?.hasPendingWrites){
+          const visible=snapshot.data().leaderboardVisible===true;
+          if(window.cbtUser.leaderboardVisible!==visible){window.cbtUser.leaderboardVisible=visible;updateLeaderboardVisibility();leaderboardUsersCache=null;}
+        }
         if(snapshot.exists&&typeof onData==='function')onData(snapshot.data(),snapshot.metadata);
       },function(error){if(typeof onError==='function')onError(error);});
     }
@@ -4234,7 +4325,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       try{await auth.signOut();}catch(_){}return;
     }
     if(epoch!==accessEpoch||auth.currentUser?.uid!==user.uid)return;
-    window.cbtUser = { uid:user.uid, email:email, emailVerified:user.emailVerified===true, username:'', avatar:'' };
+    window.cbtUser = { uid:user.uid, email:email, emailVerified:user.emailVerified===true, allowed:true, username:'', avatar:'' };
     updateLeaderboardAccess();
     setCloudSyncState('pending');
     // プロフィール読み込み（無ければユーザーネーム登録）
@@ -4270,6 +4361,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     }
     if(epoch!==accessEpoch||!window.cbtUser)return;
     watchAccess(user,epoch);
+    window.cbtUser.leaderboardVisible=snap&&!snap.metadata?.fromCache&&!snap.metadata?.hasPendingWrites?cloudData?.leaderboardVisible===true:undefined;updateLeaderboardVisibility();
     reveal();
     startCloudSubscription();
     // アプリ準備完了後：クラウド→ローカル統合 → 統合結果を書き戻す（数字は消えない）

@@ -69,4 +69,4 @@ jobs:
           fs.writeFileSync(process.env.RUNNER_TEMP+'/firestore-run/firebase.json',JSON.stringify({firestore:{rules:process.env.GITHUB_WORKSPACE+'/firestore.rules'},emulators:{firestore:{host:'127.0.0.1',port:8080},ui:{enabled:false},singleProjectMode:true}}));
           JS
           cd "$RUNNER_TEMP/firestore-run"
-          "$RUNNER_TEMP/access-tools/node_modules/.bin/firebase" emulators:exec --only firestore --project demo-cbtpass-access --config firebase.json "node $GITHUB_WORKSPACE/scripts/test_access_rules.cjs"
+          "$RUNNER_TEMP/access-tools/node_modules/.bin/firebase" emulators:exec --only firestore --project demo-cbtpass-access --config firebase.json "node $GITHUB_WORKSPACE/scripts/test_access_rules.cjs && node $GITHUB_WORKSPACE/scripts/test_leaderboard_rules.cjs"

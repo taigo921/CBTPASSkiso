@@ -157,9 +157,9 @@ const server=http.createServer((req,res)=>{
   }
   for(const page of pages){
    const values=await page.evaluate(async()=>{
-    window.cbtUser={uid:'ranking-test',email:'itaigo921@gmail.com',emailVerified:true};
+    window.cbtUser={uid:'ranking-test',email:'approved@example.test',emailVerified:true,allowed:true};
     leaderboardUsersCache=null;
-    window.cbtCloud={fetchLeaderboard:async()=>[{uid:'ranking-test',username:'Test',books:{book1:{answered:10,correct:9},book2:{answered:30,correct:15}}}]};
+    window.cbtCloud={save:async()=>{},publishLeaderboard:async()=>{window.rankingPublishes=(window.rankingPublishes||0)+1;},fetchLeaderboard:async()=>[{uid:'ranking-test',username:'Test',books:{book1:{answered:10,correct:9},book2:{answered:30,correct:15}}}]};
     const result=[];
     for(const book of ['book1','book2']){
      activeBook=book;lbMetric='answered';await renderLeaderboard();result.push(el('lbBody').querySelector('.lb-val').textContent);
@@ -168,6 +168,43 @@ const server=http.createServer((req,res)=>{
     return result;
    });
    assert.deepEqual(values,['40問','60%','40問','60%']);
+   await page.evaluate(()=>{
+    clearTimeout(_syncT);window.privateRankingPreference=false;window.failVisibility=false;
+    window.cbtUser.leaderboardVisible=false;
+    const me={uid:'ranking-test',username:'Test',books:{book1:{answered:10,correct:9},book2:{answered:30,correct:15}}};
+    const peer={uid:'peer',username:'Peer',answered:20,correct:10};
+    window.cbtCloud={save:async()=>{},getLeaderboardVisibility:async()=>window.privateRankingPreference,
+     setLeaderboardVisibility:async visible=>{if(window.failVisibility)throw Error('offline');window.privateRankingPreference=visible;},
+     publishLeaderboard:async()=>{window.rankingPublishes=(window.rankingPublishes||0)+1;},
+     fetchLeaderboard:async()=>window.privateRankingPreference?[me,peer]:[peer]};
+   });
+   await page.evaluate(()=>switchBook('book1'));
+   assert.ok(await page.locator('#rankBtn').isVisible());
+   assert.ok(await page.locator('#accessAdminBtn').isHidden(),'members see rankings without access management');
+   assert.equal(await page.locator('#rankBtn').textContent().then(s=>s.includes('管理者専用')),false);
+   await page.evaluate(async()=>{window.accessProbeCalls=0;window.cbtCloud.fetchAccessUsers=async()=>{window.accessProbeCalls++;return [];};await openAccessAdmin();await renderAccessAdmin();});
+   assert.equal(await page.evaluate(()=>window.accessProbeCalls),0,'direct member navigation never reads access list');
+   assert.equal(await page.locator('#lbVisibility').isChecked(),false);
+   await page.locator('#rankBtn').click();
+   await page.locator('#leaderboard .lb-row').waitFor({state:'visible'});
+   assert.equal(await page.locator('#leaderboard .lb-row.me').count(),0);
+   assert.equal(await page.evaluate(()=>window.rankingPublishes),1);
+   await page.locator('#lbPrivacyBack').click();await page.locator('#lbVisibility').check();
+   await page.waitForFunction(()=>!leaderboardVisibilityBusy&&window.cbtUser.leaderboardVisible===true);
+   assert.equal(await page.evaluate(()=>window.privateRankingPreference),true);
+   await page.locator('#rankBtn').click();await page.locator('#leaderboard .lb-row.me').waitFor({state:'visible'});
+   await page.locator('#lbPrivacyBack').click();
+   await page.evaluate(()=>{window.failVisibility=true;});await page.locator('#lbVisibility').click();
+   await page.waitForFunction(()=>!leaderboardVisibilityBusy&&document.getElementById('lbVisibility').checked);
+   assert.equal(await page.evaluate(()=>window.privateRankingPreference),true,'failed deletion never claims hidden');
+   await page.evaluate(()=>{window.failVisibility=false;});await page.locator('#lbVisibility').uncheck();
+   await page.waitForFunction(()=>!leaderboardVisibilityBusy&&window.cbtUser.leaderboardVisible===false);
+   // Simulate a stale second-device UI: opening rankings rereads the server preference.
+   await page.evaluate(()=>{window.cbtUser.leaderboardVisible=true;});
+   await page.locator('#rankBtn').click();await page.locator('#leaderboard .lb-row').waitFor({state:'visible'});
+   assert.equal(await page.locator('#leaderboard .lb-row.me').count(),0);
+   assert.equal(await page.evaluate(()=>window.cbtUser.leaderboardVisible),false);
+   assert.equal(await page.evaluate(()=>window.privateRankingPreference),false);
   }
   for(const page of pages){
    await page.evaluate(()=>{
