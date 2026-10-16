@@ -1,3 +1,4 @@
+const APP_BUILD='20261016-all-member-ranking-1';
 const CACHE_NAME='cbtpass-offline-v1';
 const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js'];
 // Refresh only the files containing the five corrected figures on this update.
@@ -17,8 +18,8 @@ async function warmCache(urls){
   const cache=await caches.open(CACHE_NAME);
   await Promise.all(urls.map(async url=>{
     const request=new Request(url);
-    if(await cache.match(request))return;
-    try{await putIfCacheable(cache,request,await fetch(request));}catch(_){}
+    if(!APP_SHELL.includes(url)&&await cache.match(request))return;
+    try{await putIfCacheable(cache,request,await fetch(request,{cache:'reload'}));}catch(_){}
   }));
 }
 
@@ -47,7 +48,7 @@ self.addEventListener('fetch',event=>{
   if(request.mode==='navigate'){
     event.respondWith((async()=>{
       const cache=await caches.open(CACHE_NAME);
-      try{return await putIfCacheable(cache,request,await fetch(request));}
+      try{return await putIfCacheable(cache,request,await fetch(request,{cache:'no-store'}));}
       catch(_){return (await cache.match(request))||(await cache.match('./index.html'));}
     })());
     return;

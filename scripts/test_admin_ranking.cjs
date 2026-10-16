@@ -1,44 +1,26 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const source=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
-for(const match of source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(match[1]);
-assert.ok(!source.includes('id="lbVisibility"'),'member participation UI removed');
-assert.ok(!source.includes('publishLeaderboard: async function'),'public ranking publication removed');
-const nodes={};
-const context={window:{},el:id=>nodes[id]??=( {textContent:'old',classList:{toggle(name,value){this[name]=value;}}})};
-vm.createContext(context);
-vm.runInContext('let leaderboardUsersCache=[1];'+source.slice(source.indexOf('const LEADERBOARD_ENABLED='),source.indexOf('function updateLeaderboardAccess()'))+source.slice(source.indexOf('function updateLeaderboardAccess()'),source.indexOf('\n}',source.indexOf('function updateLeaderboardAccess()'))+2),context);
-for(const [user,allowed] of [[null,false],[{email:'other@example.com',emailVerified:true},false],[{email:'taigo921@gmail.com',emailVerified:true},false],[{email:'itaigo921@gmail.com',emailVerified:false},false],[{email:'itaigo921@gmail.com',emailVerified:true},true]]){
- context.window.cbtUser=user;
- assert.equal(context.canViewLeaderboard(),allowed);
- context.updateLeaderboardAccess();
- assert.equal(nodes.rankBtn.classList.hidden,!(user&&user.email==='itaigo921@gmail.com'));
- assert.equal(nodes.accessAdminBtn.classList.hidden,!(user&&user.email==='itaigo921@gmail.com'&&user.emailVerified));
- assert.equal(nodes.lbBody.textContent,'');
- assert.equal(vm.runInContext('leaderboardUsersCache',context),null);
+for(const m of source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(m[1]);
+const slice=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b));
+assert.ok(!source.includes('id="lbVisibility"'));assert.ok(!source.includes('getLeaderboardVisibility:'));
+const nodes={};const ctx={window:{},el:id=>nodes[id]??={textContent:'',classList:{toggle(k,v){this[k]=v;}}},Map,Set,console};vm.createContext(ctx);
+vm.runInContext('let leaderboardUsersCache=null;'+slice('const LEADERBOARD_ENABLED=','const offlineCacheWrites='),ctx);
+for(const user of [null,{uid:'member',email:'approved@test',emailVerified:true,allowed:true},{uid:'owner',email:'itaigo921@gmail.com',emailVerified:true,allowed:true}]){
+ ctx.window.cbtUser=user;ctx.updateLeaderboardAccess();assert.equal(nodes.rankBtn.classList.hidden,!user);assert.equal(nodes.accessAdminBtn.classList.hidden,user?.uid!=='owner');
 }
-vm.runInContext(source.slice(source.indexOf('function combinedLeaderboardStats('),source.indexOf('async function renderLeaderboard(')),context);
-const legacy={answered:12,correct:9,accuracy:75,game:{xp:100}};
-assert.equal(context.combinedLeaderboardStats(legacy).answered,12);
-const original={uid:'test',answered:999,correct:999,game:{xp:100},books:{book1:{answered:10,correct:9,accuracy:90,bestStreak:6,lastDay:'2026-10-06',dayStreak:8},book2:{answered:30,correct:15,accuracy:50,bestStreak:4,lastDay:'2026-10-07',dayStreak:2}},mockExams:{answered:100}};
-const snapshot=JSON.stringify(original),combined=context.combinedLeaderboardStats(original);
-assert.equal(combined.answered,40);assert.equal(combined.correct,24);assert.equal(combined.accuracy,60);
-assert.equal(combined.bestStreak,6);assert.equal(combined.lastDay,'2026-10-07');assert.equal(combined.dayStreak,2);
-assert.equal(combined.game.xp,100);assert.equal(JSON.stringify(original),snapshot);
-assert.equal(context.combinedLeaderboardStats({books:{book2:{answered:20,correct:5}}}).accuracy,25);
-assert.equal(context.combinedLeaderboardStats({books:{book1:{answered:0,correct:0}}}).accuracy,0);
-const fetchCode=source.slice(source.indexOf('fetchLeaderboard: async function(){'),source.indexOf('\n    subscribe:',source.indexOf('fetchLeaderboard: async function(){'))).trim().replace(/,$/,'');
-let reads=0;
-context.auth={currentUser:null};
-context.db={collection:()=>({get:async options=>{reads++;assert.equal(options.source,'server');return {forEach(){}};}})};
-const api=vm.runInContext('({'+fetchCode+'})',context);
+ctx.safeAvatar=()=>'';vm.runInContext(slice('function combinedLeaderboardStats(','async function renderLeaderboard('),ctx);
+const data={username:'Test',email:'approved@test',leaderboardVisible:false,books:{book1:{answered:10,correct:9},book2:{answered:30,correct:15}},game:{xp:100},progressDataV1:'private'};
+const publicData=ctx.leaderboardPublicSummary(data);assert.equal(publicData.answered,40);assert.equal(publicData.correct,24);assert.equal(publicData.email,undefined);assert.equal(publicData.progressDataV1,undefined);
+let reads=[],writes=[],deletes=[];const profiles={member:data,blocked:{...data,email:'blocked@test'},outsider:{...data,email:'no@test'}};
+const admin={uid:'owner',email:'itaigo921@gmail.com',emailVerified:true,allowed:true};const member={uid:'member',email:'approved@test',emailVerified:true,allowed:true,getIdTokenResult:async()=>({claims:{email:'approved@test',email_verified:true}})};
+ctx.auth={currentUser:member};ctx.window.cbtUser=member;ctx.isAllowedEmail=async e=>['approved@test','blocked@test'].includes(e);ctx.firebase={firestore:{FieldValue:{serverTimestamp:()=>42}}};
+ctx.db={collection(name){return {doc(uid){return {name,uid};},async get(o){assert.equal(o.source,'server');reads.push(name);const rows=name==='users'?profiles:name==='accessControl'?{blocked:{blocked:true}}:{blocked:{},old:{}};return {forEach(fn){for(const [id,v] of Object.entries(rows))fn({id,data:()=>v});}};} };},async runTransaction(fn){await fn({get:async()=>({exists:true,data:()=>data}),set(ref,v){writes.push([ref.uid,v]);}});},batch(){return {set(ref,v){writes.push([ref.uid,v]);},delete(ref){deletes.push(ref.uid);},async commit(){}};}};
+const api=vm.runInContext('({'+slice('    publishLeaderboard:','    fetchAccessUsers:')+'})',ctx);
 (async()=>{
- for(const user of [null,{email:'other@example.com',emailVerified:true},{email:'taigo921@gmail.com',emailVerified:true},{email:'itaigo921@gmail.com',emailVerified:false}]){
-  context.auth.currentUser=user;await assert.rejects(api.fetchLeaderboard());
- }
- assert.equal(reads,0);
- context.auth.currentUser={uid:'admin',email:'itaigo921@gmail.com',emailVerified:true,getIdTokenResult:async()=>({claims:{email:'itaigo921@gmail.com',email_verified:false}})};
- await assert.rejects(api.fetchLeaderboard());assert.equal(reads,0);
- context.auth.currentUser.getIdTokenResult=async()=>({claims:{email:'itaigo921@gmail.com',email_verified:true}});
- await api.fetchLeaderboard();assert.equal(reads,1);
- console.log('PASS: syntax, admin visibility, logout clearing, request guards and server-only read');
+ await api.publishLeaderboard();assert.equal(writes.length,1,'old false preference no longer blocks automatic publication');assert.equal(writes[0][1].answered,40);
+ await assert.rejects(api.refreshLeaderboardMembers());assert.equal(reads.length,0,'ordinary member cannot read private member list');
+ ctx.auth.currentUser=admin;ctx.window.cbtUser=admin;writes=[];await api.refreshLeaderboardMembers();assert.deepEqual(writes.map(x=>x[0]),['member']);assert.deepEqual(deletes.sort(),['blocked','old']);assert.equal(writes[0][1].email,undefined);
+ const fetcher=vm.runInContext('({'+slice('    fetchLeaderboard:','    subscribe:')+'})',ctx);
+ ctx.auth.currentUser=member;ctx.window.cbtUser=member;reads=[];await fetcher.fetchLeaderboard();assert.deepEqual(reads,['leaderboard']);
+ console.log('PASS all-member ranking: no opt-out UI, member reads only public summaries, automatic publication ignores old preferences, admin backfill excludes blocked/unapproved, access management owner-only');
 })().catch(e=>{console.error(e);process.exitCode=1;});

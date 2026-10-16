@@ -157,7 +157,7 @@ const server=http.createServer((req,res)=>{
   }
   for(const page of pages){
    const values=await page.evaluate(async()=>{
-    window.cbtUser={uid:'ranking-test',email:'itaigo921@gmail.com',emailVerified:true};
+    window.cbtUser={uid:'ranking-test',email:'member@example.test',emailVerified:true,allowed:true};
     leaderboardUsersCache=null;
     window.cbtCloud={fetchLeaderboard:async()=>[{uid:'ranking-test',username:'Test',books:{book1:{answered:10,correct:9},book2:{answered:30,correct:15}}}]};
     const result=[];
@@ -168,6 +168,13 @@ const server=http.createServer((req,res)=>{
     return result;
    });
    assert.deepEqual(values,['40問','60%','40問','60%']);
+   await page.evaluate(()=>switchBook('book1'));
+   assert.ok(await page.locator('#rankBtn').isVisible());assert.ok(await page.locator('#accessAdminBtn').isHidden());
+   assert.equal(await page.locator('#lbVisibility').count(),0);
+   await page.locator('#rankBtn').click();await page.locator('#leaderboard .lb-row').waitFor({state:'visible'});
+   assert.equal(await page.locator('#lbPrivacyBack').count(),0);
+   await page.locator('#lbRefresh').click();await page.locator('#leaderboard .lb-row').waitFor({state:'visible'});
+
   }
   for(const page of pages){
    await page.evaluate(()=>{
