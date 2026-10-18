@@ -8,6 +8,28 @@ service cloud.firestore {
         && request.auth.token.email == 'itaigo921@gmail.com'
         && request.auth.token.email_verified == true;
     }
+    // JST class clock is checked by the server, independent of a device clock.
+    function schoolOpen() {
+      let local = request.time + duration.value(9, 'h');
+      let key = local.year()*10000 + local.month()*100 + local.day();
+      let minutes = local.hours()*60 + local.minutes();
+      let settings = /databases/$(database)/documents/schoolAccess/settings;
+      let config = exists(settings) ? get(settings).data : {'enabled': true, 'exemptDates': []};
+      return isAdmin() || config.enabled == false || key in config.exemptDates
+        || local.dayOfWeek() >= 6 || key in [20260101, 20260112, 20260211, 20260223, 20260320, 20260429, 20260503, 20260504, 20260505, 20260506, 20260720, 20260811, 20260921, 20260922, 20260923, 20261012, 20261103, 20261123, 20270101, 20270111, 20270211, 20270223, 20270321, 20270322, 20270429, 20270503, 20270504, 20270505, 20270719, 20270811, 20270920, 20270923, 20271011, 20271103, 20271123]
+        || !((minutes>=520 && minutes<610) || (minutes>=625 && minutes<715)
+          || (minutes>=775 && minutes<865) || (minutes>=880 && minutes<970));
+    }
+    match /schoolAccess/settings {
+      allow get: if request.auth != null;
+      allow list, delete: if false;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasAll(['enabled','exemptDates','updatedAt','updatedBy'])
+        && request.resource.data.keys().hasOnly(['enabled','exemptDates','updatedAt','updatedBy'])
+        && request.resource.data.enabled is bool
+        && request.resource.data.exemptDates is list && request.resource.data.exemptDates.size()<=366
+        && request.resource.data.updatedBy==request.auth.uid && request.resource.data.updatedAt==request.time;
+    }
     function notBlocked(uid) {
       return !exists(/databases/$(database)/documents/accessControl/$(uid))
         || get(/databases/$(database)/documents/accessControl/$(uid)).data.blocked == false;
@@ -52,7 +74,7 @@ service cloud.firestore {
     }
     function approvedMember() {
       return request.auth != null && request.auth.token.email is string
-        && request.auth.token.email_verified == true && notBlocked(request.auth.uid)
+        && request.auth.token.email_verified == true && notBlocked(request.auth.uid) && schoolOpen()
         && (hashing.sha256(request.auth.token.email.lower()).toHexString().lower() in approvedHashes()
           || hashing.sha256(canonicalEmail(request.auth.token.email)).toHexString().lower() in approvedHashes());
     }
@@ -74,9 +96,9 @@ service cloud.firestore {
     }
     match /users/{uid} {
       allow get: if request.auth != null
-        && (isAdmin() || (request.auth.uid == uid && notBlocked(uid)));
+        && (isAdmin() || (request.auth.uid == uid && notBlocked(uid) && schoolOpen()));
       allow list: if isAdmin();
-      allow write: if request.auth != null && request.auth.uid == uid && notBlocked(uid);
+      allow write: if request.auth != null && request.auth.uid == uid && notBlocked(uid) && schoolOpen();
     }
     match /leaderboard/{uid} {
       allow get, list: if approvedMember();

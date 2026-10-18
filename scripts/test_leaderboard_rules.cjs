@@ -9,6 +9,7 @@ const {doc,getDoc,getDocs,collection,setDoc,deleteDoc,serverTimestamp,writeBatch
  const env=await initializeTestEnvironment({projectId:'demo-cbtpass-access',firestore:{host,port:+port,rules}});
  const summary=()=>({username:'Test',avatar:'',answered:40,correct:24,accuracy:60,bestStreak:0,dayStreak:0,lastDay:null,game:{xp:100},updatedAt:serverTimestamp()});
  try{
+  await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'schoolAccess','settings'),{enabled:false,exemptDates:[]});});
   await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'users','member'),{leaderboardVisible:false,progressDataV1:'private'});await setDoc(doc(c.firestore(),'users','other'),{progressDataV1:'private'});});
   const admin=env.authenticatedContext('owner',{email:'itaigo921@gmail.com',email_verified:true}).firestore();
   const member=env.authenticatedContext('member',{email:'i.taigo921+member@gmail.com',email_verified:true}).firestore();
