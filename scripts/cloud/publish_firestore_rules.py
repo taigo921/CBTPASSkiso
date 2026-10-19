@@ -25,8 +25,8 @@ def publish(source, request):
         raise ValueError('Unexpected project in created ruleset')
     print('Previous ruleset:', old_name)
     print('Candidate ruleset:', name)
-    request('PATCH', RELEASE + '?updateMask=ruleset_name',
-            {'name': RELEASE, 'rulesetName': name})
+    # UpdateReleaseRequest wraps the Release object, as in the official Firebase CLI.
+    request('PATCH', RELEASE, {'release': {'name': RELEASE, 'rulesetName': name}})
     live = request('GET', RELEASE)
     if live['rulesetName'] != name:
         raise ValueError('Published release does not match candidate; inspect the recorded ruleset names')
