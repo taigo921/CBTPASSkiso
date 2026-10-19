@@ -26,6 +26,19 @@ const {doc,getDoc,setDoc,serverTimestamp}=dependency('firebase/firestore');
    await no(getDoc(doc(anonymous,'schoolAccess','settings')));
    const config={enabled:true,exemptDates:[],updatedBy:'owner',updatedAt:serverTimestamp()};
    await no(setDoc(doc(learner,'schoolAccess','settings'),{...config,updatedBy:'learner'}));
+   if(!allowed){
+    const minutes=Number(time.slice(11,13))*60+Number(time.slice(14,16)),period=minutes<610?1:minutes<715?2:minutes<865?3:4;
+    const key=Number(time.slice(0,10).replaceAll('-',''))*10+period;
+    await no(setDoc(doc(learner,'schoolAccess','settings'),{...config,releasedPeriod:key,updatedBy:'learner'}));
+    await no(setDoc(doc(admin,'schoolAccess','settings'),{...config,releasedPeriod:'invalid'}));
+    await ok(setDoc(doc(admin,'schoolAccess','settings'),{...config,releasedPeriod:key}));
+    await ok(getDoc(doc(learner,'users','learner')));
+    await ok(getDoc(doc(learner,'leaderboard','learner')));
+    await ok(setDoc(doc(admin,'schoolAccess','settings'),{...config,releasedPeriod:key-10}));
+    await no(getDoc(doc(learner,'users','learner')));
+    await ok(setDoc(doc(admin,'schoolAccess','settings'),{...config,releasedPeriod:period===1?key+1:key-1}));
+    await no(getDoc(doc(learner,'users','learner')));
+   }
    await ok(setDoc(doc(admin,'schoolAccess','settings'),{...config,exemptDates:[Number(time.slice(0,10).replaceAll('-',''))]}));
    await ok(getDoc(doc(learner,'users','learner')));
    await ok(setDoc(doc(admin,'schoolAccess','settings'),{...config,enabled:false}));

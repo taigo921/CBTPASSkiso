@@ -3,7 +3,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
 const fixture=`<script>
 window.testProfileReads=0;window.testSchoolPolicy={enabled:false,exemptDates:[]};window.testBlocked=true; // Intentionally no Google SDK: standalone login must work independently.
 let authCallback;const fakeAuth={currentUser:null,onAuthStateChanged(fn){authCallback=fn;queueMicrotask(()=>fn(null));},async signInWithEmailAndPassword(email){const user={uid:email.includes('different')?'allowed-fixture':'blocked-fixture',email,emailVerified:true};this.currentUser=user;queueMicrotask(()=>authCallback(user));},async signOut(){this.currentUser=null;queueMicrotask(()=>authCallback(null));}};
-const fakeDb={collection(name){return {doc(){return {async get(){if(name==='users')window.testProfileReads++;return {exists:true,data:()=>name==='accessControl'?{blocked:window.testBlocked}:name==='schoolAccess'?window.testSchoolPolicy:{username:'Test',email:fakeAuth.currentUser?.email||'',books:{},game:{xp:0}},metadata:{fromCache:false,hasPendingWrites:false}};},async set(data){if(name==='schoolAccess'){window.testSchoolPolicy=data;if(window.testSchoolListener)window.testSchoolListener({exists:true,data:()=>data,metadata:{fromCache:false,hasPendingWrites:false}});}},onSnapshot(fn){if(name==='schoolAccess')window.testSchoolListener=fn;return ()=>{if(name==='schoolAccess'&&window.testSchoolListener===fn)window.testSchoolListener=null;};}};}};},async runTransaction(fn){await fn({get:async ref=>ref.get(),set(){},delete(){}});}};
+const fakeDb={collection(name){return {doc(){return {async get(){if(name==='users')window.testProfileReads++;return {exists:true,data:()=>name==='accessControl'?{blocked:window.testBlocked}:name==='schoolAccess'?window.testSchoolPolicy:{username:'Test',email:fakeAuth.currentUser?.email||'',books:{},game:{xp:0}},metadata:{fromCache:false,hasPendingWrites:false}};},async set(data){if(name==='schoolAccess'){window.testSchoolPolicy=data;if(window.testSchoolListener)window.testSchoolListener({exists:true,data:()=>data,metadata:{fromCache:false,hasPendingWrites:false}});}},onSnapshot(fn){if(name==='schoolAccess')window.testSchoolListener=fn;return ()=>{if(name==='schoolAccess'&&window.testSchoolListener===fn)window.testSchoolListener=null;};}};}};},async runTransaction(fn){return await fn({get:async ref=>ref.get(),set(ref,data){ref.set(data);},delete(){}});}};
 window.firebase={initializeApp(){},auth:()=>fakeAuth,firestore:Object.assign(()=>fakeDb,{FieldValue:{serverTimestamp:()=>42}})};
 </script>`;
 const server=http.createServer((req,res)=>{const file=path.join(root,req.url.split('?')[0]==='/'?'index.html':decodeURIComponent(req.url.split('?')[0]));if(!file.startsWith(root+'/')||!fs.existsSync(file)){res.writeHead(404);res.end();return;}
@@ -63,6 +63,7 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    assert.ok(await page.locator('#schoolGate').isVisible(),'10:25 locks an already open app');
    assert.equal(await page.evaluate(()=>window.cbtUser.uid),'allowed-fixture','class pause keeps the account and records');
    await assert.rejects(()=>page.evaluate(()=>window.cbtCloud.setSchoolPolicy({enabled:false,exemptDates:[]})),'regular learner cannot change policy');
+   await assert.rejects(()=>page.evaluate(()=>window.cbtCloud.releaseSchoolClass()),'only the owner can release a class');
    await page.clock.fastForward(90*60000);await page.clock.runFor(1100);
    assert.ok(await page.locator('#schoolGate').isHidden(),'11:55 unlocks automatically');
    await page.evaluate(()=>{schoolPolicy={enabled:true,exemptDates:[20261019]};});
@@ -71,15 +72,25 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    await page.evaluate(()=>{schoolPolicy={enabled:true,exemptDates:[]};});
    await page.clock.runFor(1000);
    assert.ok(await page.locator('#schoolGate').isVisible());
+   await page.evaluate(()=>{const policy={enabled:true,exemptDates:[],releasedPeriod:currentSchoolPeriodKey()};window.testSchoolPolicy=policy;window.testSchoolListener({exists:true,data:()=>policy,metadata:{fromCache:false,hasPendingWrites:false}});});
+   await page.locator('#schoolGate').waitFor({state:'hidden'});
+   await page.clock.fastForward(105*60000);await page.clock.runFor(1100);
+   assert.ok(await page.locator('#schoolGate').isVisible(),'the next class locks again after an early release');
    await page.locator('#schoolLogout').click();
    await page.locator('#schoolGate').waitFor({state:'hidden'});
    await login('itaigo921@gmail.com');
    await page.waitForFunction(()=>document.getElementById('authGate').classList.contains('ok'));
    assert.ok(await page.locator('#schoolGate').isHidden(),'verified owner bypasses class lock');
    await page.evaluate(async()=>{showOnly('accessAdmin');await renderSchoolSettings();});
+   await page.locator('#schoolReleaseClass').click();
+   await page.waitForFunction(()=>document.getElementById('schoolReleaseStatus').textContent.includes('解除しました'));
+   assert.equal(await page.evaluate(()=>window.testSchoolPolicy.releasedPeriod),202610194);
+   assert.equal(await page.locator('#schoolReleaseClass').textContent(),'この授業は解除済み');
+   assert.ok(await page.locator('#schoolReleaseClass').isDisabled());
    await page.locator('#schoolExemptDate').fill('2026-10-20');await page.locator('#schoolAddDate').click();
    await page.waitForFunction(()=>document.getElementById('schoolAdminStatus').textContent==='保存しました');
    assert.deepEqual(await page.evaluate(()=>window.testSchoolPolicy.exemptDates),[20261020]);
+   assert.equal(await page.evaluate(()=>window.testSchoolPolicy.releasedPeriod),202610194,'editing school holidays preserves the temporary release');
    await page.locator('#schoolExemptList button').click();
    await page.waitForFunction(()=>window.testSchoolPolicy.exemptDates.length===0);
    await page.locator('#schoolEnabled').uncheck();

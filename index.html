@@ -695,7 +695,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/18-1・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/19-1・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -934,7 +934,7 @@
     <div class="row-btns"><button type="button" class="ghost-btn" id="accessAdminBack">‹ ホーム</button><button type="button" class="ghost-btn" id="accessAdminRefresh">一覧を更新</button></div>
     <div class="hero"><h1 style="font-size:24px">ユーザーのアクセス管理</h1><p>登録済みユーザーのアクセスを停止・解除できます。学習記録は削除しません。</p></div>
     <p class="mock-note">停止はオンラインのデータ読み書きに適用されます。通信のない端末には再接続時に反映します。管理者自身は停止できません。</p>
-    <div class="setting"><b>授業中の利用制限（日本時間）</b><p class="mock-note">月〜金の8:40〜10:10・10:25〜11:55・12:55〜14:25・14:40〜16:10。土日・祝日・登録した休校日は利用できます。管理者は対象外です。祝日は2027年まで対応。</p><label><input type="checkbox" id="schoolEnabled"> 授業中の制限を有効にする</label><p><label>休校日 <input type="date" id="schoolExemptDate"></label> <button type="button" class="ghost-btn" id="schoolAddDate">登録</button></p><div id="schoolExemptList"></div><p id="schoolAdminStatus" role="status"></p></div>
+    <div class="setting"><b>授業中の利用制限（日本時間）</b><p class="mock-note">月〜金の8:40〜10:10・10:25〜11:55・12:55〜14:25・14:40〜16:10。土日・祝日・登録した休校日は利用できます。管理者は対象外です。祝日は2027年まで対応。</p><p><button type="button" class="ghost-btn" id="schoolReleaseClass">この授業の制限を解除</button></p><p id="schoolReleaseStatus" class="mock-note" role="status">早く授業が終わったときに押すと、全員が利用できます。次の授業から自動で制限を再開します。</p><label><input type="checkbox" id="schoolEnabled"> 授業中の制限を有効にする</label><p><label>休校日 <input type="date" id="schoolExemptDate"></label> <button type="button" class="ghost-btn" id="schoolAddDate">登録</button></p><div id="schoolExemptList"></div><p id="schoolAdminStatus" role="status"></p></div>
     <p id="accessAdminStatus" role="status"></p><div id="accessAdminList"></div>
   </section>
   <!-- LEADERBOARD -->
@@ -1182,14 +1182,28 @@ function schoolDateParts(now=new Date()){
  const d=new Date(now.getTime()+9*3600000);
  return {key:d.getUTCFullYear()*10000+(d.getUTCMonth()+1)*100+d.getUTCDate(),weekday:d.getUTCDay(),minute:d.getUTCHours()*60+d.getUTCMinutes()};
 }
+function currentSchoolPeriodKey(now=new Date()){
+ const d=schoolDateParts(now),index=SCHOOL_PERIODS.findIndex(([start,end])=>d.minute>=start&&d.minute<end);
+ return index<0?0:d.key*10+index+1;
+}
+function renderSchoolReleaseButton(){
+ const button=el('schoolReleaseClass');
+ const key=currentSchoolPeriodKey();
+ if(button.dataset.period!==String(key)&&button.dataset.saving!=='1'){
+  button.dataset.period=String(key);el('schoolReleaseStatus').textContent=key?'早く授業が終わったときに押すと、全員が利用できます。次の授業から自動で制限を再開します。':'授業時間になると、この授業だけの解除ボタンが使えます。';
+ }
+ button.disabled=!schoolRestriction({email:'learner'},schoolPolicy)||button.dataset.saving==='1';
+ button.textContent=key&&schoolPolicy.releasedPeriod===key?'この授業は解除済み':'この授業の制限を解除';
+}
 function schoolRestriction(user,policy=schoolPolicy,now=new Date()){
  if(!user||canManageUsers(user)||policy.enabled===false)return null;
  const d=schoolDateParts(now);
+ if(currentSchoolPeriodKey(now)!==0&&policy.releasedPeriod===currentSchoolPeriodKey(now))return null;
  if(d.weekday===0||d.weekday===6||SCHOOL_HOLIDAYS.includes(d.key)||(policy.exemptDates||[]).includes(d.key))return null;
  const period=SCHOOL_PERIODS.find(([start,end])=>d.minute>=start&&d.minute<end);
  return period?`${Math.floor(period[1]/60)}:${String(period[1]%60).padStart(2,'0')}`:null;
 }
-function normalizeSchoolPolicy(data){return {enabled:data?.enabled!==false,exemptDates:Array.isArray(data?.exemptDates)?data.exemptDates.filter(Number.isInteger):[]};}
+function normalizeSchoolPolicy(data){return {enabled:data?.enabled!==false,exemptDates:Array.isArray(data?.exemptDates)?data.exemptDates.filter(Number.isInteger):[],releasedPeriod:Number.isSafeInteger(data?.releasedPeriod)&&data.releasedPeriod>=0?data.releasedPeriod:0};}
 function schoolDateLabel(key){const s=String(key);return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;}
 async function renderSchoolSettings(){
  if(!canManageUsers())return;
@@ -1197,24 +1211,24 @@ async function renderSchoolSettings(){
  try{
   schoolPolicy=await window.cbtCloud.fetchSchoolPolicy();
   el('schoolEnabled').checked=schoolPolicy.enabled;el('schoolExemptDate').value=schoolDateLabel(schoolDateParts().key);
-  renderSchoolExemptDates();status.textContent='設定を取得しました';
+  renderSchoolExemptDates();renderSchoolReleaseButton();status.textContent='設定を取得しました';
  }catch(_){status.textContent='設定を取得できません。Firebaseルール・通信状態を確認してください。';}
 }
 function renderSchoolExemptDates(){
  const list=el('schoolExemptList');list.textContent='';
  for(const key of schoolPolicy.exemptDates){const row=document.createElement('p');row.textContent=schoolDateLabel(key)+' ';
  const button=document.createElement('button');button.type='button';button.className='ghost-btn';button.textContent='休校日を解除';
- button.onclick=()=>saveSchoolSettings({enabled:schoolPolicy.enabled,exemptDates:schoolPolicy.exemptDates.filter(d=>d!==key)});row.append(button);list.append(row);}
+ button.onclick=()=>saveSchoolSettings({...schoolPolicy,exemptDates:schoolPolicy.exemptDates.filter(d=>d!==key)});row.append(button);list.append(row);}
 }
 async function saveSchoolSettings(policy){
  if(!canManageUsers())return;
- const controls=[...el('accessAdmin').querySelectorAll('#schoolEnabled,#schoolAddDate,#schoolExemptList button')];controls.forEach(b=>b.disabled=true);
+ const controls=[...el('accessAdmin').querySelectorAll('#schoolEnabled,#schoolAddDate,#schoolReleaseClass,#schoolExemptList button')];controls.forEach(b=>b.disabled=true);
  el('schoolAdminStatus').textContent='保存中…';
  try{schoolPolicy=await window.cbtCloud.setSchoolPolicy(policy);renderSchoolExemptDates();el('schoolAdminStatus').textContent='保存しました';}
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
- finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);}
+ finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261018-class-hours-1';
+const SERVICE_WORKER_BUILD='20261019-class-release-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1249,7 +1263,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
-  el('accountStatus').textContent='表示版：10/18-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/19-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   leaderboardUsersCache=null;
   el('accessAdminList').textContent='';el('accessAdminStatus').textContent='';
@@ -1388,6 +1402,14 @@ let timer={start:0,iv:null,elapsedMs:0,running:false,active:false};
 let explanationTimer=null;
 
 const el=id=>document.getElementById(id);
+el('schoolReleaseClass').addEventListener('click',async()=>{
+ if(!canManageUsers())return;
+ const button=el('schoolReleaseClass');button.dataset.saving='1';renderSchoolReleaseButton();
+ el('schoolReleaseStatus').textContent='解除を保存中…';
+ try{schoolPolicy=await window.cbtCloud.releaseSchoolClass();el('schoolReleaseStatus').textContent='この授業の制限を解除しました。次の授業から自動で制限を再開します。';}
+ catch(_){el('schoolReleaseStatus').textContent='解除できませんでした。授業時間・通信状態・Firebaseルールを確認してください。';}
+ finally{delete button.dataset.saving;renderSchoolReleaseButton();}
+});
 el('schoolEnabled').addEventListener('change',()=>saveSchoolSettings({...schoolPolicy,enabled:el('schoolEnabled').checked}));
 el('schoolAddDate').addEventListener('click',()=>{
  const value=el('schoolExemptDate').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return;
@@ -4194,6 +4216,16 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       const snap=await db.collection('schoolAccess').doc('settings').get({source:'server'});
       return normalizeSchoolPolicy(snap.exists?snap.data():null);
     },
+    releaseSchoolClass:async function(){
+      const user=auth.currentUser;if(!canManageUsers(user))throw Error('管理者専用です');
+      const key=currentSchoolPeriodKey();if(!key)throw Error('授業時間外です');
+      const ref=db.collection('schoolAccess').doc('settings');
+      return db.runTransaction(async transaction=>{
+        const snap=await transaction.get(ref),policy=normalizeSchoolPolicy(snap.exists?snap.data():null);
+        const next={...policy,releasedPeriod:key};
+        transaction.set(ref,{...next,updatedBy:user.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});return next;
+      });
+    },
     setSchoolPolicy:async function(policy){
       if(!canManageUsers(auth.currentUser))throw Error('管理者専用です');
       const clean=normalizeSchoolPolicy(policy);
@@ -4361,6 +4393,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   }
   function schoolTick(){
     if(!auth.currentUser)return;
+    if(canManageUsers(auth.currentUser))renderSchoolReleaseButton();
     if(!updateSchoolGate(auth.currentUser)&&schoolLoginWaiting){schoolLoginWaiting=false;handleAuthState(auth.currentUser);}
   }
   setInterval(schoolTick,1000);
