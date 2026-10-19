@@ -20,6 +20,7 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    await page.goto(url);await page.waitForFunction(()=>window.cbtAppReady);
    assert.ok(await page.locator('#authEmailBox').isVisible(),'standalone form works without Google SDK');
    assert.ok(await page.locator('#blockedLoginImage').isHidden());
+   assert.equal(await page.locator('#schoolGateImage').getAttribute('src'),null,'ordinary login does not fetch class GIF');
    const login=async email=>{await page.locator('#authEmail').fill(email);await page.locator('#authPassword').fill('synthetic-password');await page.locator('#emailLoginBtn').click();};
    await login('i.taigo921+blocked@gmail.com');
    await page.waitForFunction(()=>document.getElementById('blockedLoginImage').naturalWidth===560);
@@ -52,12 +53,20 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    const beforeReads=await page.evaluate(()=>window.testProfileReads);
    await login('i.taigo921+different@gmail.com');
    await page.locator('#schoolGate').waitFor({state:'visible'});
+   await page.waitForFunction(()=>document.getElementById('schoolGateImage').naturalWidth===560);
+   const imageBounds=await page.locator('#schoolGateImage').boundingBox();
+   assert.deepEqual(imageBounds,{x:0,y:0,width,height:844},'class GIF fills the viewport');
+   assert.equal(await page.locator('#schoolGateImage').evaluate(n=>getComputedStyle(n).objectFit),'cover');
+   assert.equal(await page.locator('#schoolGateTitle').textContent(),'授業中のため利用を制限しています');
+   assert.match(await page.locator('#schoolGateMessage').textContent(),/10:10/);
+   await page.screenshot({path:`/tmp/class-gif-${width}.png`});
    assert.equal(await page.evaluate(()=>document.getElementById('authGate').inert),true,'underlying login cannot receive keyboard input');
    assert.equal(await page.evaluate(()=>window.cbtUser),null,'class login waits before profile reads');
    assert.equal(await page.evaluate(()=>window.testProfileReads),beforeReads,'no private reads while class is active');
    await page.clock.runFor(1100);
    await page.waitForFunction(()=>document.getElementById('authGate').classList.contains('ok'));
    assert.ok(await page.locator('#schoolGate').isHidden(),'10:10 break automatically opens');
+   assert.equal(await page.locator('#schoolGateImage').getAttribute('src'),null,'break removes the class GIF');
    assert.equal(await page.evaluate(()=>document.getElementById('authGate').inert),false);
    await page.clock.fastForward(15*60000);await page.clock.runFor(1100);
    assert.ok(await page.locator('#schoolGate').isVisible(),'10:25 locks an already open app');

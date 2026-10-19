@@ -97,9 +97,13 @@
   #leaderboard .lb-val{font-weight:800;color:var(--green);font-size:16px;}
   #leaderboard .lb-empty{text-align:center;color:var(--muted);padding:40px 0;}
 
-#schoolGate{position:fixed;inset:0;z-index:100001;background:#f3f6ff;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;overflow:auto;}
+#schoolGate{position:fixed;inset:0;z-index:100001;background:#000;display:flex;align-items:flex-end;justify-content:center;text-align:center;overflow:auto;color:#fff;}
 #schoolGate[hidden]{display:none!important;}
-#schoolGate .school-card{max-width:460px;background:white;padding:32px;border-radius:24px;box-shadow:0 8px 32px #17397722;}
+#schoolGateImage{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;}
+#schoolGate .school-card{position:relative;z-index:1;width:100%;padding:56px 20px calc(24px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.86));text-shadow:0 1px 3px #000;}
+#schoolGate .school-card h2{font-size:20px;text-wrap:balance;}
+#schoolGate .school-card p{max-width:460px;margin:12px auto;line-height:1.7;}
+#schoolGate .ghost-btn{background:rgba(255,255,255,.94);color:#173977;text-shadow:none;}
 </style>
 <style>
   :root{
@@ -516,7 +520,7 @@
 </head>
 <body>
 <!-- ▼ ログイン関所（許可されたGoogleアカウントのみ解錠） -->
-<div id="schoolGate" hidden tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="schoolGateTitle"><div class="school-card"><h2 id="schoolGateTitle">授業中はお休みです</h2><p id="schoolGateMessage"></p><p>休み時間になると自動で使えるようになります。学習記録はそのまま残ります。</p><button type="button" class="ghost-btn" id="schoolLogout">別のアカウントでログイン</button></div></div>
+<div id="schoolGate" hidden tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="schoolGateTitle"><img id="schoolGateImage" width="560" height="292" alt="泣いている人物のアニメーション"><div class="school-card"><h2 id="schoolGateTitle">授業中のため利用を制限しています</h2><p id="schoolGateMessage"></p><p>休み時間になると自動で使えるようになります。学習記録はそのまま残ります。</p><button type="button" class="ghost-btn" id="schoolLogout">別のアカウントでログイン</button></div></div>
 <div id="authGate">
   <img id="blockedLoginImage" hidden width="560" height="292" alt="泣いている人物のアニメーション">
   <div id="blockedLoginOverlay" hidden><p>このアカウントのアクセスは停止されています。</p><button type="button" id="blockedLoginBack">ログイン画面に戻る</button></div>
@@ -695,7 +699,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/19-1・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/19-2・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1228,7 +1232,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261019-class-release-1';
+const SERVICE_WORKER_BUILD='20261019-class-gif-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1263,7 +1267,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
-  el('accountStatus').textContent='表示版：10/19-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/19-2・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   leaderboardUsersCache=null;
   el('accessAdminList').textContent='';el('accessAdminStatus').textContent='';
@@ -4378,6 +4382,9 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   function updateSchoolGate(user=auth.currentUser){
     const end=schoolRestriction(user),gate=document.getElementById('schoolGate');
     gate.hidden=!end;
+    const image=document.getElementById('schoolGateImage');
+    if(end){if(!image.getAttribute('src'))image.src='./assets/blocked-login.gif';}
+    else image.removeAttribute('src');
     if(schoolLocked!==!!end){setSchoolInert(!!end);if(end)gate.focus();}
     if(end){document.getElementById('schoolGateMessage').textContent=`${end}まで利用できません（日本時間）。`;
       if(!schoolLocked&&typeof pauseQuestionTimer==='function'){pauseQuestionTimer();pauseExplanationTimer();}}
@@ -4442,7 +4449,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   async function handleAuthState(user){
     const epoch=++accessEpoch;clearAccessSubscription();
     if(stopSchoolSubscription){stopSchoolSubscription();stopSchoolSubscription=null;}
-    schoolLoginWaiting=false;schoolLocked=false;setSchoolInert(false);document.getElementById('schoolGate').hidden=true;
+    schoolLoginWaiting=false;schoolLocked=false;setSchoolInert(false);document.getElementById('schoolGate').hidden=true;document.getElementById('schoolGateImage').removeAttribute('src');
     gate.classList.remove('ok');window.cbtUser=null;updateLeaderboardAccess();
     if(stopCloudSubscription){stopCloudSubscription();stopCloudSubscription=null;}
     if(user)setBlockedLoginImage(false);
