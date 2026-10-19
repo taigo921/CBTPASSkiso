@@ -257,3 +257,11 @@ JSON変更時は対象だけでなく全 `data/*.json` の構文を確認。画�
 - ホーム画面用のメールログインフォームをGoogle SDKの読み込み待ちから分離。Firebaseルールの変更は不要。表示版10/16-8。
 - test_blocked_login_browser.cjsは本番のログインコードと模擬Firebaseを使い、停止→サインアウト→リロード→保存状態を保持した別ブラウザーコンテキストでの再起動→別の許可アカウントでの解除を検証。Google SDKなし、スマホ/タブレットの両方を確認。実iOS端末・実Firebaseでのテストとは異なる。
 - 旧版で既にログアウトした端末にはこの新しい表示用の印がないため、更新後に一度停止中アカウントでログインを試し、停止を確認する必要がある。
+
+## Firebaseの鍵なし公開連携の準備（2026-10-19、初回設定・公開承認待ち）
+
+- GitHub Actions OIDC → Google Workload Identity Federation → ルール公開専用サービスアカウント。個人のGoogleログインや秘密鍵をこのクラウド環境へ保存しない。
+- scripts/cloud/setup_firebase_federation.shをGoogle管理者がCloud Shellで1回実行する必要がある。出力する2つの非秘密リソース名をActions変数へ登録し、読み取り確認から始める。
+- 手動workflow_dispatchのみ。mainの固定ワークフローとrepository/ownerの数値IDをGoogle側で検証。指定するルールは40桁のコミットで固定し、既存の回帰・ブラウザー・ルールテスト成功後だけ認証・公開。既定は読み取り確認のみ。
+- ルール公開は専用Python処理でプロジェクト・リリースを固定し、公開後にルール全文を照合。直前のruleset名を残す。既存のPages公開は維持。
+- 接続用のコード準備と模擬テストは、Google IAMの実設定・本番接続の成功とは異なる。初回操作・確認までルールをデプロイしたと報告しない。詳細はdocs/FIREBASE_DEPLOY_CONNECTION.md。
