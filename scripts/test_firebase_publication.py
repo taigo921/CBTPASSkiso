@@ -28,7 +28,10 @@ class Publication(unittest.TestCase):
                 self.assertEqual(body['source']['files'][0]['content'], source)
                 return {'name': new}
             if method == 'PATCH':
-                self.assertEqual(body, {'name': publisher.RELEASE, 'rulesetName': new})
+                self.assertEqual(resource,publisher.RELEASE)
+                # Firebase REST UpdateReleaseRequest / official CLI contract.
+                self.assertEqual(set(body),{'release'})
+                self.assertEqual(body['release'], {'name': publisher.RELEASE, 'rulesetName': new})
                 return body
             if resource == new:
                 return {'source': {'files': [{'name': 'firestore.rules', 'content': source if mode != 'bad-source' else 'wrong'}]}}

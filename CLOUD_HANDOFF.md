@@ -271,3 +271,8 @@ JSON変更時は対象だけでなく全 `data/*.json` の構文を確認。画�
 - ユーザーのCloud Shellでプロジェクト1081031054072、Pool/Provider、専用サービスアカウントの作成・IAM設定が成功した出力を確認。接続先はFirebaseプロジェクトcbtpass-a680e。
 - GitHub Actions変数の読み書きは連携APIが403で拒否。公開可能なWIF Provider名・サービスアカウント名をfirebase-rules.ymlへ固定し、変数設定の手操作を不要にする。秘密鍵・トークンの保存はしない。
 - 実接続・公開の成否は、この固定後の読み取りワークフローとルール公開後のソース照合結果を確認する。
+
+### Firebase Rules API公開リクエストの修正（2026-10-19）
+
+- 実接続の読み取りは成功（Actions run 39184310656）。公開試行ではruleset作成成功後、PATCHの形式がHTTP 400で拒否され、本番リリースは未更新。
+- REST UpdateReleaseRequestと公式firebase-toolsのupdateReleaseに合わせ、PATCHの本文をreleaseオブジェクトで包む。公開条件・IAM権限・ルール本文は維持し、API形式のテストも修正。修正後の本番公開と全文照合を確認してから授業制限アプリを公開する。
