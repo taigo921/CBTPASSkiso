@@ -277,3 +277,11 @@ JSON変更時は対象だけでなく全 `data/*.json` の構文を確認。画�
 
 - 既存のassets/blocked-login.gifを無加工で再使用し、授業中のロック画面全体に表示。「授業中のため利用を制限しています」と再開時刻を重ねる。通常時には読み込まず、休み時間・解除・ログアウト時にsrcを外す。
 - 授業制限の判定・個別停止・学習記録・Firebaseルールは維持。スマホ／タブレットで実画像の読込、画面全体の寸法、メッセージ、休憩時の非表示を確認。表示案10/19-2。
+
+## Firebaseの鍵なし公開連携の準備（2026-10-19、初回設定・公開承認待ち）
+
+- GitHub Actions OIDC → Google Workload Identity Federation → ルール公開専用サービスアカウント。個人のGoogleログインや秘密鍵をこのクラウド環境へ保存しない。
+- scripts/cloud/setup_firebase_federation.shをGoogle管理者がCloud Shellで1回実行する必要がある。出力する2つの非秘密リソース名をActions変数へ登録し、読み取り確認から始める。
+- 手動workflow_dispatchのみ。mainの固定ワークフローとrepository/ownerの数値IDをGoogle側で検証。指定するルールは40桁のコミットで固定し、既存の回帰・ブラウザー・ルールテスト成功後だけ認証・公開。既定は読み取り確認のみ。
+- ルール公開は専用Python処理でプロジェクト・リリースを固定し、公開後にルール全文を照合。直前のruleset名を残す。既存のPages公開は維持。
+- 接続用のコード準備と模擬テストは、Google IAMの実設定・本番接続の成功とは異なる。初回操作・確認までルールをデプロイしたと報告しない。詳細はdocs/FIREBASE_DEPLOY_CONNECTION.md。

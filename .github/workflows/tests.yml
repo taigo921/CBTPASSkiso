@@ -4,6 +4,10 @@ on:
   push:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      source_ref:
+        type: string
+        default: ""
 permissions:
   contents: read
 jobs:
@@ -12,19 +16,24 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
       - name: Existing regression tests
         run: |
           set -euo pipefail
+          if [ -f scripts/test_firebase_publication.py ]; then PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_firebase_publication.py; fi
+          if [ -f scripts/cloud/setup_firebase_federation.sh ]; then bash -n scripts/cloud/setup_firebase_federation.sh; fi
           node scripts/test_sync.cjs
           node scripts/test_progress_preservation.cjs
           node scripts/test_mock_exam.cjs
           node scripts/test_mock_subjects.cjs
           node scripts/test_app_update.cjs
           node scripts/test_access_control.cjs
-          node scripts/test_school_hours.cjs
+          if [ -f scripts/test_school_hours.cjs ]; then node scripts/test_school_hours.cjs; fi
           node scripts/test_admin_ranking.cjs
           node scripts/test_paper_progress.cjs
           node scripts/test_route_review.cjs
@@ -53,6 +62,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -72,5 +84,7 @@ jobs:
           const fs=require('node:fs');
           fs.writeFileSync(process.env.RUNNER_TEMP+'/firestore-run/firebase.json',JSON.stringify({firestore:{rules:process.env.GITHUB_WORKSPACE+'/firestore.rules'},emulators:{firestore:{host:'127.0.0.1',port:8080},ui:{enabled:false},singleProjectMode:true}}));
           JS
+          extra_rules_test=""
+          if [ -f "$GITHUB_WORKSPACE/scripts/test_school_rules.cjs" ]; then extra_rules_test=" && node $GITHUB_WORKSPACE/scripts/test_school_rules.cjs"; fi
           cd "$RUNNER_TEMP/firestore-run"
-          "$RUNNER_TEMP/access-tools/node_modules/.bin/firebase" emulators:exec --only firestore --project demo-cbtpass-access --config firebase.json "node $GITHUB_WORKSPACE/scripts/test_access_rules.cjs && node $GITHUB_WORKSPACE/scripts/test_leaderboard_rules.cjs && node $GITHUB_WORKSPACE/scripts/test_school_rules.cjs"
+          "$RUNNER_TEMP/access-tools/node_modules/.bin/firebase" emulators:exec --only firestore --project demo-cbtpass-access --config firebase.json "node $GITHUB_WORKSPACE/scripts/test_access_rules.cjs && node $GITHUB_WORKSPACE/scripts/test_leaderboard_rules.cjs$extra_rules_test"
