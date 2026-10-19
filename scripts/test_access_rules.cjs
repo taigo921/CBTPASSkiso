@@ -7,6 +7,7 @@ const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,serverTimestamp}
  const [host,port]=process.env.FIRESTORE_EMULATOR_HOST.split(':');
  const env=await initializeTestEnvironment({projectId:'demo-cbtpass-access',firestore:{host,port:+port,rules:fs.readFileSync(path.join(__dirname,'../firestore.rules'),'utf8')}});
  try{
+  await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'schoolAccess','settings'),{enabled:false,exemptDates:[]});});
   await env.withSecurityRulesDisabled(async c=>{for(const uid of ['owner','learner','other'])await setDoc(doc(c.firestore(),'users',uid),{progressDataV1:'untouched'});});
   const admin=env.authenticatedContext('owner',{email:'itaigo921@gmail.com',email_verified:true}).firestore();
   const learner=env.authenticatedContext('learner',{email:'learner@example.test',email_verified:true}).firestore();

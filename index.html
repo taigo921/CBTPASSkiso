@@ -96,6 +96,14 @@
   #leaderboard .lb-name small{display:block;font-weight:400;color:var(--muted);font-size:11px;}
   #leaderboard .lb-val{font-weight:800;color:var(--green);font-size:16px;}
   #leaderboard .lb-empty{text-align:center;color:var(--muted);padding:40px 0;}
+
+#schoolGate{position:fixed;inset:0;z-index:100001;background:#000;display:flex;align-items:flex-end;justify-content:center;text-align:center;overflow:auto;color:#fff;}
+#schoolGate[hidden]{display:none!important;}
+#schoolGateImage{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;}
+#schoolGate .school-card{position:relative;z-index:1;width:100%;padding:56px 20px calc(24px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.86));text-shadow:0 1px 3px #000;}
+#schoolGate .school-card h2{font-size:20px;text-wrap:balance;}
+#schoolGate .school-card p{max-width:460px;margin:12px auto;line-height:1.7;}
+#schoolGate .ghost-btn{background:rgba(255,255,255,.94);color:#173977;text-shadow:none;}
 </style>
 <style>
   :root{
@@ -512,6 +520,7 @@
 </head>
 <body>
 <!-- ▼ ログイン関所（許可されたGoogleアカウントのみ解錠） -->
+<div id="schoolGate" hidden tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="schoolGateTitle"><img id="schoolGateImage" width="560" height="292" alt="泣いている人物のアニメーション"><div class="school-card"><h2 id="schoolGateTitle">授業中のため利用を制限しています</h2><p id="schoolGateMessage"></p><p>休み時間になると自動で使えるようになります。学習記録はそのまま残ります。</p><button type="button" class="ghost-btn" id="schoolLogout">別のアカウントでログイン</button></div></div>
 <div id="authGate">
   <img id="blockedLoginImage" hidden width="560" height="292" alt="泣いている人物のアニメーション">
   <div id="blockedLoginOverlay" hidden><p>このアカウントのアクセスは停止されています。</p><button type="button" id="blockedLoginBack">ログイン画面に戻る</button></div>
@@ -690,7 +699,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/16-8・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/19-2・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -929,6 +938,7 @@
     <div class="row-btns"><button type="button" class="ghost-btn" id="accessAdminBack">‹ ホーム</button><button type="button" class="ghost-btn" id="accessAdminRefresh">一覧を更新</button></div>
     <div class="hero"><h1 style="font-size:24px">ユーザーのアクセス管理</h1><p>登録済みユーザーのアクセスを停止・解除できます。学習記録は削除しません。</p></div>
     <p class="mock-note">停止はオンラインのデータ読み書きに適用されます。通信のない端末には再接続時に反映します。管理者自身は停止できません。</p>
+    <div class="setting"><b>授業中の利用制限（日本時間）</b><p class="mock-note">月〜金の8:40〜10:10・10:25〜11:55・12:55〜14:25・14:40〜16:10。土日・祝日・登録した休校日は利用できます。管理者は対象外です。祝日は2027年まで対応。</p><p><button type="button" class="ghost-btn" id="schoolReleaseClass">この授業の制限を解除</button></p><p id="schoolReleaseStatus" class="mock-note" role="status">早く授業が終わったときに押すと、全員が利用できます。次の授業から自動で制限を再開します。</p><label><input type="checkbox" id="schoolEnabled"> 授業中の制限を有効にする</label><p><label>休校日 <input type="date" id="schoolExemptDate"></label> <button type="button" class="ghost-btn" id="schoolAddDate">登録</button></p><div id="schoolExemptList"></div><p id="schoolAdminStatus" role="status"></p></div>
     <p id="accessAdminStatus" role="status"></p><div id="accessAdminList"></div>
   </section>
   <!-- LEADERBOARD -->
@@ -1168,7 +1178,61 @@ const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
-const SERVICE_WORKER_BUILD='20261016-persist-blocked-gif-1';
+// School timetable uses JST independently of the device's timezone.
+const SCHOOL_HOLIDAYS=[20260101, 20260112, 20260211, 20260223, 20260320, 20260429, 20260503, 20260504, 20260505, 20260506, 20260720, 20260811, 20260921, 20260922, 20260923, 20261012, 20261103, 20261123, 20270101, 20270111, 20270211, 20270223, 20270321, 20270322, 20270429, 20270503, 20270504, 20270505, 20270719, 20270811, 20270920, 20270923, 20271011, 20271103, 20271123];
+const SCHOOL_PERIODS=[[520,610],[625,715],[775,865],[880,970]];
+let schoolPolicy={enabled:true,exemptDates:[]};
+function schoolDateParts(now=new Date()){
+ const d=new Date(now.getTime()+9*3600000);
+ return {key:d.getUTCFullYear()*10000+(d.getUTCMonth()+1)*100+d.getUTCDate(),weekday:d.getUTCDay(),minute:d.getUTCHours()*60+d.getUTCMinutes()};
+}
+function currentSchoolPeriodKey(now=new Date()){
+ const d=schoolDateParts(now),index=SCHOOL_PERIODS.findIndex(([start,end])=>d.minute>=start&&d.minute<end);
+ return index<0?0:d.key*10+index+1;
+}
+function renderSchoolReleaseButton(){
+ const button=el('schoolReleaseClass');
+ const key=currentSchoolPeriodKey();
+ if(button.dataset.period!==String(key)&&button.dataset.saving!=='1'){
+  button.dataset.period=String(key);el('schoolReleaseStatus').textContent=key?'早く授業が終わったときに押すと、全員が利用できます。次の授業から自動で制限を再開します。':'授業時間になると、この授業だけの解除ボタンが使えます。';
+ }
+ button.disabled=!schoolRestriction({email:'learner'},schoolPolicy)||button.dataset.saving==='1';
+ button.textContent=key&&schoolPolicy.releasedPeriod===key?'この授業は解除済み':'この授業の制限を解除';
+}
+function schoolRestriction(user,policy=schoolPolicy,now=new Date()){
+ if(!user||canManageUsers(user)||policy.enabled===false)return null;
+ const d=schoolDateParts(now);
+ if(currentSchoolPeriodKey(now)!==0&&policy.releasedPeriod===currentSchoolPeriodKey(now))return null;
+ if(d.weekday===0||d.weekday===6||SCHOOL_HOLIDAYS.includes(d.key)||(policy.exemptDates||[]).includes(d.key))return null;
+ const period=SCHOOL_PERIODS.find(([start,end])=>d.minute>=start&&d.minute<end);
+ return period?`${Math.floor(period[1]/60)}:${String(period[1]%60).padStart(2,'0')}`:null;
+}
+function normalizeSchoolPolicy(data){return {enabled:data?.enabled!==false,exemptDates:Array.isArray(data?.exemptDates)?data.exemptDates.filter(Number.isInteger):[],releasedPeriod:Number.isSafeInteger(data?.releasedPeriod)&&data.releasedPeriod>=0?data.releasedPeriod:0};}
+function schoolDateLabel(key){const s=String(key);return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;}
+async function renderSchoolSettings(){
+ if(!canManageUsers())return;
+ const status=el('schoolAdminStatus');status.textContent='設定を読み込み中…';
+ try{
+  schoolPolicy=await window.cbtCloud.fetchSchoolPolicy();
+  el('schoolEnabled').checked=schoolPolicy.enabled;el('schoolExemptDate').value=schoolDateLabel(schoolDateParts().key);
+  renderSchoolExemptDates();renderSchoolReleaseButton();status.textContent='設定を取得しました';
+ }catch(_){status.textContent='設定を取得できません。Firebaseルール・通信状態を確認してください。';}
+}
+function renderSchoolExemptDates(){
+ const list=el('schoolExemptList');list.textContent='';
+ for(const key of schoolPolicy.exemptDates){const row=document.createElement('p');row.textContent=schoolDateLabel(key)+' ';
+ const button=document.createElement('button');button.type='button';button.className='ghost-btn';button.textContent='休校日を解除';
+ button.onclick=()=>saveSchoolSettings({...schoolPolicy,exemptDates:schoolPolicy.exemptDates.filter(d=>d!==key)});row.append(button);list.append(row);}
+}
+async function saveSchoolSettings(policy){
+ if(!canManageUsers())return;
+ const controls=[...el('accessAdmin').querySelectorAll('#schoolEnabled,#schoolAddDate,#schoolReleaseClass,#schoolExemptList button')];controls.forEach(b=>b.disabled=true);
+ el('schoolAdminStatus').textContent='保存中…';
+ try{schoolPolicy=await window.cbtCloud.setSchoolPolicy(policy);renderSchoolExemptDates();el('schoolAdminStatus').textContent='保存しました';}
+ catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
+ finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
+}
+const SERVICE_WORKER_BUILD='20261019-class-gif-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1203,7 +1267,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
-  el('accountStatus').textContent='表示版：10/16-8・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/19-2・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   leaderboardUsersCache=null;
   el('accessAdminList').textContent='';el('accessAdminStatus').textContent='';
@@ -1342,6 +1406,23 @@ let timer={start:0,iv:null,elapsedMs:0,running:false,active:false};
 let explanationTimer=null;
 
 const el=id=>document.getElementById(id);
+el('schoolReleaseClass').addEventListener('click',async()=>{
+ if(!canManageUsers())return;
+ const button=el('schoolReleaseClass');button.dataset.saving='1';renderSchoolReleaseButton();
+ el('schoolReleaseStatus').textContent='解除を保存中…';
+ try{schoolPolicy=await window.cbtCloud.releaseSchoolClass();el('schoolReleaseStatus').textContent='この授業の制限を解除しました。次の授業から自動で制限を再開します。';}
+ catch(_){el('schoolReleaseStatus').textContent='解除できませんでした。授業時間・通信状態・Firebaseルールを確認してください。';}
+ finally{delete button.dataset.saving;renderSchoolReleaseButton();}
+});
+el('schoolEnabled').addEventListener('change',()=>saveSchoolSettings({...schoolPolicy,enabled:el('schoolEnabled').checked}));
+el('schoolAddDate').addEventListener('click',()=>{
+ const value=el('schoolExemptDate').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return;
+ const key=Number(value.replaceAll('-',''));if(schoolPolicy.exemptDates.includes(key))return;
+ if(schoolPolicy.exemptDates.length>=366){el('schoolAdminStatus').textContent='休校日は366日まで登録できます';return;}
+ saveSchoolSettings({...schoolPolicy,exemptDates:[...schoolPolicy.exemptDates,key].sort()});
+});
+
+
 const qkey=q=>q.uid||q.id;
 const qno=q=>q.display_no||q.id;
 function planQuestions(){return [...(DEFAULT_QUESTIONS_BY_BOOK.book1||[]),...(DEFAULT_QUESTIONS_BY_BOOK.book2||[])];}
@@ -2527,7 +2608,7 @@ function pauseQuestionTimer(){
   timer.elapsedMs+=Math.max(0,Date.now()-timer.start);timer.start=0;timer.running=false;clearInterval(timer.iv);
 }
 function resumeQuestionTimer(){
-  if(!timer.active||timer.running)return;
+  if(!timer.active||timer.running||!el('schoolGate').hidden)return;
   timer.start=Date.now();timer.running=true;
   clearInterval(timer.iv);timer.iv=setInterval(()=>{const ms=timer.elapsedMs+(timer.running?Date.now()-timer.start:0);el('timerVal').textContent=(ms/1000).toFixed(1);},100);
 }
@@ -2540,7 +2621,7 @@ function pauseExplanationTimer(){
   explanationTimer.elapsedMs+=Math.max(0,Date.now()-explanationTimer.startedAt);explanationTimer.startedAt=0;
 }
 function resumeExplanationTimer(){
-  if(explanationTimer&&!explanationTimer.startedAt)explanationTimer.startedAt=Date.now();
+  if(explanationTimer&&!explanationTimer.startedAt&&el('schoolGate').hidden)explanationTimer.startedAt=Date.now();
 }
 function commitExplanationTime(){
   if(!explanationTimer)return 0;
@@ -3679,7 +3760,7 @@ async function openAccessAdmin(){
   if(!canManageUsers())return;
   try{await window.cbtCloud.refreshAdminVerification();}catch(_){toast('管理者の確認に失敗しました。通信状態を確認してください');return;}
   if(!canManageUsers()){toast('先にランキング画面で管理者メールの確認を完了してください');return;}
-  el('footer').classList.add('hidden');showOnly('accessAdmin');await renderAccessAdmin();
+  el('footer').classList.add('hidden');showOnly('accessAdmin');await Promise.all([renderAccessAdmin(),renderSchoolSettings()]);
 }
 async function renderAccessAdmin(){
   const list=el('accessAdminList'),status=el('accessAdminStatus');list.textContent='';
@@ -3712,7 +3793,7 @@ async function renderAccessAdmin(){
   }catch(_){status.textContent='一覧を取得できませんでした。管理者メール・Firebaseの権限設定・通信状態を確認してください。';}
 }
 el('accessAdminBtn').addEventListener('click',openAccessAdmin);
-el('accessAdminRefresh').addEventListener('click',renderAccessAdmin);
+el('accessAdminRefresh').addEventListener('click',()=>Promise.all([renderAccessAdmin(),renderSchoolSettings()]));
 el('accessAdminBack').addEventListener('click',renderHome);
 async function openLeaderboard(){
   if(isLeaderboardMember()&&!canViewLeaderboard()){
@@ -4134,6 +4215,27 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
 
   // メインアプリから使うクラウドAPI
   window.cbtCloud = {
+    fetchSchoolPolicy:async function(){
+      const user=auth.currentUser;if(!user)throw Error('未ログインです');
+      const snap=await db.collection('schoolAccess').doc('settings').get({source:'server'});
+      return normalizeSchoolPolicy(snap.exists?snap.data():null);
+    },
+    releaseSchoolClass:async function(){
+      const user=auth.currentUser;if(!canManageUsers(user))throw Error('管理者専用です');
+      const key=currentSchoolPeriodKey();if(!key)throw Error('授業時間外です');
+      const ref=db.collection('schoolAccess').doc('settings');
+      return db.runTransaction(async transaction=>{
+        const snap=await transaction.get(ref),policy=normalizeSchoolPolicy(snap.exists?snap.data():null);
+        const next={...policy,releasedPeriod:key};
+        transaction.set(ref,{...next,updatedBy:user.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});return next;
+      });
+    },
+    setSchoolPolicy:async function(policy){
+      if(!canManageUsers(auth.currentUser))throw Error('管理者専用です');
+      const clean=normalizeSchoolPolicy(policy);
+      await db.collection('schoolAccess').doc('settings').set({...clean,updatedBy:auth.currentUser.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      return clean;
+    },
     save: async function(payload){
       if(!window.cbtUser)throw Error('未ログインです');
       const user={...window.cbtUser},ref=db.collection('users').doc(user.uid);
@@ -4273,6 +4375,37 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     const iv=setInterval(function(){ if(window.cbtAppReady){ clearInterval(iv); fn(); } },60);
   }
 
+  let stopSchoolSubscription=null,schoolLocked=false,schoolLoginWaiting=false;
+  function setSchoolInert(blocked){
+    for(const node of document.body.children){if(node.id!=='schoolGate'&&!['SCRIPT','STYLE'].includes(node.tagName))node.inert=blocked;}
+  }
+  function updateSchoolGate(user=auth.currentUser){
+    const end=schoolRestriction(user),gate=document.getElementById('schoolGate');
+    gate.hidden=!end;
+    const image=document.getElementById('schoolGateImage');
+    if(end){if(!image.getAttribute('src'))image.src='./assets/blocked-login.gif';}
+    else image.removeAttribute('src');
+    if(schoolLocked!==!!end){setSchoolInert(!!end);if(end)gate.focus();}
+    if(end){document.getElementById('schoolGateMessage').textContent=`${end}まで利用できません（日本時間）。`;
+      if(!schoolLocked&&typeof pauseQuestionTimer==='function'){pauseQuestionTimer();pauseExplanationTimer();}}
+    else if(schoolLocked&&window.cbtUser&&!schoolLoginWaiting){if(typeof resumeQuestionTimer==='function'&&!document.hidden)resumeQuestionTimer();if(!document.hidden)resumeExplanationTimer();startCloudSubscription();if(window.cbtSyncNow)window.cbtSyncNow();}
+    schoolLocked=!!end;return schoolLocked;
+  }
+  function watchSchoolPolicy(user,epoch){
+    if(stopSchoolSubscription)stopSchoolSubscription();
+    stopSchoolSubscription=db.collection('schoolAccess').doc('settings').onSnapshot(snapshot=>{
+      if(epoch!==accessEpoch||snapshot.metadata.fromCache||snapshot.metadata.hasPendingWrites)return;
+      schoolPolicy=normalizeSchoolPolicy(snapshot.exists?snapshot.data():null);schoolTick();
+    },()=>{if(epoch===accessEpoch){schoolLoginWaiting=false;lockAccess('授業時間の設定を確認できません。通信状態を確認し、アプリを開き直してください。',false);}});
+  }
+  function schoolTick(){
+    if(!auth.currentUser)return;
+    if(canManageUsers(auth.currentUser))renderSchoolReleaseButton();
+    if(!updateSchoolGate(auth.currentUser)&&schoolLoginWaiting){schoolLoginWaiting=false;handleAuthState(auth.currentUser);}
+  }
+  setInterval(schoolTick,1000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)schoolTick();});
+  document.getElementById('schoolLogout').addEventListener('click',()=>auth.signOut());
   let stopAccessSubscription=null,accessEpoch=0;
   function clearAccessSubscription(){if(stopAccessSubscription){stopAccessSubscription();stopAccessSubscription=null;}}
   function lockAccess(message,blocked=blockedLoginNotice){
@@ -4288,6 +4421,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   async function requireAccess(user){
     const snap=await db.collection('accessControl').doc(user.uid).get({source:'server'});
     if(snap.exists&&snap.data().blocked===true)throw Object.assign(Error('blocked'),{code:'access-blocked'});
+    schoolPolicy=await window.cbtCloud.fetchSchoolPolicy();
   }
   function watchAccess(user,epoch){
     clearAccessSubscription();
@@ -4312,8 +4446,10 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)recheckAccess();});
 
   // ログイン状態の監視
-  auth.onAuthStateChanged(async function(user){
+  async function handleAuthState(user){
     const epoch=++accessEpoch;clearAccessSubscription();
+    if(stopSchoolSubscription){stopSchoolSubscription();stopSchoolSubscription=null;}
+    schoolLoginWaiting=false;schoolLocked=false;setSchoolInert(false);document.getElementById('schoolGate').hidden=true;document.getElementById('schoolGateImage').removeAttribute('src');
     gate.classList.remove('ok');window.cbtUser=null;updateLeaderboardAccess();
     if(stopCloudSubscription){stopCloudSubscription();stopCloudSubscription=null;}
     if(user)setBlockedLoginImage(false);
@@ -4334,6 +4470,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       try{await auth.signOut();}catch(_){}return;
     }
     if(epoch!==accessEpoch||auth.currentUser?.uid!==user.uid)return;
+    watchSchoolPolicy(user,epoch);
+    if(updateSchoolGate(user)){schoolLoginWaiting=true;watchAccess(user,epoch);return;}
     window.cbtUser = { uid:user.uid, email:email, emailVerified:user.emailVerified===true, allowed:true, username:'', avatar:'' };
     updateLeaderboardAccess();
     setCloudSyncState('pending');
@@ -4369,6 +4507,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       lockAccess(error.code==='access-blocked'?'管理者によりアクセスが停止されています。':'アクセス権を確認できません。アプリを開き直してください。',error.code==='access-blocked');return;
     }
     if(epoch!==accessEpoch||!window.cbtUser)return;
+    if(updateSchoolGate(user)){schoolLoginWaiting=true;watchAccess(user,epoch);return;}
     watchAccess(user,epoch);
 
     reveal();
@@ -4380,7 +4519,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       catch(error){console.warn('initial cloud merge error',error);setCloudSyncState('unavailable',{error:String(error?.message||'merge failed')});}
       window.cbtSyncNow();
     });
-  });
+  }
+  auth.onAuthStateChanged(handleAuthState);
 })();
 </script>
 </body>

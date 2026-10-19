@@ -1,4 +1,4 @@
-const APP_BUILD='20261016-persist-blocked-gif-1';
+const APP_BUILD='20261019-class-gif-1';
 const CACHE_NAME='cbtpass-offline-v1';
 const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js'];
 // Refresh only the files containing the five corrected figures on this update.
