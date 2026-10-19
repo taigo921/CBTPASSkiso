@@ -3,7 +3,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.
 const fixture=`<script>
 window.testProfileReads=0;window.testSchoolPolicy={enabled:false,exemptDates:[]};window.testBlocked=true; // Intentionally no Google SDK: standalone login must work independently.
 let authCallback;const fakeAuth={currentUser:null,onAuthStateChanged(fn){authCallback=fn;queueMicrotask(()=>fn(null));},async signInWithEmailAndPassword(email){const user={uid:email.includes('different')?'allowed-fixture':'blocked-fixture',email,emailVerified:true};this.currentUser=user;queueMicrotask(()=>authCallback(user));},async signOut(){this.currentUser=null;queueMicrotask(()=>authCallback(null));}};
-const fakeDb={collection(name){return {doc(){return {async get(){if(name==='users')window.testProfileReads++;return {exists:true,data:()=>name==='accessControl'?{blocked:window.testBlocked}:name==='schoolAccess'?window.testSchoolPolicy:{username:'Test',email:fakeAuth.currentUser?.email||'',books:{},game:{xp:0}},metadata:{fromCache:false,hasPendingWrites:false}};},async set(data){if(name==='schoolAccess'){window.testSchoolPolicy=data;if(window.testSchoolListener)window.testSchoolListener({exists:true,data:()=>data,metadata:{fromCache:false,hasPendingWrites:false}});}},onSnapshot(fn){if(name==='schoolAccess')window.testSchoolListener=fn;return ()=>{if(name==='schoolAccess'&&window.testSchoolListener===fn)window.testSchoolListener=null;};}};}};},async runTransaction(fn){return await fn({get:async ref=>ref.get(),set(ref,data){ref.set(data);},delete(){}});}};
+const fakeDb={collection(name){return {doc(){return {async get(){if(name==='accessControl'&&window.testAccessDelay)await window.testAccessDelay;if(name==='users')window.testProfileReads++;return {exists:true,data:()=>name==='accessControl'?{blocked:window.testBlocked}:name==='schoolAccess'?window.testSchoolPolicy:{username:'Test',email:fakeAuth.currentUser?.email||'',books:{},game:{xp:0}},metadata:{fromCache:false,hasPendingWrites:false}};},async set(data){if(name==='schoolAccess'){window.testSchoolPolicy=data;if(window.testSchoolListener)window.testSchoolListener({exists:true,data:()=>data,metadata:{fromCache:false,hasPendingWrites:false}});}},onSnapshot(fn){if(name==='schoolAccess')window.testSchoolListener=fn;return ()=>{if(name==='schoolAccess'&&window.testSchoolListener===fn)window.testSchoolListener=null;};}};}};},async runTransaction(fn){return await fn({get:async ref=>ref.get(),set(ref,data){ref.set(data);},delete(){}});}};
 window.firebase={initializeApp(){},auth:()=>fakeAuth,firestore:Object.assign(()=>fakeDb,{FieldValue:{serverTimestamp:()=>42}})};
 </script>`;
 const server=http.createServer((req,res)=>{const file=path.join(root,req.url.split('?')[0]==='/'?'index.html':decodeURIComponent(req.url.split('?')[0]));if(!file.startsWith(root+'/')||!fs.existsSync(file)){res.writeHead(404);res.end();return;}
@@ -27,6 +27,16 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    assert.ok(await page.locator('#blockedLoginImage').isVisible());
    assert.equal(await page.evaluate(()=>localStorage.getItem(BLOCKED_LOGIN_NOTICE_KEY)),'1');
    assert.equal(await page.evaluate(()=>window.cbtUser),null);
+   // A restored Firebase user must not dismiss a confirmed stop while the server check is pending.
+   await page.evaluate(()=>{
+    window.testAccessDelay=new Promise(resolve=>window.finishAccessCheck=resolve);
+    fakeAuth.currentUser={uid:'blocked-fixture',email:'i.taigo921+blocked@gmail.com',emailVerified:true};authCallback(fakeAuth.currentUser);
+   });
+   assert.ok(await page.locator('#blockedLoginImage').isVisible(),'confirmed stop remains visible during auth recheck');
+   await page.clock.runFor(30000);
+   assert.ok(await page.locator('#blockedLoginImage').isVisible(),'blocked GIF persists after 30 seconds');
+   await page.evaluate(()=>{window.finishAccessCheck();window.testAccessDelay=null;});
+   await page.waitForFunction(()=>fakeAuth.currentUser===null);
    await page.reload();await page.locator('#blockedLoginImage').waitFor({state:'visible'});
    assert.ok(await page.locator('#authGate .auth-card').isHidden(),'relaunch shows GIF before another sign-in');
    await page.locator('#blockedLoginBack').click();assert.ok(await page.locator('#authGate').isVisible());
@@ -71,6 +81,12 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    await page.clock.fastForward(15*60000);await page.clock.runFor(1100);
    assert.ok(await page.locator('#schoolGate').isVisible(),'10:25 locks an already open app');
    assert.equal(await page.evaluate(()=>window.cbtUser.uid),'allowed-fixture','class pause keeps the account and records');
+   await page.evaluate(()=>{window.testAccessDelay=new Promise(resolve=>window.finishAccessCheck=resolve);authCallback(fakeAuth.currentUser);});
+   assert.ok(await page.locator('#schoolGate').isVisible(),'class GIF persists during same-account reauthentication');
+   await page.clock.runFor(30000);
+   assert.ok(await page.locator('#schoolGateImage').isVisible(),'class GIF remains visible after 30 seconds');
+   await page.evaluate(()=>{window.finishAccessCheck();window.testAccessDelay=null;});
+   await page.waitForFunction(()=>window.testSchoolListener!==null);
    await assert.rejects(()=>page.evaluate(()=>window.cbtCloud.setSchoolPolicy({enabled:false,exemptDates:[]})),'regular learner cannot change policy');
    await assert.rejects(()=>page.evaluate(()=>window.cbtCloud.releaseSchoolClass()),'only the owner can release a class');
    await page.clock.fastForward(90*60000);await page.clock.runFor(1100);

@@ -699,7 +699,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/19-2・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/19-3・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1232,7 +1232,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261019-class-gif-1';
+const SERVICE_WORKER_BUILD='20261019-persistent-gif-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1250,7 +1250,8 @@ function setBlockedLoginImage(blocked){
   document.getElementById('authGate')?.classList.toggle('blocked-view',blockedLoginNotice);
   const overlay=document.getElementById('blockedLoginOverlay');if(overlay)overlay.hidden=!blockedLoginNotice;
   image.hidden=!blockedLoginNotice;
-  if(blockedLoginNotice)image.src='./assets/blocked-login.gif';else image.removeAttribute('src');
+  if(blockedLoginNotice){if(!image.getAttribute('src'))image.src='./assets/blocked-login.gif';}
+  else image.removeAttribute('src');
 }
 
 function isAccessOwner(user=window.cbtUser){
@@ -1267,7 +1268,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
-  el('accountStatus').textContent='表示版：10/19-2・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/19-3・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   leaderboardUsersCache=null;
   el('accessAdminList').textContent='';el('accessAdminStatus').textContent='';
@@ -4375,12 +4376,13 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     const iv=setInterval(function(){ if(window.cbtAppReady){ clearInterval(iv); fn(); } },60);
   }
 
-  let stopSchoolSubscription=null,schoolLocked=false,schoolLoginWaiting=false;
+  let stopSchoolSubscription=null,schoolLocked=false,schoolLoginWaiting=false,schoolGateUserId=null;
   function setSchoolInert(blocked){
     for(const node of document.body.children){if(node.id!=='schoolGate'&&!['SCRIPT','STYLE'].includes(node.tagName))node.inert=blocked;}
   }
   function updateSchoolGate(user=auth.currentUser){
     const end=schoolRestriction(user),gate=document.getElementById('schoolGate');
+    schoolGateUserId=end?user.uid:null;
     gate.hidden=!end;
     const image=document.getElementById('schoolGateImage');
     if(end){if(!image.getAttribute('src'))image.src='./assets/blocked-login.gif';}
@@ -4449,10 +4451,11 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   async function handleAuthState(user){
     const epoch=++accessEpoch;clearAccessSubscription();
     if(stopSchoolSubscription){stopSchoolSubscription();stopSchoolSubscription=null;}
-    schoolLoginWaiting=false;schoolLocked=false;setSchoolInert(false);document.getElementById('schoolGate').hidden=true;document.getElementById('schoolGateImage').removeAttribute('src');
+    const keepSchoolGate=!!(user&&schoolLocked&&schoolGateUserId===user.uid);
+    schoolLoginWaiting=false;
+    if(!keepSchoolGate){schoolLocked=false;schoolGateUserId=null;setSchoolInert(false);document.getElementById('schoolGate').hidden=true;document.getElementById('schoolGateImage').removeAttribute('src');}
     gate.classList.remove('ok');window.cbtUser=null;updateLeaderboardAccess();
     if(stopCloudSubscription){stopCloudSubscription();stopCloudSubscription=null;}
-    if(user)setBlockedLoginImage(false);
     if(passwordSetupCreating){if(user)try{await auth.signOut();}catch(e){}return;}
     if(!user){lockAccess(errEl.textContent);return;} // 未ログイン → 関所のまま
     const email = (user.email||'').toLowerCase().trim();
