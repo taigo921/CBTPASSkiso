@@ -1,0 +1,59 @@
+name: Firebase rules (manual, keyless)
+on:
+  workflow_dispatch:
+    inputs:
+      rules_commit:
+        description: Exact reviewed 40-character commit containing firestore.rules
+        type: string
+        required: true
+      publish:
+        description: Publish rules (off = read-only connection check)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: firebase-production-rules
+  cancel-in-progress: false
+jobs:
+  validate-input:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main workflow and immutable source
+        env:
+          RULES_COMMIT: ${{ inputs.rules_commit }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          [[ "$RULES_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+  tests:
+    needs: validate-input
+    uses: ./.github/workflows/tests.yml
+    with:
+      source_ref: ${{ inputs.rules_commit }}
+  deploy:
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.rules_commit }}
+          path: reviewed-rules
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.FIREBASE_WIF_PROVIDER }}
+          service_account: ${{ vars.FIREBASE_DEPLOY_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Check connection without changing rules
+        if: ${{ !inputs.publish }}
+        run: python3 scripts/cloud/publish_firestore_rules.py reviewed-rules/firestore.rules --check
+      - name: Publish reviewed rules and verify live contents
+        if: ${{ inputs.publish }}
+        run: python3 scripts/cloud/publish_firestore_rules.py reviewed-rules/firestore.rules
