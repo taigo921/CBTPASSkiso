@@ -81,6 +81,8 @@ class Publication(unittest.TestCase):
     def test_trust_and_workflow_constraints(self):
         workflow = (ROOT / '.github/workflows/firebase-rules.yml').read_text()
         setup = (ROOT / 'scripts/cloud/setup_firebase_federation.sh').read_text()
+        self.assertIn('projects/1081031054072/locations/global/workloadIdentityPools/cbtpass-github/providers/repo-1283596898',workflow)
+        self.assertIn('service_account: cbtpass-rules-publisher@cbtpass-a680e.iam.gserviceaccount.com',workflow)
         self.assertIn('needs: tests', workflow)
         self.assertIn('default: false', workflow)
         self.assertIn('id-token: write', workflow)
