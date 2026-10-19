@@ -48,8 +48,8 @@ jobs:
           persist-credentials: false
       - uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.FIREBASE_WIF_PROVIDER }}
-          service_account: ${{ vars.FIREBASE_DEPLOY_SERVICE_ACCOUNT }}
+          workload_identity_provider: projects/1081031054072/locations/global/workloadIdentityPools/cbtpass-github/providers/repo-1283596898
+          service_account: cbtpass-rules-publisher@cbtpass-a680e.iam.gserviceaccount.com
       - uses: google-github-actions/setup-gcloud@v2
       - name: Check connection without changing rules
         if: ${{ !inputs.publish }}

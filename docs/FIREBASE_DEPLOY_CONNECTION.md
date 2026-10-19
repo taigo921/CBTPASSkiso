@@ -16,7 +16,7 @@ Google Cloud Shellをプロジェクト `cbtpass-a680e` のIAM管理権限を持
 
 このロールはプロジェクト内のRules APIへの権限です。IAMだけではFirestoreの1リリースだけに完全分離できないため、公開コードは `projects/cbtpass-a680e/releases/cloud.firestore` に固定します。既存の同名ロール・Providerがある場合は設定を更新します。Owner/Editor権限やサービスアカウント鍵は作りません。GitHub mainへのコード変更権限を持つ人は、このワークフローを通じてルールを変更できる点に注意してください。
 
-出力の `FIREBASE_WIF_PROVIDER` と `FIREBASE_DEPLOY_SERVICE_ACCOUNT` をGitHubのリポジトリActions変数へ登録します。これらは公開可能なリソース名であり、トークン・秘密鍵ではありません。Codexへこの2行を伝えれば登録できます。エラー時はそのエラーを伝え、秘密鍵・トークンを貼らないでください。
+出力の `FIREBASE_WIF_PROVIDER` と `FIREBASE_DEPLOY_SERVICE_ACCOUNT` は公開可能なリソース名であり、トークン・秘密鍵ではありません。確認したプロジェクト番号1081031054072と専用アカウントを公開ワークフローに固定しました。この環境のGitHub連携はActions変数の読み書きが403で拒否されるため、変数登録は不要です。エラー時はそのエラーを伝え、秘密鍵・トークンを貼らないでください。
 
 ## 接続検証と公開
 
