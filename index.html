@@ -1254,8 +1254,8 @@ function setBlockedLoginImage(blocked){
   document.getElementById('authGate')?.classList.toggle('blocked-view',blockedLoginNotice);
   const overlay=document.getElementById('blockedLoginOverlay');if(overlay)overlay.hidden=!blockedLoginNotice;
   image.hidden=!blockedLoginNotice;
-  if(blockedLoginNotice){if(!image.getAttribute('src'))image.src='./assets/blocked-login.mp4';image.play().catch(()=>{});}
-  else{image.pause();image.removeAttribute('src');image.load();}
+  if(blockedLoginNotice){if(!image.getAttribute('src'))image.src='./assets/blocked-login.mp4';const playback=image.play?.();if(playback?.catch)playback.catch(()=>{});}
+  else{image.pause?.();image.removeAttribute('src');image.load?.();}
 }
 
 function isAccessOwner(user=window.cbtUser){
@@ -4394,8 +4394,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     schoolGateUserId=end?user.uid:null;
     gate.hidden=!end;
     const image=document.getElementById('schoolGateImage');
-    if(end){if(!image.getAttribute('src'))image.src='./assets/blocked-login.mp4';image.play().catch(()=>{});}
-    else{image.pause();image.removeAttribute('src');image.load();}
+    if(end){if(!image.getAttribute('src'))image.src='./assets/blocked-login.mp4';const playback=image.play?.();if(playback?.catch)playback.catch(()=>{});}
+    else{image.pause?.();image.removeAttribute('src');image.load?.();}
     if(schoolLocked!==!!end){setSchoolInert(!!end);if(end)gate.focus();}
     if(end){document.getElementById('schoolGateMessage').textContent=`${end}まで利用できません（日本時間）。`;
       if(!schoolLocked&&typeof pauseQuestionTimer==='function'){pauseQuestionTimer();pauseExplanationTimer();}}
@@ -4462,7 +4462,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     if(stopSchoolSubscription){stopSchoolSubscription();stopSchoolSubscription=null;}
     const keepSchoolGate=!!(user&&schoolLocked&&schoolGateUserId===user.uid);
     schoolLoginWaiting=false;
-    if(!keepSchoolGate){schoolLocked=false;schoolGateUserId=null;setSchoolInert(false);document.getElementById('schoolGate').hidden=true;const media=document.getElementById('schoolGateImage');media.pause();media.removeAttribute('src');media.load();}
+    if(!keepSchoolGate){schoolLocked=false;schoolGateUserId=null;setSchoolInert(false);document.getElementById('schoolGate').hidden=true;const media=document.getElementById('schoolGateImage');media.pause?.();media.removeAttribute('src');media.load?.();}
     gate.classList.remove('ok');window.cbtUser=null;updateLeaderboardAccess();
     if(stopCloudSubscription){stopCloudSubscription();stopCloudSubscription=null;}
     if(passwordSetupCreating){if(user)try{await auth.signOut();}catch(e){}return;}
