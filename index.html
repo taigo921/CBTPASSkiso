@@ -699,7 +699,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/20-1・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/20-2・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -1232,7 +1232,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261020-e4-figure-batch-1';
+const SERVICE_WORKER_BUILD='20261020-sync-single-transaction-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1268,7 +1268,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
-  el('accountStatus').textContent='表示版：10/20-1・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/20-2・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   leaderboardUsersCache=null;
   el('accessAdminList').textContent='';el('accessAdminStatus').textContent='';
@@ -3660,21 +3660,20 @@ async function runCloudSync(){
   let timeout,stage='端末バックアップ',payloadBytes=0;
   const operation=(async()=>{
     ensureProgressBackup();
-    stage='サーバー読込';
-    const latest=await window.cbtCloud.readLatest();
-    if(window.cbtUser?.uid!==uid)throw Error('ログインが変更されました');
-    if(latest)cbtMergeCloud(latest);
     stage='進捗の保存';
     const payload=fullStatsPayload();
     payloadBytes=new Blob([JSON.stringify(payload)]).size;
-    await window.cbtCloud.save(payload);
-    stage='保存後の確認';
-    const confirmed=await window.cbtCloud.readLatest();
+    // save() performs the server read, lossless merge and write in one Firestore
+    // transaction. Reuse that committed merge result instead of downloading the
+    // same large progress document before and after the transaction.
+    let confirmed=await window.cbtCloud.save(payload);
     if(window.cbtUser?.uid!==uid)throw Error('ログインが変更されました');
+    // Keep compatibility with older/test adapters that do not return a result.
+    if(!confirmed&&window.cbtCloud.readLatest){stage='保存後の確認';confirmed=await window.cbtCloud.readLatest();}
     if(confirmed)cbtMergeCloud(confirmed);
   })();
   // Keep the single-flight lock until the operation settles, even after a slow-network warning.
-  timeout=setTimeout(()=>setCloudSyncState('unavailable',{error:'通信に時間がかかっています。記録は端末に保持しています'}),20000);
+  timeout=setTimeout(()=>setCloudSyncState('unavailable',{error:'通信に時間がかかっています。記録は端末に保持しています'}),45000);
   try{
     await operation;_syncFailures=0;
     // Public summary publication is independent: its failure never invalidates private progress sync.
@@ -4241,9 +4240,11 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       if(!window.cbtUser)throw Error('未ログインです');
       const user={...window.cbtUser},ref=db.collection('users').doc(user.uid);
       const clean=JSON.parse(JSON.stringify(payload||{}));
+      let committed=null;
       await db.runTransaction(async function(transaction){
         const snapshot=await transaction.get(ref);
         const merged=window.cbtMergePayloads(snapshot.exists?decodeCloudProgress(snapshot.data()):{},clean);
+        committed=merged;
         const body=Object.assign({username:user.username||'',email:user.email||'',avatar:safeAvatar(user.avatar),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},encodeCloudProgress(merged));
         // Retired visibility preferences are ignored and never copied into new progress writes.
         delete body.leaderboardVisible;
@@ -4252,6 +4253,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
         // Replace merged top-level maps so old session tombstones/fields cannot linger recursively.
         transaction.set(ref,body,{mergeFields:Object.keys(body)});
       });
+      return committed;
     },
     // cache ではなく Firestore サーバーから読む。同期表示を「保存要求を出した」だけで
     // 完了にせず、別端末の回答も含む確定値へ統合するために使う。

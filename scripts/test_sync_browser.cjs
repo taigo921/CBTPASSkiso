@@ -39,13 +39,14 @@ const server=http.createServer((req,res)=>{
   let remote=null;
   for(const page of pages){
    await page.exposeFunction('testRead',()=>remote);
-   await page.exposeFunction('testSave',async payload=>{remote=await page.evaluate(([remote,payload])=>encodeCloudProgress(cbtMergePayloads(remote?decodeCloudProgress(remote):{},payload)),[remote,payload]);});
-   await page.evaluate(()=>{window.cbtCloud={readLatest:()=>window.testRead(),save:p=>window.testSave(p)};});
+   await page.exposeFunction('testSave',async payload=>{remote=await page.evaluate(([remote,payload])=>encodeCloudProgress(cbtMergePayloads(remote?decodeCloudProgress(remote):{},payload)),[remote,payload]);return remote;});
+   await page.evaluate(()=>{window.syncTransportCounts={read:0,save:0};window.cbtCloud={readLatest:()=>{window.syncTransportCounts.read++;return window.testRead();},save:p=>{window.syncTransportCounts.save++;return window.testSave(p);}};});
    await page.locator('#syncNowBtn').click();await page.waitForFunction(()=>document.getElementById('cloudStatus').textContent.includes('同期版 9/23'));
   }
   for(const page of pages){
    const payload=await page.evaluate(()=>cbtFullPayload());
    assert.equal(payload.books.book1.answered,1977);assert.equal(payload.game.xp,13179);assert.equal(payload.mockExams[5].index,2);assert.equal(payload.sessions.book1.updatedAt,1977);
+   assert.deepEqual(await page.evaluate(()=>window.syncTransportCounts),{read:0,save:1});
    assert.ok(await page.evaluate(()=>localStorage.getItem('togo_sync_backup_20260923_sync-test')));
   }
   const page=pages[0],download=page.waitForEvent('download');await page.locator('#exportProgressBtn').click();assert.match((await download).suggestedFilename(),/^toGO-progress-/);
