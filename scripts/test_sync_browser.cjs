@@ -10,7 +10,7 @@ const server=http.createServer((req,res)=>{
   html=html.replace(/<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->[\s\S]*?<\/script>/,'<script>window.cbtUser={uid:"sync-test"};document.getElementById("authGate").classList.add("ok");</script>');
   res.setHeader('Content-Type','text/html');res.end(html);return;
  }
- res.setHeader('Content-Type',file.endsWith('.json')?'application/json':file.endsWith('.js')?'application/javascript':file.endsWith('.gif')?'image/gif':'application/octet-stream');fs.createReadStream(file).pipe(res);
+ res.setHeader('Content-Type',file.endsWith('.json')?'application/json':file.endsWith('.js')?'application/javascript':file.endsWith('.mp4')?'video/mp4':file.endsWith('.gif')?'image/gif':'application/octet-stream');fs.createReadStream(file).pipe(res);
 });
 (async()=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -232,11 +232,11 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>el('authGate').classList.remove('ok'));
    assert.ok(await page.locator('#authGate').isVisible());
    assert.ok(await page.locator('#blockedLoginImage').isHidden());
-   assert.equal(await page.locator('#blockedLoginImage').getAttribute('src'),null,'normal login does not download GIF');
+   assert.equal(await page.locator('#blockedLoginImage').getAttribute('src'),null,'normal login does not download the blocked animation');
    await page.evaluate(()=>{setBlockedLoginImage(true);el('authGate').classList.remove('ok');el('authErr').textContent='管理者によりアクセスが停止されています。';});
    await page.locator('#blockedLoginImage').waitFor({state:'visible'});
-   await page.waitForFunction(()=>document.getElementById('blockedLoginImage').naturalWidth===560);
-   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'blocked GIF fits mobile/tablet');
+   await page.waitForFunction(()=>document.getElementById('blockedLoginImage').videoWidth===720);
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'blocked animation fits mobile/tablet');
    const bounds=await page.locator('#blockedLoginImage').boundingBox();
    const viewport=page.viewportSize();assert.equal(bounds.x,0);assert.equal(bounds.y,0);assert.equal(bounds.width,viewport.width);assert.equal(bounds.height,viewport.height);
    assert.equal(await page.locator('#blockedLoginImage').evaluate(img=>getComputedStyle(img).objectFit),'cover');

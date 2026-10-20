@@ -7,7 +7,7 @@ const fakeDb={collection(name){return {doc(){return {async get(){if(name==='acce
 window.firebase={initializeApp(){},auth:()=>fakeAuth,firestore:Object.assign(()=>fakeDb,{FieldValue:{serverTimestamp:()=>42}})};
 </script>`;
 const server=http.createServer((req,res)=>{const file=path.join(root,req.url.split('?')[0]==='/'?'index.html':decodeURIComponent(req.url.split('?')[0]));if(!file.startsWith(root+'/')||!fs.existsSync(file)){res.writeHead(404);res.end();return;}
-if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<script src="https:[^>]+><\/script>/g,'');html=html.replace('<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->',fixture+'<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->');res.setHeader('Content-Type','text/html');res.end(html);}else{res.setHeader('Content-Type',file.endsWith('.gif')?'image/gif':file.endsWith('.json')?'application/json':'application/javascript');res.end(fs.readFileSync(file));}});
+if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<script src="https:[^>]+><\/script>/g,'');html=html.replace('<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->',fixture+'<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->');res.setHeader('Content-Type','text/html');res.end(html);}else{res.setHeader('Content-Type',file.endsWith('.mp4')?'video/mp4':file.endsWith('.gif')?'image/gif':file.endsWith('.json')?'application/json':'application/javascript');res.end(fs.readFileSync(file));}});
 
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch();
@@ -20,11 +20,12 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    await page.goto(url);await page.waitForFunction(()=>window.cbtAppReady);
    assert.ok(await page.locator('#authEmailBox').isVisible(),'standalone form works without Google SDK');
    assert.ok(await page.locator('#blockedLoginImage').isHidden());
-   assert.equal(await page.locator('#schoolGateImage').getAttribute('src'),null,'ordinary login does not fetch class GIF');
+   assert.equal(await page.locator('#schoolGateImage').getAttribute('src'),null,'ordinary login does not fetch class animation');
    const login=async email=>{await page.locator('#authEmail').fill(email);await page.locator('#authPassword').fill('synthetic-password');await page.locator('#emailLoginBtn').click();};
    await login('i.taigo921+blocked@gmail.com');
-   await page.waitForFunction(()=>document.getElementById('blockedLoginImage').naturalWidth===560);
+   await page.waitForFunction(()=>document.getElementById('blockedLoginImage').videoWidth===720);
    assert.ok(await page.locator('#blockedLoginImage').isVisible());
+   assert.deepEqual(await page.locator('#blockedLoginImage').evaluate(video=>({muted:video.muted,loop:video.loop,playsInline:video.playsInline,paused:video.paused})),{muted:true,loop:true,playsInline:true,paused:false},'blocked animation autoplays silently and loops inline');
    assert.equal(await page.evaluate(()=>localStorage.getItem(BLOCKED_LOGIN_NOTICE_KEY)),'1');
    assert.equal(await page.evaluate(()=>window.cbtUser),null);
    // A restored Firebase user must not dismiss a confirmed stop while the server check is pending.
@@ -34,7 +35,7 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    });
    assert.ok(await page.locator('#blockedLoginImage').isVisible(),'confirmed stop remains visible during auth recheck');
    await page.clock.runFor(30000);
-   assert.ok(await page.locator('#blockedLoginImage').isVisible(),'blocked GIF persists after 30 seconds');
+   assert.ok(await page.locator('#blockedLoginImage').isVisible(),'blocked animation persists after 30 seconds');
    await page.evaluate(()=>{window.finishAccessCheck();window.testAccessDelay=null;});
    await page.waitForFunction(()=>fakeAuth.currentUser===null);
    await page.reload();await page.locator('#blockedLoginImage').waitFor({state:'visible'});
@@ -63,9 +64,10 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    const beforeReads=await page.evaluate(()=>window.testProfileReads);
    await login('i.taigo921+different@gmail.com');
    await page.locator('#schoolGate').waitFor({state:'visible'});
-   await page.waitForFunction(()=>document.getElementById('schoolGateImage').naturalWidth===560);
+   await page.waitForFunction(()=>document.getElementById('schoolGateImage').videoWidth===720);
+   assert.deepEqual(await page.locator('#schoolGateImage').evaluate(video=>({muted:video.muted,loop:video.loop,playsInline:video.playsInline,paused:video.paused})),{muted:true,loop:true,playsInline:true,paused:false},'class animation autoplays silently and loops inline');
    const imageBounds=await page.locator('#schoolGateImage').boundingBox();
-   assert.deepEqual(imageBounds,{x:0,y:0,width,height:844},'class GIF fills the viewport');
+   assert.deepEqual(imageBounds,{x:0,y:0,width,height:844},'class animation fills the viewport');
    assert.equal(await page.locator('#schoolGateImage').evaluate(n=>getComputedStyle(n).objectFit),'cover');
    assert.equal(await page.locator('#schoolGateTitle').textContent(),'授業中のため利用を制限しています');
    assert.match(await page.locator('#schoolGateMessage').textContent(),/10:10/);
@@ -76,15 +78,15 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    await page.clock.runFor(1100);
    await page.waitForFunction(()=>document.getElementById('authGate').classList.contains('ok'));
    assert.ok(await page.locator('#schoolGate').isHidden(),'10:10 break automatically opens');
-   assert.equal(await page.locator('#schoolGateImage').getAttribute('src'),null,'break removes the class GIF');
+   assert.equal(await page.locator('#schoolGateImage').getAttribute('src'),null,'break removes the class animation');
    assert.equal(await page.evaluate(()=>document.getElementById('authGate').inert),false);
    await page.clock.fastForward(15*60000);await page.clock.runFor(1100);
    assert.ok(await page.locator('#schoolGate').isVisible(),'10:25 locks an already open app');
    assert.equal(await page.evaluate(()=>window.cbtUser.uid),'allowed-fixture','class pause keeps the account and records');
    await page.evaluate(()=>{window.testAccessDelay=new Promise(resolve=>window.finishAccessCheck=resolve);authCallback(fakeAuth.currentUser);});
-   assert.ok(await page.locator('#schoolGate').isVisible(),'class GIF persists during same-account reauthentication');
+   assert.ok(await page.locator('#schoolGate').isVisible(),'class animation persists during same-account reauthentication');
    await page.clock.runFor(30000);
-   assert.ok(await page.locator('#schoolGateImage').isVisible(),'class GIF remains visible after 30 seconds');
+   assert.ok(await page.locator('#schoolGateImage').isVisible(),'class animation remains visible after 30 seconds');
    await page.evaluate(()=>{window.finishAccessCheck();window.testAccessDelay=null;});
    await page.waitForFunction(()=>window.testSchoolListener!==null);
    await assert.rejects(()=>page.evaluate(()=>window.cbtCloud.setSchoolPolicy({enabled:false,exemptDates:[]})),'regular learner cannot change policy');
@@ -124,6 +126,6 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    await reopened.close();
   }
   assert.deepEqual(errors,[]);
-  console.log('PASS standalone actual login flow: block -> signout -> reload/reopen GIF; temporary back; authorized account clears marker; no Google SDK dependency; class login/private-read deferral, automatic break/start, owner bypass, school settings controls; phone/tablet');
+  console.log('PASS standalone actual login flow: block -> signout -> reload/reopen animation; temporary back; authorized account clears marker; no Google SDK dependency; class login/private-read deferral, automatic break/start, owner bypass, school settings controls; phone/tablet');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});

@@ -18,11 +18,14 @@ const elements={},storage={},context={window:{cbtUser:{uid:'test-a'},scrollTo(){
 vm.createContext(context);
 context.cloudSyncSoon=()=>{};
 vm.runInContext(fs.readFileSync(path.join(root,'mock-assets/azabu-2026/blocks.js'),'utf8'),context);
+vm.runInContext(fs.readFileSync(path.join(root,'mock-assets/azabu-2026/photo-pages.js'),'utf8'),context);
 const data=source.slice(source.indexOf('const AZABU_MOCK_2026_BLOCK1='),source.indexOf('const DEFAULT_QUESTIONS_BY_BOOK'));
 const logic=source.slice(source.indexOf('function formatMockExamTime('),source.indexOf('function setProgress('));
 vm.runInContext(data+logic+`
 function renderHome(){renderMockHome();}
 check([1,2,3,4,5,6].map(b=>mockQuestions(b).length).join(',')==='60,60,60,60,40,40','all 320 questions');
+selectedMockBlock=1;openMockExam(0);check(!el('mockPhotoZoom').classList.contains('hidden'),'photo-booklet button shown');
+openMockExam(2);check(el('mockPhotoZoom').classList.contains('hidden'),'photo-booklet button hidden when no source figure');
 for(let block=1;block<=4;block++){
  selectedMockBlock=block;openMockExam(12);check(mockExamState.index===12,'free navigation');
  el('mockExamChoices').children[2].click();loadMockProgress();check(mockProgress.answers[13].picked==='C','selection saved');
@@ -66,5 +69,11 @@ for(const [block,qs] of Object.entries(context.window.TOGO_MOCK_BLOCKS)){
   check(q.no===i+1,`block ${block} order`);check(q.choices.includes(q.answer),`block ${block} answer`);
   for(const file of [q.image,...q.explanationImages])check(fs.existsSync(path.join(root,file)),file);
  }
+}
+const photoPages=context.window.TOGO_MOCK_PHOTO_PAGES;
+check(Object.keys(photoPages).length===188,'188 questions mapped to photo booklet');
+for(const [key,file] of Object.entries(photoPages)){
+ check(/^[1-6]-(?:[1-9]|[1-5][0-9]|60)$/.test(key),`photo key ${key}`);
+ check(fs.existsSync(path.join(root,file)),file);
 }
 console.log(`PASS: ${checks} checks; JavaScript syntax, 320 question counts, block/user isolation, save/resume, 80 linked confirmations, navigation locks, choices, and assets.`);

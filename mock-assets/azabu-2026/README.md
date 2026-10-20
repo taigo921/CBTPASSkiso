@@ -16,6 +16,8 @@ Question panels are cropped from the supplied answer/explanation book to avoid i
 
 `blocks.js` contains the 260 added records. Question images are in `block2`–`block6`; official explanation pages are shared under `explanations`. Multi-page explanations retain their page sequence.
 
+The official `CBT模試2026 別冊写真.pdf` is also represented by 44 optimized WebP pages under `photos`. `photo-pages.js` maps the 188 questions that reference a booklet figure to its printed page. The question crop remains the primary image; a separate “別冊写真（原本）” control opens the higher-resolution source page without changing question text, choices, answers, order, or saved progress.
+
 ## Behavior
 
 Blocks 1–4 permit question-list and previous/next navigation. Blocks 5–6 are forward-only: confirmed answers cannot be changed, the next unanswered item is derived from saved answers, and future questions cannot be skipped to. Correctness and explanations are only shown after the entire linked block is finished. Finished review is read-only.
