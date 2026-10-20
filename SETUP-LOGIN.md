@@ -1,7 +1,7 @@
 # ログイン（Googleアカウント制限）セットアップ手順
 
-CBTPASSを「許可したGmailの友達だけ」使えるようにする設定です。
-`index.html` の一番下（`▼ ログイン関所ロジック`）の **2か所だけ** 書き換えれば完成します。
+toGOを「許可したGoogle／Firebase Authユーザーだけ」使えるようにする設定です。
+現在はクライアントの許可hashだけでなく、Firebase Authentication、`accessControl`、授業時間、Firestoreルールでも制限します。許可ユーザーを変更するときは `index.html` と `firestore.rules` を同じ変更で更新してください。
 
 > ⚠️ 前提：これは「普通の人・知らない人を追い払う関所」です。
 > データ本体（`data/*.json`）はURL直打ちで技術的には取得できます（github.io無料構成の限界）。
@@ -26,12 +26,14 @@ CBTPASSを「許可したGmailの友達だけ」使えるようにする設定�
    - リダイレクトURIは不要（空でOK）
    - 作成すると出る **クライアントID**（`......apps.googleusercontent.com`）をコピー
 
-## ② index.html に貼る
+## ② アプリとFirestoreルールへ反映する
 
-`index.html` 末尾のこの部分を書き換え：
+GoogleクライアントIDを変更する場合は、`index.html` の `GIS_CLIENT_ID` を更新します。Firebaseプロジェクト自体を変更する場合だけ、同じ認証ブロックの `firebaseConfig` も更新します。
+
+許可ユーザーは `index.html` の `ALLOW` と、`firestore.rules` の `approvedHashes()` の両方へ同じSHA-256 hashを登録します。
 
 ```js
-const CLIENT_ID = "PASTE_YOUR_CLIENT_ID.apps.googleusercontent.com"; // ← ①でコピーしたIDに置換
+const GIS_CLIENT_ID = "PASTE_YOUR_CLIENT_ID.apps.googleusercontent.com";
 const ALLOW = [
   "（自分のメールのハッシュ）",   // 自分@gmail.com
   "（友達のメールのハッシュ）",   // 友達@gmail.com
@@ -54,18 +56,21 @@ await cbtHash('friend@gmail.com')
 
 **⚠️ 自分のメールのハッシュを入れ忘れると自分もログインできなくなります。**
 
-## ③ 反映
+## ③ テストと反映
 
-`index.html` を commit → push すれば GitHub Pages に反映されます。
-数分後に https://taigo921.github.io を開いてログインを確認。
+1. `ALLOW` と `approvedHashes()` の一致を含むアクセス制御・Firestore Emulatorテストを実行します。コマンドは `docs/development.md` を参照してください。
+2. `firestore.rules` をレビュー済みコミットから手動ルール公開workflowで反映します。Pagesの公開だけではルールは変わりません。
+3. ルール反映後にアプリをmainへ反映し、GitHub Pages workflowの成功と配信内容を確認します。
+4. 許可ユーザー、未許可ユーザー、停止ユーザーでログイン結果を確認します。本番ユーザーをテスト目的で停止しないでください。
 
 ---
 
 ## 友達の追加・削除
-- **追加**：その人のGmailを「OAuth同意画面のテストユーザー」に足す＋ハッシュを `ALLOW` に足す → push
-- **削除**：`ALLOW` からハッシュを消す → push（次回ログインから弾かれる。すでにログイン中の端末は次回リロード時まで有効）
+- **追加**：OAuth同意画面がテスト状態なら対象Googleアカウントもテストユーザーに追加し、hashを `ALLOW` と `approvedHashes()` に追加する。
+- **削除**：hashを両方から削除する。即時停止が必要なら、管理者画面のUID単位のアクセス停止も使用する。
 
 ## 仕組みメモ
-- ログイン成功時、メアドは端末の `localStorage`（`cbt_auth_email`）に保存され、次回から自動解錠。
-- 左下「ログアウト」でその保存を消して関所に戻る。
+- ログイン状態の永続化はFirebase Authenticationが管理する。アプリ独自の `cbt_auth_email` は使用しない。
+- 左下「ログアウト」は `auth.signOut()` を実行して認証関所へ戻る。
 - メアドは平文でリポジトリに置かず、SHA-256ハッシュで照合しているのでGitHub上に友達のメアドは出ません。
+- Firestoreは同じ許可hashに加え、メール確認、個別停止、授業時間をサーバー側で再判定する。ボタン非表示やクライアント判定だけを認可境界にしない。
