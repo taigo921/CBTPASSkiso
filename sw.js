@@ -1,8 +1,15 @@
-const APP_BUILD='20261019-persistent-gif-1';
+const APP_BUILD='20261020-blocked-login-video-1';
 const CACHE_NAME='cbtpass-offline-v1';
-const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js'];
-// Refresh only the files containing the five corrected figures on this update.
-const CORRECTED_FIGURE_FILES=['./data/175-204.json','./data/C3-034-118.json','./data/C3-119-204.json'];
+const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js','./mock-assets/azabu-2026/photo-pages.js'];
+// Remove stale copies of source-image data. Each selected book is fetched and cached on demand,
+// avoiding a roughly 57 MB download during service-worker installation.
+const UPDATED_DATA_FILES=[
+  './data/1-60.json','./data/61-90.json','./data/91-120.json','./data/121-144.json',
+  './data/145-174.json','./data/175-204.json','./data/C3-034-118.json','./data/C3-119-204.json',
+  './data/C4-001-094.json','./data/C5-001-055.json','./data/C6-001-088.json',
+  './data/D1-001-034.json','./data/D2-001-076.json','./data/E1.json','./data/E2.json',
+  './data/E3.json','./data/E4.json','./data/E5.json'
+];
 const FIREBASE_SDKS=[
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
@@ -27,9 +34,7 @@ self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
     await warmCache([...APP_SHELL,...FIREBASE_SDKS]);
     const cache=await caches.open(CACHE_NAME);
-    await Promise.all(CORRECTED_FIGURE_FILES.map(async url=>{
-      try{const request=new Request(new URL(url,self.location.href));await putIfCacheable(cache,request,await fetch(request,{cache:'reload'}));}catch(_){}
-    }));
+    await Promise.all(UPDATED_DATA_FILES.map(url=>cache.delete(new Request(new URL(url,self.location.href)))));
     await self.skipWaiting();
   })());
 });

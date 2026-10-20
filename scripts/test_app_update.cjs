@@ -6,7 +6,8 @@ const ctx={self:{location:{origin:'https://app.test',href:'https://app.test/sw.j
 vm.createContext(ctx);vm.runInContext(source,ctx);
 (async()=>{
  await vm.runInContext('warmCache([...APP_SHELL,...FIREBASE_SDKS])',ctx);
- assert.equal(fetches.length,4,'existing app shell gets refreshed while cached SDKs remain');assert.ok(fetches.every(x=>x[1]==='reload'));
+ const appShellCount=vm.runInContext('APP_SHELL.length',ctx);
+ assert.equal(fetches.length,appShellCount,'existing app shell gets refreshed while cached SDKs remain');assert.ok(fetches.every(x=>x[1]==='reload'));
  let reply;handlers.fetch({request:{url:'https://app.test/',method:'GET',mode:'navigate'},respondWith:p=>reply=p});await reply;assert.equal(fetches.at(-1)[1],'no-store');
  ctx.fetch=async()=>{throw Error('offline');};handlers.fetch({request:{url:'https://app.test/',method:'GET',mode:'navigate'},respondWith:p=>reply=p});assert.equal(await reply,cached,'offline shell still available');
  console.log('PASS app update: cached HTML refreshed on install, navigation bypasses HTTP cache, offline fallback retained');

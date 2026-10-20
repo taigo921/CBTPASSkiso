@@ -520,9 +520,9 @@
 </head>
 <body>
 <!-- ▼ ログイン関所（許可されたGoogleアカウントのみ解錠） -->
-<div id="schoolGate" hidden tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="schoolGateTitle"><img id="schoolGateImage" width="560" height="292" alt="泣いている人物のアニメーション"><div class="school-card"><h2 id="schoolGateTitle">授業中のため利用を制限しています</h2><p id="schoolGateMessage"></p><p>休み時間になると自動で使えるようになります。学習記録はそのまま残ります。</p><button type="button" class="ghost-btn" id="schoolLogout">別のアカウントでログイン</button></div></div>
+<div id="schoolGate" hidden tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="schoolGateTitle"><video id="schoolGateImage" muted loop playsinline preload="none" aria-label="ログイン停止中のアニメーション"></video><div class="school-card"><h2 id="schoolGateTitle">授業中のため利用を制限しています</h2><p id="schoolGateMessage"></p><p>休み時間になると自動で使えるようになります。学習記録はそのまま残ります。</p><button type="button" class="ghost-btn" id="schoolLogout">別のアカウントでログイン</button></div></div>
 <div id="authGate">
-  <img id="blockedLoginImage" hidden width="560" height="292" alt="泣いている人物のアニメーション">
+  <video id="blockedLoginImage" hidden muted loop playsinline preload="none" aria-label="ログイン停止中のアニメーション"></video>
   <div id="blockedLoginOverlay" hidden><p>このアカウントのアクセスは停止されています。</p><button type="button" id="blockedLoginBack">ログイン画面に戻る</button></div>
   <div class="auth-card">
     <div class="auth-brand">toGO<span>クイズ</span></div>
@@ -699,7 +699,7 @@
     <div class="row-btns"><button class="ghost-btn" id="syncNowBtn">今すぐ同期</button><button class="ghost-btn" id="exportProgressBtn">進捗をバックアップ</button></div>
     <p class="mock-note" id="syncBackupStatus"></p>
     <p class="mock-note">同期修正版：9/23-4（詳細記録の保存方式を更新）</p>
-    <p class="mock-note" id="accountStatus">表示版：10/19-3・ログイン確認中</p>
+    <p class="mock-note" id="accountStatus">表示版：10/20-3・ログイン確認中</p>
 
     <div class="setting">
       <label>「遅い」の基準時間 <input type="number" id="slowSec" min="5" max="600" step="5"> 秒</label>
@@ -827,7 +827,7 @@
     </div>
     <div class="mock-exam-card">
       <div class="row-btns"><button class="ghost-btn" id="mockListBtn">問題一覧へ</button><button class="ghost-btn" id="mockPrevBtn">前の問題</button><button class="ghost-btn" id="mockNextBtn">次の問題</button></div>
-      <div class="mock-exam-toolbar"><b id="mockExamNumber">問1</b><span>選択肢は資料の画面どおりです</span><button type="button" id="mockExamZoom">問題を拡大</button></div>
+      <div class="mock-exam-toolbar"><b id="mockExamNumber">問1</b><span>選択肢は資料の画面どおりです</span><button type="button" id="mockExamZoom">問題を拡大</button><button type="button" id="mockPhotoZoom" class="hidden">別冊写真（原本）</button></div>
       <img id="mockExamImage" class="mock-source" alt="CBT模試の問題">
       <div class="mock-answer-row" id="mockExamChoices" aria-label="回答を選ぶ"></div>
       <button type="button" class="mock-submit" id="mockExamSubmit" disabled>回答する</button>
@@ -845,6 +845,7 @@
       <p id="mockSubjectNumber" class="mock-note"></p>
       <img id="mockSubjectImage" class="mock-source" alt="模試の問題">
       <button type="button" class="image-zoom-hint" id="mockSubjectZoom">🔍 タップして拡大</button>
+      <button type="button" class="image-zoom-hint hidden" id="mockSubjectPhotoZoom">📷 別冊写真（原本）</button>
       <div id="mockSubjectChoices" class="mock-answer-row"></div>
       <button type="button" class="mock-submit" id="mockSubjectSubmit">回答を確定して次へ</button>
       <div id="mockSubjectResult" class="mock-result hidden"></div>
@@ -978,6 +979,7 @@
 
 <script src="mock-assets/azabu-2026/blocks.js"></script>
 <script src="mock-assets/azabu-2026/subjects.js"></script>
+<script src="mock-assets/azabu-2026/photo-pages.js"></script>
 <script>
 const BOOKS = {
   book1: {
@@ -1048,6 +1050,7 @@ let mockExamState={index:0,picked:null,answered:false,startedAt:0,clock:null};
 let mockHomeSelected=false,mockListFilter='all',mockProgress={index:0,answers:{}};
 let selectedMockBlock=1;
 function mockQuestions(block=selectedMockBlock){return block===1?AZABU_MOCK_2026_BLOCK1:(window.TOGO_MOCK_BLOCKS?.[block]||[]);}
+function mockPhotoPage(block,no){return window.TOGO_MOCK_PHOTO_PAGES?.[`${block}-${no}`]||'';}
 function mockForwardOnly(){return selectedMockBlock===5||selectedMockBlock===6;}
 function mockFrontier(){const i=mockQuestions().findIndex(q=>!mockProgress.answers[q.no]?.answered);return i<0?mockQuestions().length:i;}
 function mockStorageKey(){return `togo_mock_azabu2026_block${selectedMockBlock}_v1_`+(window.cbtUser?.uid||'local');}
@@ -1116,6 +1119,7 @@ function renderMockSubjectPractice(){
   el('mockSubjectProgress').textContent=complete?`終了：${s.qs.length}問中${correct}問正解 ・ 解説を確認できます`:`${index+1} / ${s.qs.length}問 ・ 回答確定後は戻れません`;
   el('mockSubjectNumber').textContent=`ブロック${q.block}・問${q.no} ／ ${q.subject}`;
   el('mockSubjectImage').src=q.image;
+  const photoPage=mockPhotoPage(q.block,q.no);el('mockSubjectPhotoZoom').classList.toggle('hidden',!photoPage);el('mockSubjectPhotoZoom').dataset.src=photoPage;
   const choices=el('mockSubjectChoices');choices.innerHTML='';
   for(const key of q.choices||'ABCDE'){
     const button=document.createElement('button');button.type='button';button.className='mock-choice';button.textContent=key;
@@ -1232,7 +1236,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261019-persistent-gif-1';
+const SERVICE_WORKER_BUILD='20261020-blocked-login-video-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1250,8 +1254,8 @@ function setBlockedLoginImage(blocked){
   document.getElementById('authGate')?.classList.toggle('blocked-view',blockedLoginNotice);
   const overlay=document.getElementById('blockedLoginOverlay');if(overlay)overlay.hidden=!blockedLoginNotice;
   image.hidden=!blockedLoginNotice;
-  if(blockedLoginNotice){if(!image.getAttribute('src'))image.src='./assets/blocked-login.gif';}
-  else image.removeAttribute('src');
+  if(blockedLoginNotice){if(!image.getAttribute('src'))image.src='./assets/blocked-login.mp4';const playback=image.play?.();if(playback?.catch)playback.catch(()=>{});}
+  else{image.pause?.();image.removeAttribute('src');image.load?.();}
 }
 
 function isAccessOwner(user=window.cbtUser){
@@ -1268,7 +1272,7 @@ function canViewLeaderboard(user=window.cbtUser){
 }
 function updateLeaderboardAccess(){
   el('rankBtn').classList.toggle('hidden',!isLeaderboardMember());
-  el('accountStatus').textContent='表示版：10/19-3・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
+  el('accountStatus').textContent='表示版：10/20-3・'+(window.cbtUser?window.cbtUser.email+'・メール'+(window.cbtUser.emailVerified?'確認済み':'未確認'):'未ログイン');
   el('accessAdminBtn').classList.toggle('hidden',!canManageUsers());
   leaderboardUsersCache=null;
   el('accessAdminList').textContent='';el('accessAdminStatus').textContent='';
@@ -2522,6 +2526,7 @@ function renderMockExam(){
   el('mockExamNumber').textContent=`問${q.no} ／ ${mockQuestionSubject(selectedMockBlock,q.no)}`;
   el('mockExamProgress').textContent=`${mockExamState.index+1} / ${qs.length}問${mockForwardOnly()?' ・ 連問：確定すると戻れません':''}`;
   el('mockExamImage').src=q.image;
+  const photoPage=mockPhotoPage(selectedMockBlock,q.no);el('mockPhotoZoom').classList.toggle('hidden',!photoPage);el('mockPhotoZoom').dataset.src=photoPage;
   el('mockExamResult').classList.add('hidden');el('mockExamResult').textContent='';
   el('mockExplanationImage').classList.add('hidden');el('mockExplanationImage').removeAttribute('src');
   el('mockExtraExplanations').innerHTML='';
@@ -3280,6 +3285,7 @@ el('mockSubjectStart').addEventListener('click',startMockSubjectPractice);
 el('mockSubjectBack').addEventListener('click',()=>{saveMockSubjectPractice();mockHomeSelected=true;renderHome();});
 el('mockSubjectZoom').addEventListener('click',()=>openImageZoom(el('mockSubjectImage').src,'模試の問題'));
 el('mockSubjectImage').addEventListener('click',()=>openImageZoom(el('mockSubjectImage').src,'模試の問題'));
+el('mockSubjectPhotoZoom').addEventListener('click',event=>{const src=event.currentTarget.dataset.src;if(src)openImageZoom(src,'CBT模試 別冊写真（原本）');});
 el('mockResumeBtn').addEventListener('click',()=>openMockExam());
 el('mockListBtn').addEventListener('click',()=>{saveMockProgress();renderHome();});
 el('mockPrevBtn').addEventListener('click',()=>moveMockQuestion(-1));
@@ -3288,6 +3294,7 @@ el('mockFilters').addEventListener('click',event=>{const b=event.target.closest(
 el('mockExamSubmit').addEventListener('click',submitMockExam);
 el('mockExamZoom').addEventListener('click',()=>openImageZoom(el('mockExamImage').currentSrc||el('mockExamImage').src,'CBT模試の問題'));
 el('mockExamImage').addEventListener('click',()=>openImageZoom(el('mockExamImage').currentSrc||el('mockExamImage').src,'CBT模試の問題'));
+el('mockPhotoZoom').addEventListener('click',event=>{const src=event.currentTarget.dataset.src;if(src)openImageZoom(src,'CBT模試 別冊写真（原本）');});
 el('mockExplanationImage').addEventListener('click',()=>openImageZoom(el('mockExplanationImage').currentSrc||el('mockExplanationImage').src,'公式の解答と解説'));
 el('planStartBtn').addEventListener('click',startStudyPlan);
 el('planReviewBtn').addEventListener('click',startRouteReview);
@@ -3660,21 +3667,20 @@ async function runCloudSync(){
   let timeout,stage='端末バックアップ',payloadBytes=0;
   const operation=(async()=>{
     ensureProgressBackup();
-    stage='サーバー読込';
-    const latest=await window.cbtCloud.readLatest();
-    if(window.cbtUser?.uid!==uid)throw Error('ログインが変更されました');
-    if(latest)cbtMergeCloud(latest);
     stage='進捗の保存';
     const payload=fullStatsPayload();
     payloadBytes=new Blob([JSON.stringify(payload)]).size;
-    await window.cbtCloud.save(payload);
-    stage='保存後の確認';
-    const confirmed=await window.cbtCloud.readLatest();
+    // save() performs the server read, lossless merge and write in one Firestore
+    // transaction. Reuse that committed merge result instead of downloading the
+    // same large progress document before and after the transaction.
+    let confirmed=await window.cbtCloud.save(payload);
     if(window.cbtUser?.uid!==uid)throw Error('ログインが変更されました');
+    // Keep compatibility with older/test adapters that do not return a result.
+    if(!confirmed&&window.cbtCloud.readLatest){stage='保存後の確認';confirmed=await window.cbtCloud.readLatest();}
     if(confirmed)cbtMergeCloud(confirmed);
   })();
   // Keep the single-flight lock until the operation settles, even after a slow-network warning.
-  timeout=setTimeout(()=>setCloudSyncState('unavailable',{error:'通信に時間がかかっています。記録は端末に保持しています'}),20000);
+  timeout=setTimeout(()=>setCloudSyncState('unavailable',{error:'通信に時間がかかっています。記録は端末に保持しています'}),45000);
   try{
     await operation;_syncFailures=0;
     // Public summary publication is independent: its failure never invalidates private progress sync.
@@ -4241,9 +4247,11 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       if(!window.cbtUser)throw Error('未ログインです');
       const user={...window.cbtUser},ref=db.collection('users').doc(user.uid);
       const clean=JSON.parse(JSON.stringify(payload||{}));
+      let committed=null;
       await db.runTransaction(async function(transaction){
         const snapshot=await transaction.get(ref);
         const merged=window.cbtMergePayloads(snapshot.exists?decodeCloudProgress(snapshot.data()):{},clean);
+        committed=merged;
         const body=Object.assign({username:user.username||'',email:user.email||'',avatar:safeAvatar(user.avatar),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},encodeCloudProgress(merged));
         // Retired visibility preferences are ignored and never copied into new progress writes.
         delete body.leaderboardVisible;
@@ -4252,6 +4260,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
         // Replace merged top-level maps so old session tombstones/fields cannot linger recursively.
         transaction.set(ref,body,{mergeFields:Object.keys(body)});
       });
+      return committed;
     },
     // cache ではなく Firestore サーバーから読む。同期表示を「保存要求を出した」だけで
     // 完了にせず、別端末の回答も含む確定値へ統合するために使う。
@@ -4385,8 +4394,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     schoolGateUserId=end?user.uid:null;
     gate.hidden=!end;
     const image=document.getElementById('schoolGateImage');
-    if(end){if(!image.getAttribute('src'))image.src='./assets/blocked-login.gif';}
-    else image.removeAttribute('src');
+    if(end){if(!image.getAttribute('src'))image.src='./assets/blocked-login.mp4';const playback=image.play?.();if(playback?.catch)playback.catch(()=>{});}
+    else{image.pause?.();image.removeAttribute('src');image.load?.();}
     if(schoolLocked!==!!end){setSchoolInert(!!end);if(end)gate.focus();}
     if(end){document.getElementById('schoolGateMessage').textContent=`${end}まで利用できません（日本時間）。`;
       if(!schoolLocked&&typeof pauseQuestionTimer==='function'){pauseQuestionTimer();pauseExplanationTimer();}}
@@ -4453,7 +4462,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     if(stopSchoolSubscription){stopSchoolSubscription();stopSchoolSubscription=null;}
     const keepSchoolGate=!!(user&&schoolLocked&&schoolGateUserId===user.uid);
     schoolLoginWaiting=false;
-    if(!keepSchoolGate){schoolLocked=false;schoolGateUserId=null;setSchoolInert(false);document.getElementById('schoolGate').hidden=true;document.getElementById('schoolGateImage').removeAttribute('src');}
+    if(!keepSchoolGate){schoolLocked=false;schoolGateUserId=null;setSchoolInert(false);document.getElementById('schoolGate').hidden=true;const media=document.getElementById('schoolGateImage');media.pause?.();media.removeAttribute('src');media.load?.();}
     gate.classList.remove('ok');window.cbtUser=null;updateLeaderboardAccess();
     if(stopCloudSubscription){stopCloudSubscription();stopCloudSubscription=null;}
     if(passwordSetupCreating){if(user)try{await auth.signOut();}catch(e){}return;}

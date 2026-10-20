@@ -34,12 +34,12 @@ const packed=encodeCloudProgress(mergeCloudPayloads({},phone));
 const mixed=decodeCloudProgress({...packed,books:payload(2200,14000).books});
 assert(mixed.books.book1.answered===2200,'new answers from legacy clients survive packed migration');
 let rejected=false;try{decodeCloudProgress({progressDataV1:'broken'});}catch(_){rejected=true;}assert(rejected,'invalid packed data blocks overwrite');
-let states=[],details=[],backups=0,localCount=1977,serverCount=1692;
+let states=[],details=[],backups=0,reads=0,localCount=1977,serverCount=1692;
 function setCloudSyncState(state,detail){states.push(state);details.push(detail);}
 function ensureProgressBackup(){backups++;}
 function cbtMergeCloud(data){localCount=Math.max(localCount,data.count);}
 function fullStatsPayload(){return {count:localCount};}
-window.cbtCloud={readLatest:async()=>({count:serverCount}),save:async p=>{serverCount=Math.max(serverCount,p.count);}};
+window.cbtCloud={readLatest:async()=>{reads++;return {count:serverCount};},save:async p=>{serverCount=Math.max(serverCount,p.count);return {count:serverCount};}};
 `,context);
 (async()=>{
  if(process.env.PROGRESS_BACKUP){
@@ -61,7 +61,7 @@ window.cbtCloud={readLatest:async()=>({count:serverCount}),save:async p=>{server
   console.log('Backup check (no live database writes):',measurement);
  }
  await vm.runInContext(`runCloudSync()`,context);
- vm.runInContext(`assert(backups===1,'backup precedes sync');assert(serverCount===1977,'phone uploads latest');assert(states.at(-1)==='ready','ready after readback');
+ vm.runInContext(`assert(backups===1,'backup precedes sync');assert(serverCount===1977,'phone uploads latest');assert(reads===0,'transaction result avoids redundant document downloads');assert(states.at(-1)==='ready','ready after committed merge');
  states=[];window.cbtCloud.save=async()=>{throw {code:'invalid-argument',message:'Document exceeds maximum size'};};`,context);
  await vm.runInContext('runCloudSync()',context);
  vm.runInContext(`assert(states.at(-1)==='unavailable','failed save never ready');assert(localCount===1977,'failed save keeps local records');assert(details.at(-1).error.includes('invalid-argument')&&details.at(-1).error.includes('Document exceeds maximum size')&&details.at(-1).error.includes('進捗の保存'),'diagnostic keeps code, full reason and stage');
