@@ -10,7 +10,8 @@ const server=http.createServer((req,res)=>{const file=path.join(root,req.url.spl
 if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<script src="https:[^>]+><\/script>/g,'');html=html.replace('<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->',fixture+'<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->');res.setHeader('Content-Type','text/html');res.end(html);}else{res.setHeader('Content-Type',file.endsWith('.mp4')?'video/mp4':file.endsWith('.gif')?'image/gif':file.endsWith('.json')?'application/json':'application/javascript');res.end(fs.readFileSync(file));}});
 
 (async()=>{
- await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch();
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const browser=await chromium.launch(process.env.PLAYWRIGHT_EXECUTABLE_PATH?{executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH}:{});
  try{
   const errors=[],url='http://127.0.0.1:'+server.address().port;
   for(const width of [390,1024]){
@@ -23,9 +24,9 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    assert.equal(await page.locator('#schoolGateImage').getAttribute('src'),null,'ordinary login does not fetch class animation');
    const login=async email=>{await page.locator('#authEmail').fill(email);await page.locator('#authPassword').fill('synthetic-password');await page.locator('#emailLoginBtn').click();};
    await login('i.taigo921+blocked@gmail.com');
-   await page.waitForFunction(()=>document.getElementById('blockedLoginImage').videoWidth===720);
+   await page.waitForFunction(()=>document.getElementById('blockedLoginImage').naturalWidth===320);
    assert.ok(await page.locator('#blockedLoginImage').isVisible());
-   assert.deepEqual(await page.locator('#blockedLoginImage').evaluate(video=>({muted:video.muted,loop:video.loop,playsInline:video.playsInline,paused:video.paused})),{muted:true,loop:true,playsInline:true,paused:false},'blocked animation autoplays silently and loops inline');
+   assert.ok(await page.locator('#blockedLoginImage').evaluate(image=>image.complete),'blocked GIF loads without autoplay');
    assert.equal(await page.evaluate(()=>localStorage.getItem(BLOCKED_LOGIN_NOTICE_KEY)),'1');
    assert.equal(await page.evaluate(()=>window.cbtUser),null);
    // A restored Firebase user must not dismiss a confirmed stop while the server check is pending.
@@ -64,8 +65,8 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    const beforeReads=await page.evaluate(()=>window.testProfileReads);
    await login('i.taigo921+different@gmail.com');
    await page.locator('#schoolGate').waitFor({state:'visible'});
-   await page.waitForFunction(()=>document.getElementById('schoolGateImage').videoWidth===720);
-   assert.deepEqual(await page.locator('#schoolGateImage').evaluate(video=>({muted:video.muted,loop:video.loop,playsInline:video.playsInline,paused:video.paused})),{muted:true,loop:true,playsInline:true,paused:false},'class animation autoplays silently and loops inline');
+   await page.waitForFunction(()=>document.getElementById('schoolGateImage').naturalWidth===320);
+   assert.ok(await page.locator('#schoolGateImage').evaluate(image=>image.complete),'class GIF loads without autoplay');
    const imageBounds=await page.locator('#schoolGateImage').boundingBox();
    assert.deepEqual(imageBounds,{x:0,y:0,width,height:844},'class animation fills the viewport');
    assert.equal(await page.locator('#schoolGateImage').evaluate(n=>getComputedStyle(n).objectFit),'cover');
@@ -126,6 +127,6 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    await reopened.close();
   }
   assert.deepEqual(errors,[]);
-  console.log('PASS standalone actual login flow: block -> signout -> reload/reopen animation; temporary back; authorized account clears marker; no Google SDK dependency; class login/private-read deferral, automatic break/start, owner bypass, school settings controls; phone/tablet');
+  console.log('PASS standalone actual login flow: block -> signout -> reload/reopen GIF; temporary back; authorized account clears marker; no Google SDK dependency; class login/private-read deferral, automatic break/start, owner bypass, school settings controls; phone/tablet');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});

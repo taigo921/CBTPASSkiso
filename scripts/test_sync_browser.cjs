@@ -14,7 +14,7 @@ const server=http.createServer((req,res)=>{
 });
 (async()=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
- const browser=await chromium.launch();
+  const browser=await chromium.launch(process.env.PLAYWRIGHT_EXECUTABLE_PATH?{executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH}:{});
  try{
   const pages=[],errors=[];
   for(const count of [1977,1692]){
@@ -235,7 +235,7 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.locator('#blockedLoginImage').getAttribute('src'),null,'normal login does not download the blocked animation');
    await page.evaluate(()=>{setBlockedLoginImage(true);el('authGate').classList.remove('ok');el('authErr').textContent='管理者によりアクセスが停止されています。';});
    await page.locator('#blockedLoginImage').waitFor({state:'visible'});
-   await page.waitForFunction(()=>document.getElementById('blockedLoginImage').videoWidth===720);
+   await page.waitForFunction(()=>document.getElementById('blockedLoginImage').naturalWidth===320);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'blocked animation fits mobile/tablet');
    const bounds=await page.locator('#blockedLoginImage').boundingBox();
    const viewport=page.viewportSize();assert.equal(bounds.x,0);assert.equal(bounds.y,0);assert.equal(bounds.width,viewport.width);assert.equal(bounds.height,viewport.height);

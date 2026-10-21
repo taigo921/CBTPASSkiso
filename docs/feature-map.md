@@ -10,7 +10,7 @@
 - state / hooks相当: `window.cbtUser`、`schoolPolicy`、`handleAuthState()`、`requireAccess()`、`watchAccess()`、`watchSchoolPolicy()`、`schoolRestriction()`。
 - API / service: Firebase Auth、`window.cbtCloud.fetchSchoolPolicy()`。
 - DB: `accessControl/{uid}`、`schoolAccess/settings`、初回プロフィール用 `users/{uid}`。
-- 関連ファイル: `index.html` のaccess/auth/Firebase bootstrap、`assets/blocked-login.mp4`、`firestore.rules`、`ACCESS_CONTROL_SETUP.md`、`CLASS_HOURS_ACCESS.md`、`SETUP-LOGIN.md`。
+- 関連ファイル: `index.html` のaccess/auth/Firebase bootstrap、`assets/blocked-login.gif`、`firestore.rules`、`ACCESS_CONTROL_SETUP.md`、`CLASS_HOURS_ACCESS.md`、`SETUP-LOGIN.md`。
 - 他Featureとの依存: すべての認証後Featureの前提。Firestoreルール側でも同じ制限を再評価する。
 
 ## ホーム・問題集選択・教材読込

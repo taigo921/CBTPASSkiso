@@ -43,6 +43,8 @@ PLAYWRIGHT_MODULE=/absolute/path/to/playwright node scripts/test_sync_browser.cj
 PLAYWRIGHT_MODULE=/absolute/path/to/playwright node scripts/test_blocked_login_browser.cjs
 ```
 
+Playwright管理外のChromiumを使う環境では、両スクリプトに `PLAYWRIGHT_EXECUTABLE_PATH=/absolute/path/to/chromium` も渡せる。
+
 Firestore権限を変えた場合は、実プロジェクトではなくローカルFirestore Emulatorで `test_access_rules.cjs`、`test_leaderboard_rules.cjs`、`test_school_rules.cjs` を実行する。CIが使うNode、Java、依存versionはworkflowを参照する。
 
 変更対象に応じた最低追加確認:
