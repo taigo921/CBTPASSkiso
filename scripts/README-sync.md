@@ -9,18 +9,21 @@ its absolute path when running `test_sync.cjs`. Never commit the backup.
 The test prints only counts/size, estimates default Firestore index entries, and
 checks that encoding/decoding preserves books, plans, mock answers and resumes.
 
-Cloud wire format 9/23-4 stores detailed maps in `progressDataV1` JSON text.
-Root book summaries, shared XP and time remain available as before. Migration is
-atomic inside the existing transaction: decode old and new records, merge, pack,
-then remove obsolete indexed maps in the same write. Legacy reads remain supported.
-Malformed packed data throws and blocks writes rather than resetting progress.
-All devices must update to read this format.
+Cloud wire format 10/21-1 stores detailed maps as JSON text split into 600 KB or
+smaller documents under `users/{uid}/progressChunks`. The user document keeps a
+`progressDataV2` manifest with generation, count and length. Root book summaries,
+shared XP and time remain available as before. Manifest and chunks are replaced in
+one transaction. Missing, mixed-generation or malformed chunks throw and block
+writes rather than resetting progress. The reader also merges legacy
+`progressDataV1` and top-level detailed maps before removing them in the next
+successful v2 transaction, so an old device cannot silently erase newer answers.
 
 The September 23 user backup measured 51,249 default index entries before and 310
 after, with 483,097 bytes of packed wire JSON. This exceeds the 40,000-entry limit
 before migration under default indexing, but not afterwards. Production index
 configuration and actual device success are not verified by these isolated tests.
-The document 1 MiB size limit is unchanged.
+The format avoids the 1 MiB document/string limit; each write is also bounded to
+12 chunks so the 10 MiB transaction limit retains headroom.
 
 References: https://firebase.google.com/docs/firestore/quotas and
 https://firebase.google.com/docs/firestore/query-data/index-overview

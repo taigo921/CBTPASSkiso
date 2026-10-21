@@ -1236,7 +1236,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261021-blocked-login-gif-1';
+const SERVICE_WORKER_BUILD='20261021-progress-chunks-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -3655,6 +3655,50 @@ function decodeCloudProgress(document){
   // An old client may still write legacy maps. Merge those too, never discard its newer answers.
   return {...legacy,...mergeCloudPayloads({...legacy,...packed.data},legacy)};
 }
+const CLOUD_PROGRESS_CHUNK_BYTES=600000,CLOUD_PROGRESS_MAX_CHUNKS=12;
+function splitCloudProgressText(text,limit=CLOUD_PROGRESS_CHUNK_BYTES){
+  const chunks=[];
+  for(let start=0;start<text.length;){
+    let low=start+1,high=Math.min(text.length,start+limit),best=start;
+    while(low<=high){
+      const middle=Math.floor((low+high)/2),bytes=new Blob([text.slice(start,middle)]).size;
+      if(bytes<=limit){best=middle;low=middle+1;}else high=middle-1;
+    }
+    if(best===start)throw Error('クラウド同期データを分割できません');
+    if(best<text.length&&text.charCodeAt(best-1)>=0xD800&&text.charCodeAt(best-1)<=0xDBFF&&text.charCodeAt(best)>=0xDC00&&text.charCodeAt(best)<=0xDFFF)best--;
+    chunks.push(text.slice(start,best));start=best;
+  }
+  return chunks;
+}
+function cloudProgressGeneration(text){
+  let hash=2166136261;
+  for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
+  return `v2-${text.length}-${(hash>>>0).toString(16)}`;
+}
+function encodeCloudProgressV2(payload){
+  const root=encodeCloudProgress(payload),text=root.progressDataV1;delete root.progressDataV1;
+  const chunks=splitCloudProgressText(text),generation=cloudProgressGeneration(text);
+  if(chunks.length>CLOUD_PROGRESS_MAX_CHUNKS)throw Error('クラウド同期データが上限を超えています。端末の記録は保持しています');
+  root.progressDataV2={version:2,generation,chunkCount:chunks.length,charLength:text.length};
+  return {root,chunks,generation};
+}
+function decodeCloudProgressV2(root,chunkDocuments){
+  const manifest=root?.progressDataV2;
+  if(!manifest)return decodeCloudProgress(root||{});
+  if(manifest.version!==2||!Number.isInteger(manifest.chunkCount)||manifest.chunkCount<1||manifest.chunkCount>CLOUD_PROGRESS_MAX_CHUNKS||typeof manifest.generation!=='string')throw Error('未対応のクラウド分割形式です。更新してください');
+  if(!Array.isArray(chunkDocuments)||chunkDocuments.length!==manifest.chunkCount)throw Error('クラウドの分割記録が不足しています。端末の記録は保持しています');
+  const chunks=chunkDocuments.map((document,index)=>{
+    const value=typeof document?.data==='function'?document.data():document;
+    if(!value||value.version!==2||value.generation!==manifest.generation||value.index!==index||typeof value.data!=='string')throw Error('クラウドの分割記録を読み取れません。端末の記録は保持しています');
+    return value.data;
+  });
+  const text=chunks.join('');
+  if(text.length!==manifest.charLength||cloudProgressGeneration(text)!==manifest.generation)throw Error('クラウドの分割記録が一致しません。端末の記録は保持しています');
+  const base={...root};delete base.progressDataV2;const legacyPacked=base.progressDataV1;delete base.progressDataV1;
+  const current=decodeCloudProgress({...base,progressDataV1:text});
+  if(legacyPacked===undefined)return current;
+  return mergeCloudPayloads(current,decodeCloudProgress({...base,progressDataV1:legacyPacked}));
+}
 function cloudErrorDetail(error){
   return [...new Set([error?.code,error?.message].filter(Boolean).map(String))].join('：')||'原因不明の通信エラー';
 }
@@ -4226,6 +4270,30 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     leaderboardUsersCache=null;
   };
 
+  function progressChunkRef(userRef,index){return userRef.collection('progressChunks').doc(`chunk${index}`);}
+  async function transactionCloudProgress(transaction,userRef,snapshot){
+    if(!snapshot.exists)return {};
+    const root=snapshot.data(),manifest=root.progressDataV2;
+    if(!manifest)return decodeCloudProgress(root);
+    if(!Number.isInteger(manifest.chunkCount)||manifest.chunkCount<1||manifest.chunkCount>CLOUD_PROGRESS_MAX_CHUNKS)throw Error('クラウドの分割記録を読み取れません。端末の記録は保持しています');
+    const chunks=[];
+    for(let index=0;index<manifest.chunkCount;index++){
+      const chunk=await transaction.get(progressChunkRef(userRef,index));
+      if(!chunk.exists)throw Error('クラウドの分割記録が不足しています。端末の記録は保持しています');
+      chunks.push(chunk.data());
+    }
+    return decodeCloudProgressV2(root,chunks);
+  }
+  async function readCloudProgress(userRef,snapshot){
+    if(!snapshot.exists)return null;
+    const root=snapshot.data(),manifest=root.progressDataV2;
+    if(!manifest)return decodeCloudProgress(root);
+    if(!Number.isInteger(manifest.chunkCount)||manifest.chunkCount<1||manifest.chunkCount>CLOUD_PROGRESS_MAX_CHUNKS)throw Error('クラウドの分割記録を読み取れません。端末の記録は保持しています');
+    const chunks=await Promise.all(Array.from({length:manifest.chunkCount},(_,index)=>progressChunkRef(userRef,index).get({source:'server'})));
+    if(chunks.some(chunk=>!chunk.exists))throw Error('クラウドの分割記録が不足しています。端末の記録は保持しています');
+    return decodeCloudProgressV2(root,chunks.map(chunk=>chunk.data()));
+  }
+
   // メインアプリから使うクラウドAPI
   window.cbtCloud = {
     fetchSchoolPolicy:async function(){
@@ -4256,15 +4324,20 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       let committed=null;
       await db.runTransaction(async function(transaction){
         const snapshot=await transaction.get(ref);
-        const merged=window.cbtMergePayloads(snapshot.exists?decodeCloudProgress(snapshot.data()):{},clean);
+        const previous=snapshot.exists?snapshot.data():{},remote=await transactionCloudProgress(transaction,ref,snapshot);
+        const merged=window.cbtMergePayloads(remote||{},clean);
         committed=merged;
-        const body=Object.assign({username:user.username||'',email:user.email||'',avatar:safeAvatar(user.avatar),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},encodeCloudProgress(merged));
+        const encoded=encodeCloudProgressV2(merged);
+        const body=Object.assign({username:user.username||'',email:user.email||'',avatar:safeAvatar(user.avatar),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},encoded.root);
         // Retired visibility preferences are ignored and never copied into new progress writes.
         delete body.leaderboardVisible;
-        // Atomically replace legacy detailed maps only after all their data is in progressDataV1.
-        for(const key of ['studyPlans','mockExams','sessions','perQ','rankAttempts'])body[key]=firebase.firestore.FieldValue.delete();
+        // Atomically replace legacy detailed fields only after all their data is in progressDataV2 chunks.
+        for(const key of ['progressDataV1','studyPlans','mockExams','sessions','perQ','rankAttempts'])body[key]=firebase.firestore.FieldValue.delete();
         // Replace merged top-level maps so old session tombstones/fields cannot linger recursively.
         transaction.set(ref,body,{mergeFields:Object.keys(body)});
+        encoded.chunks.forEach((data,index)=>transaction.set(progressChunkRef(ref,index),{version:2,generation:encoded.generation,index,data}));
+        const previousCount=Number.isInteger(previous.progressDataV2?.chunkCount)?previous.progressDataV2.chunkCount:0;
+        for(let index=encoded.chunks.length;index<previousCount;index++)transaction.delete(progressChunkRef(ref,index));
       });
       return committed;
     },
@@ -4272,8 +4345,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     // 完了にせず、別端末の回答も含む確定値へ統合するために使う。
     readLatest: async function(){
       if(!window.cbtUser)return null;
-      const snap=await db.collection('users').doc(window.cbtUser.uid).get({source:'server'});
-      return snap.exists?snap.data():null;
+      const ref=db.collection('users').doc(window.cbtUser.uid),snap=await ref.get({source:'server'});
+      return readCloudProgress(ref,snap);
     },
     refreshAdminVerification: async function(){
       const user=auth.currentUser;
@@ -4357,10 +4430,15 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     },
     subscribe: function(onData,onError){
       if(!window.cbtUser)return function(){};
-      const uid=window.cbtUser.uid;
-      return db.collection('users').doc(uid).onSnapshot(function(snapshot){
+      const uid=window.cbtUser.uid,ref=db.collection('users').doc(uid);let sequence=0;
+      return ref.onSnapshot(async function(snapshot){
+        const current=++sequence;
         if(window.cbtUser?.uid!==uid)return;
-        if(snapshot.exists&&typeof onData==='function')onData(snapshot.data(),snapshot.metadata);
+        if(snapshot.metadata.fromCache||snapshot.metadata.hasPendingWrites)return;
+        if(snapshot.exists&&typeof onData==='function'){
+          try{const data=await readCloudProgress(ref,snapshot);if(current===sequence&&window.cbtUser?.uid===uid)onData(data,snapshot.metadata);}
+          catch(error){if(current===sequence&&typeof onError==='function')onError(error);}
+        }
       },function(error){if(typeof onError==='function')onError(error);});
     }
   };

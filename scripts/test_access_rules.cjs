@@ -1,7 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const dependency=n=>require(process.env.FIREBASE_TEST_MODULES?path.join(process.env.FIREBASE_TEST_MODULES,n):n);
 const {initializeTestEnvironment,assertSucceeds:ok,assertFails:no}=dependency('@firebase/rules-unit-testing');
-const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,serverTimestamp}=dependency('firebase/firestore');
+const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,runTransaction,serverTimestamp}=dependency('firebase/firestore');
 (async()=>{
  assert.ok(process.env.FIRESTORE_EMULATOR_HOST,'Local emulator required');
  const [host,port]=process.env.FIRESTORE_EMULATOR_HOST.split(':');
@@ -17,6 +17,21 @@ const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,serverTimestamp}
   await ok(getDoc(doc(learner,'accessControl','learner')));
   await ok(getDoc(doc(learner,'users','learner')));
   await ok(updateDoc(doc(learner,'users','learner'),{score:10}));
+  const chunk={version:2,generation:'v2-test',index:0,data:'{"version":1,"data":{}}'};
+  await ok(setDoc(doc(learner,'users','learner','progressChunks','chunk0'),chunk));
+  await ok(getDoc(doc(learner,'users','learner','progressChunks','chunk0')));
+  await ok(getDoc(doc(admin,'users','learner','progressChunks','chunk0')));
+  await no(getDocs(collection(learner,'users','learner','progressChunks')));
+  await no(getDoc(doc(learner,'users','other','progressChunks','chunk0')));
+  await no(setDoc(doc(learner,'users','other','progressChunks','chunk0'),chunk));
+  await no(setDoc(doc(learner,'users','learner','progressChunks','invalid'),chunk));
+  await no(setDoc(doc(learner,'users','learner','progressChunks','chunk1'),{...chunk,extra:true}));
+  await ok(runTransaction(learner,async transaction=>{
+    const root=doc(learner,'users','learner');await transaction.get(root);
+    transaction.update(root,{progressDataV2:{version:2,generation:'v2-transaction',chunkCount:2,charLength:42}});
+    transaction.set(doc(learner,'users','learner','progressChunks','chunk0'),{...chunk,generation:'v2-transaction'});
+    transaction.set(doc(learner,'users','learner','progressChunks','chunk1'),{...chunk,generation:'v2-transaction',index:1});
+  }));
   for(const db of [learner,unverified,anonymous]){await no(getDocs(collection(db,'accessControl')));await no(setDoc(doc(db,'accessControl','learner'),record(true)));}
   await no(getDoc(doc(learner,'accessControl','other')));
   await no(setDoc(doc(admin,'accessControl','owner'),record(true)));
@@ -33,6 +48,8 @@ const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,serverTimestamp}
   assert.equal((await getDoc(doc(admin,'users','learner'))).data().progressDataV1,'untouched');
   await ok(setDoc(doc(admin,'accessControl','learner'),record(false)));
   await ok(getDoc(doc(learner,'users','learner')));await ok(updateDoc(doc(learner,'users','learner'),{score:11}));
+  await ok(deleteDoc(doc(learner,'users','learner','progressChunks','chunk0')));
+  await ok(deleteDoc(doc(learner,'users','learner','progressChunks','chunk1')));
   await no(deleteDoc(doc(admin,'accessControl','learner')));
   console.log('PASS access rules: verified admin, self/schema protection, block/unblock, private data and progress preserved');
  }finally{await env.cleanup();}

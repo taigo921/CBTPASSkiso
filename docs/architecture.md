@@ -71,7 +71,7 @@ URLルーターはない。`showOnly(id)` が `index.html` 内のsectionを切�
 - LocalStorage: 端末即時保存とオフライン継続。利用不能時は `_memStore` に退避し警告する。
 - Firestore: 認証ユーザー単位の複数端末同期。`runCloudSync()` → `window.cbtCloud.save()` のtransactionでサーバー値とマージする。
 
-詳細進捗は `progressDataV1` のJSON文字列に圧縮し、ネストした問題別mapが大量のFirestore index entryを生成しないようにしている。古い形式は読込時に統合する。同期規則は `scripts/README-sync.md` と `database.md` を参照する。
+詳細進捗はJSON文字列へ圧縮し、`users/{uid}/progressChunks` に600KB以下で分割して、Firestoreの文書サイズとindex entry上限を避ける。ルートの `progressDataV2` manifestと全chunkをtransactionで同時更新し、古い `progressDataV1` 形式も読込時に統合する。同期規則は `scripts/README-sync.md` と `database.md` を参照する。
 
 ## API / service境界
 

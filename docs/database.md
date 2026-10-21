@@ -19,13 +19,22 @@
   - profile: `username`、`email`、`avatar`、`updatedAt`
   - root summary: `activeBook`、`answered`、`correct`、`accuracy`、`distinct`、`bestStreak`、`dayStreak`
   - shared summary/state: `game`、`studyTime`、本別summaryの `books`
-  - packed detail: `progressDataV1`。version 1のJSON文字列で `books` の問題別記録・rank attempts、`studyPlans`、`mockExams`、`sessions` を保持
+  - packed detail manifest: `progressDataV2`。version、generation、chunk数、文字数を保持
 - リレーション: Firebase Auth userと1対1。本人の内容から `leaderboard/{uid}` を派生する。`accessControl/{uid}` がblockedなら本人の読書きを拒否する。
 - 使用Feature: Progress & Sync、プロフィール、通常演習、学習ルート、模試、分析、ランキング集計元。
 - DBアクセス: `window.cbtCloud.save/readLatest/subscribe`、`cbtMergeCloud()`、`cbtRename()`、`cbtSetAvatar()`。
 - 権限: 本人は非停止かつ利用可能時間のみget/write。管理者はget/list。一般ユーザーは他人の文書を読めない。
 
-`perQ`、`rankAttempts`、`studyPlans`、`mockExams`、`sessions` は旧形式のtop-level mapとして残さず、保存transactionで削除する。旧クライアント互換の読込は維持する。
+`perQ`、`rankAttempts`、`studyPlans`、`mockExams`、`sessions`、`progressDataV1` は旧形式として読込・統合できるが、新形式の保存transactionでは削除する。
+
+### `users/{uid}/progressChunks/chunk{index}`
+
+- 役割: 問題別記録・rank attempts・学習計画・模試・中断sessionを含む詳細JSONを、Firestoreの1MiB制限を超えない600KB以下の文字列へ分割保存する。
+- 主なフィールド: `version: 2`、`generation`、`index`、`data`。ルートの `progressDataV2` とgeneration・chunk数が一致するものだけ採用する。
+- リレーション: `users/{uid}` に従属。ルートmanifestと全チャンクを同じtransactionで更新する。
+- 使用Feature: Progress & Sync、通常演習、学習ルート、模試。
+- DBアクセス: `encodeCloudProgressV2()`、`decodeCloudProgressV2()`、`transactionCloudProgress()`、`readCloudProgress()`、`window.cbtCloud.save/readLatest/subscribe`。
+- 権限: 本人は非停止かつ利用可能時間のみ個別get/write/delete。管理者は個別get。collection listは禁止。
 
 ### `leaderboard/{uid}`
 
@@ -58,7 +67,7 @@
 
 |key / pattern|内容|クラウド同期|
 |---|---|---|
-|`cbt_stats_books_v1`|本別の問題履歴・集計・rank attempts|はい。`users.progressDataV1` と本別summary|
+|`cbt_stats_books_v1`|本別の問題履歴・集計・rank attempts|はい。`users/{uid}/progressChunks` と本別summary|
 |`cbt_settings_v2`|選択中の本、遅い回答の秒数、セクションmode|いいえ|
 |`cbt_session_v3_book1`, `_book2`|通常演習の中断session|はい|
 |`cbt_session_v3_shared-plan`, `_route-review`|計画・総復習の中断session|はい|
@@ -85,7 +94,7 @@ LocalStorageが失敗した場合は最新値を `_memStore` に保持して警�
 
 - クラウド保存はread-merge-writeを同じFirestore transactionで行う。
 - 回答回数、XP、best streakなど既存の累積値を古い端末で減らさない。
-- malformedな `progressDataV1` は空データとして上書きせず、保存を止める。
+- malformedな `progressDataV1`、欠損・不一致の `progressDataV2` chunkは空データとして上書きせず、保存を止める。
 - leaderboard公開失敗はprivate progress同期の失敗として扱わない。
 - access停止や授業制限で個人進捗を削除しない。
 - 許可メールhashは `index.html` の `ALLOW` と `firestore.rules` の `approvedHashes()` を一致させる。

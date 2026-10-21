@@ -102,6 +102,20 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow write: if request.auth != null && request.auth.uid == uid && notBlocked(uid) && schoolOpen();
     }
+    match /users/{uid}/progressChunks/{chunkId} {
+      allow get: if request.auth != null
+        && (isAdmin() || (request.auth.uid == uid && notBlocked(uid) && schoolOpen()));
+      allow list: if false;
+      allow create, update: if request.auth != null && request.auth.uid == uid && notBlocked(uid) && schoolOpen()
+        && chunkId.matches('^chunk[0-9]{1,2}$')
+        && request.resource.data.keys().hasAll(['version','generation','index','data'])
+        && request.resource.data.keys().hasOnly(['version','generation','index','data'])
+        && request.resource.data.version == 2
+        && request.resource.data.generation is string && request.resource.data.generation.size() <= 100
+        && request.resource.data.index is int && request.resource.data.index >= 0 && request.resource.data.index < 12
+        && request.resource.data.data is string && request.resource.data.data.size() <= 600000;
+      allow delete: if request.auth != null && request.auth.uid == uid && notBlocked(uid) && schoolOpen();
+    }
     match /leaderboard/{uid} {
       allow get, list: if approvedMember();
       allow create, update: if ((approvedMember() && request.auth.uid==uid) || isAdmin())

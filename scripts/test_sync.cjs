@@ -34,6 +34,15 @@ const packed=encodeCloudProgress(mergeCloudPayloads({},phone));
 const mixed=decodeCloudProgress({...packed,books:payload(2200,14000).books});
 assert(mixed.books.book1.answered===2200,'new answers from legacy clients survive packed migration');
 let rejected=false;try{decodeCloudProgress({progressDataV1:'broken'});}catch(_){rejected=true;}assert(rejected,'invalid packed data blocks overwrite');
+const oversized={books:{book1:{perQ:{q:{note:'あ'.repeat(400000)}}},book2:{perQ:{b:{note:'x'.repeat(300000)}}}},studyPlans:{shared:{}},mockExams:{},sessions:{book1:{uids:['q']}}};
+const chunked=encodeCloudProgressV2(oversized);
+assert(chunked.chunks.length>1,'progress beyond the Firestore field limit is split');
+assert(chunked.chunks.every(chunk=>new Blob([chunk]).size<=CLOUD_PROGRESS_CHUNK_BYTES),'each progress chunk stays below its byte limit');
+assert(chunked.root.progressDataV1===undefined&&chunked.root.progressDataV2.chunkCount===chunked.chunks.length,'root stores only the v2 manifest');
+const chunkDocuments=chunked.chunks.map((data,index)=>({version:2,generation:chunked.generation,index,data}));
+const chunkRoundtrip=decodeCloudProgressV2(chunked.root,chunkDocuments);
+assert(chunkRoundtrip.books.book1.perQ.q.note.length===400000&&chunkRoundtrip.books.book2.perQ.b.note.length===300000,'chunked progress roundtrip is lossless');
+rejected=false;try{decodeCloudProgressV2(chunked.root,chunkDocuments.slice(1));}catch(_){rejected=true;}assert(rejected,'missing progress chunks block overwrite');
 let states=[],details=[],backups=0,reads=0,localCount=1977,serverCount=1692;
 function setCloudSyncState(state,detail){states.push(state);details.push(detail);}
 function ensureProgressBackup(){backups++;}

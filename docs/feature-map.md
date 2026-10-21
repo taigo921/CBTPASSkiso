@@ -31,7 +31,7 @@
 - 主なUI: `#qText`、`#qChoices`、`#qFig`、`#resultBlock`、`#prevBtn`、`#nextBtn`、`#favBtn`。
 - state / hooks相当: `session`、`timer`、`startSession()`、`renderQuestion()`、`pick()`、`next()`、`finish()`、`saveSession()`。
 - API / service: `saveStats()`、`saveStudyPlans()`、`addStudyTime()`、`cloudSyncSoon()`。
-- DB: LocalStorageの本別session・成績。Firestore `users/{uid}` の `progressDataV1` と要約。
+- DB: LocalStorageの本別session・成績。Firestore `users/{uid}` の `progressDataV2` manifest・要約と `users/{uid}/progressChunks/*` の詳細記録。
 - 関連ファイル: `index.html` のtimer/session/quiz/result、`data/*.json`、`guide/*.webp`。
 - 他Featureとの依存: Question Catalogを読む。Progress、Study Route、Gamificationへ結果を渡す。
 
