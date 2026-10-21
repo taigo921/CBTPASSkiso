@@ -4,7 +4,7 @@
 
 基準コミット: `322ca66`（同期chunk修正）
 
-状態: 停止GIF修正は公開済み。Firestoreの1MiB上限で同期不能になった実機報告に対し、詳細進捗の分割保存を実装・検証し、Firestoreルールを先行公開済み。アプリ本体をPagesへ公開する。
+状態: 停止GIF修正と、Firestoreの1MiB上限で同期不能になる問題の詳細進捗分割保存を本番公開済み。報告端末での同期確認待ち。
 
 ## プロジェクト全体の目標
 
@@ -81,6 +81,7 @@
 - Firestore Emulatorでaccess、leaderboard、school rules一式と、root・chunk複数文書transactionを確認。
 - GitHub Actions read-only run `39575667612` の全回帰と本番接続確認が成功。
 - Firebase rules run `39575954735` でchunk subcollection用ルールを先行公開し、live contents検証が成功。
+- GitHub Actions Pages run `39576413408` の全回帰、2端末ブラウザ同期、Firestoreルールテスト、Pages配備が成功。本番からbuild ID `20261021-progress-chunks-1` とv2同期コードが配信されることを確認。
 
 ## 自動再開の状態
 
@@ -90,7 +91,6 @@
 
 ## 次回再開時の具体的な作業
 
-1. GitHub Pagesの公開runと本番のbuild IDを確認する。
-2. 報告端末でアプリを完全終了して再起動し、「今すぐ同期」を実行する。
-3. 1MiB超過エラーの解消、端末記録の保持、可能なら別端末への記録反映を確認する。
-4. 実機で問題が残る場合は、画面の同期IDとエラー文を基に再現・修正する。
+1. 報告端末でアプリを完全終了して再起動し、「今すぐ同期」を実行する。
+2. 1MiB超過エラーの解消、端末記録の保持、可能なら別端末への記録反映を確認する。
+3. 実機で問題が残る場合は、画面の同期IDとエラー文を基に再現・修正する。
