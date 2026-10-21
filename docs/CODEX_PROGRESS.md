@@ -2,9 +2,9 @@
 
 最終更新: 2026-10-21
 
-基準コミット: `54e8de9`（main）
+基準コミット: `322ca66`（同期chunk修正）
 
-状態: 停止GIF修正は公開済み。Firestoreの1MiB上限で同期不能になった実機報告に対し、詳細進捗の分割保存を実装・検証中（未公開）。
+状態: 停止GIF修正は公開済み。Firestoreの1MiB上限で同期不能になった実機報告に対し、詳細進捗の分割保存を実装・検証し、Firestoreルールを先行公開済み。アプリ本体をPagesへ公開する。
 
 ## プロジェクト全体の目標
 
@@ -27,13 +27,13 @@
 
 ## 現在開発している機能
 
-ログイン停止・授業時間制限画面の表示不具合を修正中。`video` と `assets/blocked-login.mp4` による自動再生を廃止し、元動画から生成した `assets/blocked-login.gif` を必要時だけ `img` に設定する方式へ変更した。DB schemaと本番環境は変更していない。
+大容量の詳細進捗を `users/{uid}/progressChunks/chunk{index}` へ600KB以下に分割し、root manifestと同一transactionで保存する同期v2を公開する。旧 `progressDataV1` は読込・mergeでき、移行中も端末記録を失わない構成とした。
 
 ## 未完了タスクと優先順位
 
 ### P0
 
-- `progressDataV1` が1,048,487 bytesを超えた実機で同期不能。端末記録を保持したまま `progressDataV2` とsubcollection chunksへ移行する修正を最優先で検証・公開する。
+- 報告端末で更新後に「今すぐ同期」を実行し、1MiB超過エラーの解消と別端末への記録反映を確認する。
 
 ### P1
 
@@ -49,7 +49,7 @@
 
 - 修正済み: `SETUP-LOGIN.md` が廃止済みの `cbt_auth_email` とクライアント側だけの許可設定を説明していた。Firebase Auth、`ALLOW`／`approvedHashes()`、別配備のルール公開へ修正した。
 - 修正済み: ログイン停止画面がMP4の自動再生に依存し、iPhoneで映像が表示されないことがあった。GIFを遅延読込する `img` へ変更し、自動再生制限とHTTP Range処理への依存を除いた。
-- 修正中: 詳細記録が増えると単一 `progressDataV1` がFirestoreの約1MiB上限を超える。600KB以下の複数文書へ分割し、同一transactionで保存するv2形式を実装した。
+- 修正済み: 詳細記録が増えると単一 `progressDataV1` がFirestoreの約1MiB上限を超えていた。600KB以下の複数文書へ分割し、root manifestと同一transactionで保存するv2形式へ移行した。
 - `CLOUD_HANDOFF.md` の「公開前」「確認待ち」は時点付き履歴であり、現在の未完了一覧ではない。現行状態は実コード、workflow、`firestore.rules`、この文書を優先する。
 - 競合同期はイベントログ方式ではないため、複数端末が同時にオフライン回答した全イベントの完全合算までは保証しない。既存merge規則で累積値の後退を防ぐ。
 
@@ -74,6 +74,14 @@
 - GitHub Actions run `39539716231` の回帰、Firestoreルールテスト、Pages配備が成功。本番のGIFがHTTP 200・`image/gif`で返り、公開物のSHA-256がローカルと一致することを確認。
 - 実iPhoneでの最終表示確認は未実施。
 
+2026-10-21の進捗chunk修正で次を成功確認:
+
+- `test_sync.cjs` 46項目（1MiB超の多言語データ、分割上限、lossless round-trip、欠損chunk拒否を含む）と標準Node回帰一式。
+- `test_sync_browser.cjs` と `test_blocked_login_browser.cjs`。
+- Firestore Emulatorでaccess、leaderboard、school rules一式と、root・chunk複数文書transactionを確認。
+- GitHub Actions read-only run `39575667612` の全回帰と本番接続確認が成功。
+- Firebase rules run `39575954735` でchunk subcollection用ルールを先行公開し、live contents検証が成功。
+
 ## 自動再開の状態
 
 このスレッドで利用できるツールとクラウド環境capabilityには、Thread Automation、cron、定期タスク作成機能がない。そのため1時間おきの自動実行は未設定であり、設定済みとみなしてはいけない。利用制限の残量や正確な回復時刻を取得するAPIも提供されていない。
@@ -82,8 +90,7 @@
 
 ## 次回再開時の具体的な作業
 
-1. `git status --short` とHEADを確認し、進捗chunk修正のcommit状態を照合する。
-2. 全回帰とFirestore Emulatorのrulesテストを通す。
-3. 先に新しいFirestore rulesを公開し、その成功後だけアプリをmainへ反映・Pages公開する。
-4. 報告端末で「今すぐ同期」を実行し、エラー解消と別端末への記録反映を確認する。
-5. 作業終了前に、完了内容、テスト、残課題、次の一手をこの文書へ反映する。
+1. GitHub Pagesの公開runと本番のbuild IDを確認する。
+2. 報告端末でアプリを完全終了して再起動し、「今すぐ同期」を実行する。
+3. 1MiB超過エラーの解消、端末記録の保持、可能なら別端末への記録反映を確認する。
+4. 実機で問題が残る場合は、画面の同期IDとエラー文を基に再現・修正する。
