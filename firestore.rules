@@ -66,7 +66,8 @@ service cloud.firestore {
         '53899441fa55d0708901eaa79322b4e728d97ec011dd301adf72d7cfd3867383',
         '89d7ae2a35a33b58fc5e5ee343a28b4c2eadd71c82dcba2c2651cf92d9e57dad',
         '00bb6be79512a3ed1c1f5ffa94def0690b031a07f1a97f1d46fe78fe4881239f',
-        '052879fed32ec59c2707536d4b7d82ad566456f44df43371cf05d5f5383c222e'
+        '052879fed32ec59c2707536d4b7d82ad566456f44df43371cf05d5f5383c222e',
+        'a52045bf8642f5ecd5484d7955bb0d3039a48d6c42cd5fdba038c0a8367e652e'
       ];
     }
     function canonicalEmail(email) {
