@@ -723,7 +723,7 @@
       <summary>ルートについて</summary>
       <div class="plan-about-body">
         <div class="plan-rule"><b>新規問題を先に、そのあと復習</b>新規は問題集1の最初から掲載順で出題し、問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
-        <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
+        <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>復習数は、一律の上限ではなく、個人の残り復習量と仕上げ日までの学習可能日から毎日再計算します。終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
         <div class="plan-rule"><b>仕上がりの判定</b>忘却曲線に沿った別日の復習で3回連続正解すると「習得済み」になります。ただし出題は止めず、最低5回は解きます。仕上げ前の最後の7日間で全問題をもう一度確認し、それがルートでの最後の出題です。同じ日の解き直しは連続回数に含めません。間違えた場合や「まだ説明できない」を選んだ場合は連続回数をリセットします。</div>
         <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、復習の間隔と優先度を調整します。</span></div>
         <div class="plan-rule"><b>5周の労力から毎日の量を逆算</b>初回100・2周目80・3周目70・4周目60・5周目50として計算します。土日祝と学校がない日は、平日の1.5倍を目安に多めの課題を出します。</div>
@@ -1236,7 +1236,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261022-c3-134-crop-1';
+const SERVICE_WORKER_BUILD='20261022-adaptive-review-load-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1798,8 +1798,8 @@ const PLAN_CORRECT_STREAK_TARGET=3;
 const PLAN_MINIMUM_ROUNDS=5;
 const PLAN_FINAL_REVIEW_WINDOW_DAYS=7;
 const PLAN_FINAL_REVIEW_VERSION=2;
+const PLAN_ADAPTIVE_LOAD_VERSION=1;
 const PLAN_FULL_EFFORT=PLAN_EFFORTS.reduce((sum,value)=>sum+value,0)+PLAN_EFFORTS[PLAN_MINIMUM_ROUNDS-1];
-const PLAN_REVIEW_BASE_LIMIT=70;
 const JP_HOLIDAYS=new Set([
   '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06','2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23',
   '2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22','2027-04-29','2027-05-03','2027-05-04','2027-05-05','2027-07-19','2027-08-11','2027-09-20','2027-09-23','2027-10-11','2027-11-03','2027-11-23'
@@ -1877,10 +1877,17 @@ function planIsHighLoadDay(key,p){
   return day===0||day===6||JP_HOLIDAYS.has(key)||!!(p.schoolOff||{})[key];
 }
 function planDayFactor(key,p){return planIsLightDay(key,p)?0.35:(planIsAugustPrep(key)?0.45:(planIsHighLoadDay(key,p)?1.5:1));}
-function planReviewLimit(key,p){
-  if(planIsLightDay(key,p)||planIsAugustPrep(key))return 30;
-  // 平日は復習を詰め込みすぎず、土日祝・学校がない日は1.5倍まで受け持つ。
-  return Math.round(PLAN_REVIEW_BASE_LIMIT*planDayFactor(key,p));
+function planReviewCountForEffort(efforts,budget,maximum=Infinity){
+  const limit=Math.min(efforts.length,Number.isFinite(maximum)?Math.max(0,maximum):efforts.length);
+  if(!limit||!(budget>0))return 0;
+  let count=0,used=0;
+  // 残り復習負荷を学習可能日に配分し、その日の予算を満たすまで期限到来問題を取る。
+  while(count<limit&&(count===0||used<budget))used+=Math.max(1,+efforts[count++]||1);
+  return count;
+}
+function planReviewMaximum(key,p){
+  // 模試・試験日と8月先行期間だけは、意図した軽負荷日として30問上限を維持する。
+  return planIsLightDay(key,p)||planIsAugustPrep(key)?30:Infinity;
 }
 function countPlanStudyDays(from,to,p){
   let count=0,key=from,guard=0;
@@ -2042,6 +2049,18 @@ function repairExpandedTodayAssignment(p){
   const saved=safeGet(sharedPlanSessionKey());if(saved?.mode==='plan'&&!saved.extra&&(saved.assignmentDate||today)===today)safeRemove(sharedPlanSessionKey());
   p.updatedAt=Date.now();saveStudyPlans();
 }
+function migrateAdaptiveTodayAssignment(p,key,due,fresh){
+  const assignment=p.assignments?.[key];if(!assignment||assignment.adaptiveLoadV>=PLAN_ADAPTIVE_LOAD_VERSION)return assignment;
+  const progress=planAssignmentProgress(assignment),saved=safeGet(sharedPlanSessionKey());
+  const started=saved?.mode==='plan'&&!saved.extra&&(saved.assignmentDate||key)===key&&((saved.resumeIdx||saved.idx||0)>0||(saved.records||[]).length>0);
+  // 未着手の旧「70問課題」だけを更新後すぐに再計算する。解答済みの日は順序と進捗を維持する。
+  if(progress.done||progress.completed>0||started)return assignment;
+  assignment.uids=[...new Set([...fresh,...due])];assignment.freshUids=fresh.slice();assignment.completedUids={};
+  assignment.assigned=assignment.uids.length;assignment.completed=0;assignment.done=!assignment.assigned;
+  assignment.adaptiveLoadV=PLAN_ADAPTIVE_LOAD_VERSION;assignment.updatedAt=Date.now();p.updatedAt=Date.now();
+  if(saved?.mode==='plan'&&!saved.extra&&(saved.assignmentDate||key)===key)safeRemove(sharedPlanSessionKey());
+  saveStudyPlans();return assignment;
+}
 function updateStudyPlan(uid,correct){
   const p=planFor();if(!p.active)return;
   const today=dateKey(),existing=p.items[uid];
@@ -2100,11 +2119,13 @@ function studyPlanSummary(){
     });
     if(migrated){p.updatedAt=Date.now();saveStudyPlans();}
   }
-  const dueAll=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.finalReviewDone&&item.due<=today&&(phaseBook!=='book1'||planBookForUid(uid)==='book1')).sort((a,b)=>a[1].due.localeCompare(b[1].due)||personal.scoreFor(b[0])-personal.scoreFor(a[0])).map(([uid])=>uid);
-  let due=studyToday?dueAll.slice(0,planReviewLimit(today,p)):[];
+  const dueEntries=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.finalReviewDone&&item.due<=today&&(phaseBook!=='book1'||planBookForUid(uid)==='book1')).sort((a,b)=>a[1].due.localeCompare(b[1].due)||personal.scoreFor(b[0])-personal.scoreFor(a[0]));
+  const dueAll=dueEntries.map(([uid])=>uid);
   const remainingEffort=all.reduce((sum,q)=>sum+(p.items[qkey(q)]?planRemainingEffort(p.items[qkey(q)]):PLAN_FULL_EFFORT),0);
   const capacity=Math.max(1,planCapacitySum(today,addPlanDays(finishDate,1),p));
   const baseEffort=remainingEffort/capacity,todayBudget=studyToday?Math.max(0,baseEffort*planDayFactor(today,p)-(p.daily.effort||0)):0;
+  const dueCount=studyToday?planReviewCountForEffort(dueEntries.map(([,item])=>planNextEffort(item)),todayBudget,planReviewMaximum(today,p)):0;
+  let due=dueAll.slice(0,dueCount);
   const reviewEffort=due.reduce((sum,uid)=>sum+planNextEffort(p.items[uid]),0);
   const budgetFresh=Math.max(0,Math.floor((todayBudget-reviewEffort)/PLAN_EFFORTS[0]));
   const introEnd=planNewQuestionDeadline(p);
@@ -2114,7 +2135,9 @@ function studyPlanSummary(){
   let freshCount=studyToday&&!lightDay?Math.min(phaseUnseen.length,Math.max(budgetFresh,urgentFresh)):0;
   if(augustPrep)freshCount=studyToday?Math.min(phaseUnseen.length,Math.max(0,15-doneToday)):0;
   let fresh=phaseUnseen.slice(0,freshCount);
-  const todayAssignment=p.assignments?.[today],todayDone=!!todayAssignment&&(!!todayAssignment.done||planAssignmentProgress(todayAssignment).done);if(todayDone){due=[];fresh=[];}
+  let todayAssignment=p.assignments?.[today];
+  if(todayAssignment)todayAssignment=migrateAdaptiveTodayAssignment(p,today,due,fresh);
+  const todayDone=!!todayAssignment&&(!!todayAssignment.done||planAssignmentProgress(todayAssignment).done);if(todayDone){due=[];fresh=[];}
   const mastered=all.filter(q=>planIsMastered(p.items[qkey(q)])).length;
   return {p,today,finishDate,studyToday,studyDays,lightDay,lightReason:(p.lightDays||{})[today]||'',augustPrep,personal,due,dueAll,unseen,unseenBook1:unseenBook1.length,unseenBook2:unseenBook2.length,phaseBook,phaseUnseen,fresh,mastered,total:all.length,remainingEffort,baseEffort,todayBudget,highLoad:planIsHighLoadDay(today,p),pool:[...new Set([...fresh,...due])]};
 }
@@ -2132,7 +2155,13 @@ function planUpcomingRows(s){
       const activePhase=unseenBook1>0?'book1':'book2';
       const ready=queue.filter(item=>item.due<=key&&(activePhase!=='book1'||item.book==='book1')).sort((a,b)=>a.due.localeCompare(b.due)||(b.score||1)-(a.score||1));
       const deferred=queue.filter(item=>item.due<=key&&activePhase==='book1'&&item.book!=='book1');
-      const light=planIsLightDay(key,p),augustPrep=planIsAugustPrep(key),future=queue.filter(item=>item.due>key),alreadyDone=key===s.today&&!!p.assignments?.[key]?.done,reviewed=alreadyDone?[]:ready.slice(0,planReviewLimit(key,p));
+      const light=planIsLightDay(key,p),augustPrep=planIsAugustPrep(key),future=queue.filter(item=>item.due>key),alreadyDone=key===s.today&&!!p.assignments?.[key]?.done;
+      const queueEffort=queue.reduce((sum,item)=>sum+(item.round>=5?PLAN_EFFORTS[4]:PLAN_EFFORTS.slice(item.round).reduce((a,b)=>a+b,0)),0);
+      const unseen=unseenBook1+unseenBook2,remainingEffort=queueEffort+unseen*PLAN_FULL_EFFORT;
+      const capacity=Math.max(1,planCapacitySum(key,addPlanDays(s.finishDate,1),p));
+      const budget=remainingEffort/capacity*planDayFactor(key,p);
+      const reviewCount=alreadyDone?0:planReviewCountForEffort(ready.map(item=>PLAN_EFFORTS[Math.min(item.round,4)]),budget,planReviewMaximum(key,p));
+      const reviewed=ready.slice(0,reviewCount);
       queue=[...future,...deferred,...ready.slice(reviewed.length)];
       reviewed.forEach(item=>{
         const round=Math.min(PLAN_MINIMUM_ROUNDS,(item.round||0)+1);
@@ -2140,10 +2169,6 @@ function planUpcomingRows(s){
         else if(key<s.finishDate)queue.push({round,score:item.score,book:item.book,due:s.finishDate});
       });
       const review=reviewed.length;
-      const queueEffort=queue.reduce((sum,item)=>sum+(item.round>=5?PLAN_EFFORTS[4]:PLAN_EFFORTS.slice(item.round).reduce((a,b)=>a+b,0)),0);
-      const unseen=unseenBook1+unseenBook2,remainingEffort=queueEffort+unseen*PLAN_FULL_EFFORT;
-      const capacity=Math.max(1,planCapacitySum(key,addPlanDays(s.finishDate,1),p));
-      const budget=remainingEffort/capacity*planDayFactor(key,p);
       const reviewEffort=reviewed.reduce((sum,item)=>sum+PLAN_EFFORTS[Math.min(item.round,4)],0);
       let fresh=Math.max(0,Math.floor((budget-reviewEffort)/PLAN_EFFORTS[0]));
       const introEnd=planNewQuestionDeadline(p);
@@ -2165,7 +2190,7 @@ function planUpcomingRows(s){
 function createPlanAssignment(key,uids,freshUids=null){
   const p=ensureStudyPlan(),unique=[...new Set(uids)];
   const hasFresh=Array.isArray(freshUids),fresh=hasFresh?[...new Set(freshUids)].filter(uid=>unique.includes(uid)):[];
-  if(!p.assignments[key])p.assignments[key]={date:key,uids:unique,...(hasFresh?{freshUids:fresh}:{}),completedUids:{},assigned:unique.length,completed:0,done:false,updatedAt:Date.now()};
+  if(!p.assignments[key])p.assignments[key]={date:key,uids:unique,...(hasFresh?{freshUids:fresh}:{}),completedUids:{},assigned:unique.length,completed:0,done:false,adaptiveLoadV:PLAN_ADAPTIVE_LOAD_VERSION,updatedAt:Date.now()};
   else{
     const assignment=p.assignments[key];if(assignment.done)return assignment;assignment.uids=[...new Set([...(assignment.uids||[]),...unique])];if(hasFresh)assignment.freshUids=[...new Set([...(assignment.freshUids||[]),...fresh])];assignment.completedUids=assignment.completedUids||{};
     assignment.assigned=assignment.uids.length;assignment.completed=assignment.uids.filter(uid=>assignment.completedUids[uid]).length;assignment.done=assignment.completed>=assignment.assigned;assignment.updatedAt=Date.now();
