@@ -21,9 +21,16 @@ const partialB={assignments:{day:{uids:['a','b'],completedUids:{b:true},done:fal
 assert.equal(ctx.mergeStudyPlanBook(partialA,partialB).assignments.day.done,true);
 assert.equal(ctx.mergeStudyPlanBook(partialA,{assignments:{day:{uids:['a','b'],completedUids:{},done:false,completed:0}}}).assignments.day.done,false);
 let day='2026-10-12';
-Object.assign(ctx,{studyPlans:{shared:{active:true,correctStreakTargetV:3,minimumFiveRoundsV:2,examDate:'2027-01-26',finishLeadDays:30,items:{},assignments:completed.assignments,daily:{date:day,count:1,effort:1}}},CAMPUS_SCHOOL_OFF:[],CAMPUS_LIGHT_DAYS:{},PLAN_CORRECT_STREAK_TARGET:3,PLAN_FINAL_REVIEW_VERSION:2,dateKey:()=>day,planFinishDate:()=> '2026-12-27'});
+Object.assign(ctx,{studyPlans:{shared:{active:true,correctStreakTargetV:3,streakOnlyV:1,examDate:'2027-01-26',finishLeadDays:30,items:{},assignments:completed.assignments,daily:{date:day,count:1,effort:1}}},CAMPUS_SCHOOL_OFF:[],CAMPUS_LIGHT_DAYS:{},PLAN_CORRECT_STREAK_TARGET:3,PLAN_STREAK_ONLY_VERSION:1,STORE_PLAN:'plan',safeSet(){},dateKey:()=>day,planFinishDate:()=> '2026-12-27',planIsMastered:item=>(+item?.correctStreak||0)>=3});
 vm.runInContext(source.slice(source.indexOf('function planFor('),source.indexOf('function saveStudyPlans(')),ctx);
 ctx.planFor();day='2026-10-13';ctx.planFor();
 assert.equal(ctx.studyPlans.shared.daily.count,0,'only the new day counter resets');
 assert.equal(ctx.studyPlans.shared.assignments['2026-10-12'].done,true,'yesterday remains complete after midnight');
+day='2026-10-14';ctx.studyPlans.shared={active:true,correctStreakTargetV:3,streakOnlyV:0,examDate:'2027-01-26',finishLeadDays:30,items:{two:{correctStreak:2,completed:true,mastered:true,finalReviewDone:true,due:'9999-12-31'},three:{correctStreak:3,completed:false,mastered:false,due:day}},assignments:{day:{uids:['two','three'],completedUids:{},assigned:2,completed:0,done:false}},daily:{date:day,count:0,effort:0}};
+ctx.planFor();
+assert.equal(ctx.studyPlans.shared.items.two.completed,false,'old five-round completion reopens without a three-correct streak');
+assert.equal(ctx.studyPlans.shared.items.two.due,day);
+assert.equal(ctx.studyPlans.shared.items.three.completed,true,'three-correct streak is migrated to completed');
+assert.equal(ctx.studyPlans.shared.items.three.due,'9999-12-31');
+assert.equal(ctx.studyPlans.shared.assignments.day.completedUids.three,true,'migrated mastered question is completed in an existing assignment');
 console.log('PASS preservation: quota fallback keeps latest values, visible warning and recovery, completed day survives stale sync in both directions, partial progress retained');

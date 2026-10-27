@@ -27,6 +27,8 @@
 
 `perQ`、`rankAttempts`、`studyPlans`、`mockExams`、`sessions`、`progressDataV1` は旧形式として読込・統合できるが、新形式の保存transactionでは削除する。
 
+`studyPlans.shared.items[questionUid]` の学習終了判定は `correctStreak >= 3` がsource of truth。`mastered` / `completed` は互換用の派生値で、旧 `finalReview*` や回答回数は終了条件に使わない。旧「最低5回＋仕上げ確認」の端末データは `streakOnlyV` migrationでこの判定へ揃える。
+
 ### `users/{uid}/progressChunks/chunk{index}`
 
 - 役割: 問題別記録・rank attempts・学習計画・模試・中断sessionを含む詳細JSONを、Firestoreの1MiB制限を超えない600KB以下の文字列へ分割保存する。

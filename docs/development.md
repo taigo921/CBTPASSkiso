@@ -34,6 +34,7 @@ node scripts/test_paper_progress.cjs
 node scripts/test_route_review.cjs
 node scripts/test_study_plan_load.cjs
 node scripts/test_question_progress.cjs
+node scripts/test_reported_question_images.cjs
 node scripts/test_rank_progression.cjs
 git diff --check
 ```

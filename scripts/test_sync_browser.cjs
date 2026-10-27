@@ -61,13 +61,13 @@ const server=http.createServer((req,res)=>{
     {correct:true,at:now-4000},{correct:false,at:now-3000},{correct:true,at:now-2000},{correct:true,at:now-1000}
    ]};
    stats.rankAttempts=[];
-   const p=planFor();p.active=true;p.items[uid]={round:3,stage:2,due:dateKey(),last:addPlanDays(dateKey(),-1),correctStreak:2,correctStreakDate:addPlanDays(dateKey(),-1),mastered:false,completed:false,explained:false,finalReviewDue:planFinalReviewDate(uid,p),finalReviewDone:false,updatedAt:now};
+   const p=planFor();p.active=true;p.items[uid]={round:3,stage:2,due:dateKey(),last:addPlanDays(dateKey(),-1),correctStreak:2,correctStreakDate:addPlanDays(dateKey(),-1),mastered:false,completed:false,explained:false,updatedAt:now};
    startSingle(uid,'list');
   });
   assert.ok(await page.locator('#qProgress').isHidden(),'question progress stays hidden before answering');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'question progress fits phone viewport');
   await page.evaluate(()=>{picked=byUid(session.uids[0]).answer;submit(false);});
-  assert.match(await page.locator('#qProgress').textContent(),/正解 4回.*回答 5回.*○ 3連続.*3\/5回.*2\/3回/s);
+  assert.match(await page.locator('#qProgress').textContent(),/正解 4回.*回答 5回.*○ 3連続.*ルート完了.*3回連続正解を達成/s);
   assert.ok(await page.locator('#qProgress').isVisible(),'question progress appears with the explanation');
   assert.equal(await page.locator('#qProgress .question-result-dot').count(),5);
   assert.equal(await page.locator('#qProgress .question-result-dot.ok').count(),4);

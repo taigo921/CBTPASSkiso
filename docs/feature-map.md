@@ -37,14 +37,14 @@
 
 ## 学習ルート・忘却曲線
 
-- 機能: 試験日からの日次割当、1/3/7/14/30日復習、追加・無限学習、最終確認、休み／軽め設定、本で進めた範囲登録。
+- 機能: 試験日からの日次割当、1/3/7日間隔の復習、全問題共通の3回連続正解による終了判定、追加・無限学習、休み／軽め設定、本で進めた範囲登録。
 - Route / 画面: `#studyPlan`。出題は共通の `#quiz`。
 - 主なUI: `#planStartBtn`、`#planReviewBtn`、`#planCalendarDays`、`#planExtraBox`、`#paperApply`、`#planWhitePassOpen`。
 - state / hooks相当: `studyPlans.shared`、`planFor()`、`studyPlanSummary()`、`renderStudyPlan()`、`startStudyPlan()`、`startExtraStudy()`、`startRouteReview()`、`paperProgress`。
 - API / service: `saveStudyPlans()`、共通Practice session、`cloudSyncSoon()`。
 - DB: LocalStorage `cbt_study_plan_v1` とshared-plan/route-review session。Firestoreの圧縮進捗内 `studyPlans`、`sessions`。
-- 関連ファイル: `index.html` のstudy plan/paper progress、`scripts/test_paper_progress.cjs`、`scripts/test_route_review.cjs`。
-- 他Featureとの依存: 両問題集のQuestion Catalog、Practice、Progress。問題集固有の成績は越境参照するが、割当は `studyPlans.shared` が所有する。
+- 関連ファイル: `index.html` のstudy plan/paper progress、`scripts/test_paper_progress.cjs`、`scripts/test_route_review.cjs`、`scripts/test_study_plan_load.cjs`、`scripts/test_question_progress.cjs`。
+- 他Featureとの依存: 両問題集のQuestion Catalog、Practice、Progress。学習ルートが有効な間は共通Practiceの各回答が連続正解数を更新し、3連続に達した問題を既存割当からも完了扱いにする。割当自体は `studyPlans.shared` が所有する。
 
 ## 問題一覧・セクション演習
 

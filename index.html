@@ -739,10 +739,10 @@
       <summary>ルートについて</summary>
       <div class="plan-about-body">
         <div class="plan-rule"><b>新規問題を先に、そのあと復習</b>新規は問題集1の最初から掲載順で出題し、問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
-        <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>復習数は、一律の上限ではなく、個人の残り復習量と仕上げ日までの学習可能日から毎日再計算します。終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ルート外で解いた問題では日程は進みません。</div>
-        <div class="plan-rule"><b>仕上がりの判定</b>忘却曲線に沿った別日の復習で3回連続正解すると「習得済み」になります。ただし出題は止めず、最低5回は解きます。仕上げ前の最後の7日間で全問題をもう一度確認し、それがルートでの最後の出題です。同じ日の解き直しは連続回数に含めません。間違えた場合や「まだ説明できない」を選んだ場合は連続回数をリセットします。</div>
+        <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>復習数は、一律の上限ではなく、個人の残り復習量と仕上げ日までの学習可能日から毎日再計算します。終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ほかの演習で3連続正解を達成した問題も課題から自動で外れます。</div>
+        <div class="plan-rule"><b>仕上がりの判定</b>3回連続正解すると「習得済み」になり、その問題のルート出題は終了します。間違えた場合は連続回数をリセットします。</div>
         <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、復習の間隔と優先度を調整します。</span></div>
-        <div class="plan-rule"><b>5周の労力から毎日の量を逆算</b>初回100・2周目80・3周目70・4周目60・5周目50として計算します。土日祝と学校がない日は、平日の1.5倍を目安に多めの課題を出します。</div>
+        <div class="plan-rule"><b>3連続正解までの労力から毎日の量を逆算</b>1回目100・2回目80・3回目70として計算します。土日祝と学校がない日は、平日の1.5倍を目安に多めの課題を出します。</div>
       </div>
     </details>
     <div class="plan-grid">
@@ -1253,7 +1253,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261027-question-progress-2';
+const SERVICE_WORKER_BUILD='20261027-streak-only-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1499,7 +1499,7 @@ function planOrderUnseen(questions,profile){
 }
 function planRouteAllows(uid,summary){return summary.phaseBook!=='book1'||planBookForUid(uid)==='book1';}
 function planRouteOrder(uids,summary,declaredFresh=null){
-  const unique=[...new Set(uids)].filter(uid=>planQuestion(uid)&&planRouteAllows(uid,summary));
+  const unique=[...new Set(uids)].filter(uid=>planQuestion(uid)&&planRouteAllows(uid,summary)&&!planIsMastered(summary.p.items[uid]));
   const freshSet=Array.isArray(declaredFresh)?new Set(declaredFresh):null;
   const isFresh=uid=>freshSet?freshSet.has(uid):!summary.p.items[uid];
   const reviews=unique.filter(uid=>!isFresh(uid)).sort((a,b)=>(summary.p.items[a]?.due||'').localeCompare(summary.p.items[b]?.due||'')||summary.personal.scoreFor(b)-summary.personal.scoreFor(a));
@@ -1809,14 +1809,12 @@ function saveSectionUid(section,uid){
 }
 
 /* ============ 学習計画（忘却曲線） ============ */
-const PLAN_INTERVALS=[1,3,7,14,30];
-const PLAN_EFFORTS=[100,80,70,60,50];
+const PLAN_INTERVALS=[1,3,7];
+const PLAN_EFFORTS=[100,80,70];
 const PLAN_CORRECT_STREAK_TARGET=3;
-const PLAN_MINIMUM_ROUNDS=5;
-const PLAN_FINAL_REVIEW_WINDOW_DAYS=7;
-const PLAN_FINAL_REVIEW_VERSION=2;
+const PLAN_STREAK_ONLY_VERSION=1;
 const PLAN_ADAPTIVE_LOAD_VERSION=1;
-const PLAN_FULL_EFFORT=PLAN_EFFORTS.reduce((sum,value)=>sum+value,0)+PLAN_EFFORTS[PLAN_MINIMUM_ROUNDS-1];
+const PLAN_FULL_EFFORT=PLAN_EFFORTS.reduce((sum,value)=>sum+value,0);
 const JP_HOLIDAYS=new Set([
   '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06','2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23',
   '2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22','2027-04-29','2027-05-03','2027-05-04','2027-05-05','2027-07-19','2027-08-11','2027-09-20','2027-09-23','2027-10-11','2027-11-03','2027-11-23'
@@ -1916,46 +1914,30 @@ function planCapacitySum(from,to,p){
   while(key<to&&guard++<1000){if(isPlanStudyDay(key,p))total+=planDayFactor(key,p);key=addPlanDays(key,1);}
   return total;
 }
-function planItemRound(item){return Math.max(0,Math.min(PLAN_MINIMUM_ROUNDS,Number.isFinite(+item?.round)?+item.round:Math.min(PLAN_MINIMUM_ROUNDS,(+item?.stage||0)+1)));}
-function planIsMastered(item){return !!(item?.mastered||item?.completed);}
+function planItemStreak(item){return Math.max(0,Math.min(PLAN_CORRECT_STREAK_TARGET,+item?.correctStreak||0));}
+function planIsMastered(item){return planItemStreak(item)>=PLAN_CORRECT_STREAK_TARGET;}
 function planRemainingEffort(item){
-  const round=planItemRound(item);
-  const remainingRounds=round>=PLAN_MINIMUM_ROUNDS?0:PLAN_EFFORTS.slice(round).reduce((sum,value)=>sum+value,0);
-  // 習得表示に関係なく、最後の1週間の総確認を1回ぶん残す。
-  const finalReview=!item?.finalReviewDone?PLAN_EFFORTS[PLAN_MINIMUM_ROUNDS-1]:0;
-  return remainingRounds+finalReview;
+  return planIsMastered(item)?0:PLAN_EFFORTS.slice(planItemStreak(item)).reduce((sum,value)=>sum+value,0);
 }
-function planNextEffort(item){const round=planItemRound(item);return PLAN_EFFORTS[Math.min(round,PLAN_EFFORTS.length-1)];}
-function planFinalReviewDays(p){
-  const finish=planFinishDate(p),start=addPlanDays(finish,-(PLAN_FINAL_REVIEW_WINDOW_DAYS-1)),days=[];
-  for(let key=start;key<=finish;key=addPlanDays(key,1))if(isPlanStudyDay(key,p))days.push(key);
-  return days.length?days:[finish];
-}
-function planFinalReviewDate(uid,p){
-  const days=planFinalReviewDays(p),questions=planQuestions(),index=Math.max(0,questions.findIndex(q=>qkey(q)===uid));
-  return days[Math.min(days.length-1,Math.floor(index*Math.max(1,days.length)/Math.max(1,questions.length)))];
-}
+function planNextEffort(item){return PLAN_EFFORTS[Math.min(planItemStreak(item),PLAN_EFFORTS.length-1)];}
 function planNewQuestionDeadline(p){
-  // 最も間隔が長くなった場合でも、5回目の後に最後の7日間の総確認を残す。
-  const maximumReviewDays=PLAN_INTERVALS.slice(0,PLAN_MINIMUM_ROUNDS-1).reduce((sum,interval)=>sum+Math.ceil(interval*1.4),0);
-  return addPlanDays(planFinalReviewDays(p)[0],-maximumReviewDays);
+  const maximumReviewDays=PLAN_INTERVALS.slice(0,PLAN_CORRECT_STREAK_TARGET-1).reduce((sum,interval)=>sum+Math.ceil(interval*1.4),0);
+  return addPlanDays(planFinishDate(p),-maximumReviewDays);
 }
-function planNextDue(uid,round,correct,today,p){
+function planNextDue(uid,streak,correct,today,p){
   const finish=planFinishDate(p);
-  // 5回目までは忘却曲線に沿って復習し、その後は最後の7日間に総確認する。
-  if(round>=PLAN_MINIMUM_ROUNDS)return planFinalReviewDate(uid,p)<today?today:planFinalReviewDate(uid,p);
-  const baseInterval=PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)];
+  if(correct&&streak>=PLAN_CORRECT_STREAK_TARGET)return '9999-12-31';
+  const baseInterval=correct?PLAN_INTERVALS[Math.min(Math.max(0,streak-1),PLAN_INTERVALS.length-1)]:1;
   const due=addPlanDays(today,correct?planPersonalInterval(uid,baseInterval):1);
   return due>finish?finish:due;
 }
 function advancePlanCorrectStreak(item,correct,today){
   const streak=Math.max(0,Math.min(PLAN_CORRECT_STREAK_TARGET,+item?.correctStreak||0));
   if(!correct)return {correctStreak:0,correctStreakDate:null};
-  if(item?.correctStreakDate===today)return {correctStreak:Math.max(1,streak),correctStreakDate:today};
   return {correctStreak:Math.min(PLAN_CORRECT_STREAK_TARGET,streak+1),correctStreakDate:today};
 }
 function planFor(){
-  if(!studyPlans.shared)studyPlans.shared={active:false,examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},lightDays:{},augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,minimumFiveRoundsV:PLAN_FINAL_REVIEW_VERSION,items:{},assignments:{},daily:{date:dateKey(),count:0},updatedAt:0};
+  if(!studyPlans.shared)studyPlans.shared={active:false,examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},lightDays:{},augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,streakOnlyV:PLAN_STREAK_ONLY_VERSION,items:{},assignments:{},daily:{date:dateKey(),count:0},updatedAt:0};
   const p=studyPlans.shared;
   p.items=p.items||{};p.assignments=p.assignments||{};p.unavailable=p.unavailable||{};p.schoolOff=Object.assign(Object.fromEntries([...CAMPUS_SCHOOL_OFF].map(key=>[key,true])),p.schoolOff||{});p.lightDays=Object.assign({},CAMPUS_LIGHT_DAYS,p.lightDays||{});p.examDate=p.examDate||'2027-01-26';
   if(!p.augustPrepV){p.augustPrepV=1;p.updatedAt=Date.now();}
@@ -1970,22 +1952,24 @@ function planFor(){
   }
   p.finishLeadDays=Number.isFinite(+p.finishLeadDays)?Math.max(1,+p.finishLeadDays):30;
   const finish=planFinishDate(p),today=dateKey();
-  // 旧仕様の「completed=以後出題しない」を、5回＋仕上げ日確認へ移行する。
-  if((+p.minimumFiveRoundsV||0)<PLAN_FINAL_REVIEW_VERSION){
+  // 旧「最低5回＋仕上げ確認」を廃止し、3連続正解だけを終了条件に統一する。
+  if((+p.streakOnlyV||0)<PLAN_STREAK_ONLY_VERSION){
     Object.entries(p.items).forEach(([uid,item])=>{
-      const mastered=planIsMastered(item);
-      item.mastered=mastered;item.completed=mastered;item.finalReviewDone=!!item.finalReviewDone;
-      const round=planItemRound(item);
-      if(item.finalReviewDone)return;
-      item.finalReviewDue=item.finalReviewDue||planFinalReviewDate(uid,p);
-      if(round>=PLAN_MINIMUM_ROUNDS)item.due=item.finalReviewDue<today?today:item.finalReviewDue;
-      else if(item.due==='9999-12-31'||item.due>finish)item.due=planNextDue('',round,true,item.last||today,p);
-      if(item.due<today)item.due=today;
+      const mastered=planIsMastered(item);item.mastered=mastered;item.completed=mastered;
+      item.due=mastered?'9999-12-31':(item.due==='9999-12-31'||item.due>finish?(today>finish?finish:today):item.due);
+      if(!mastered&&item.due<today)item.due=today;
       item.updatedAt=Date.now();
     });
-    p.minimumFiveRoundsV=PLAN_FINAL_REVIEW_VERSION;p.updatedAt=Date.now();safeSet(STORE_PLAN,studyPlans);
+    Object.values(p.assignments||{}).forEach(assignment=>{
+      if(!assignment||assignment.done||!Array.isArray(assignment.uids))return;
+      assignment.completedUids=assignment.completedUids||{};
+      assignment.uids.forEach(uid=>{if(planIsMastered(p.items[uid]))assignment.completedUids[uid]=true;});
+      assignment.completed=assignment.uids.filter(uid=>assignment.completedUids[uid]).length;
+      assignment.done=assignment.completed>=assignment.uids.length;assignment.updatedAt=Date.now();
+    });
+    p.streakOnlyV=PLAN_STREAK_ONLY_VERSION;p.updatedAt=Date.now();safeSet(STORE_PLAN,studyPlans);
   }
-  Object.values(p.items).forEach(item=>{if(!item.finalReviewDone&&item.due>finish)item.due=finish;});
+  Object.values(p.items).forEach(item=>{if(!planIsMastered(item)&&item.due>finish)item.due=finish;});
   if(!p.daily||p.daily.date!==dateKey())p.daily={date:dateKey(),count:0,effort:0};
   p.daily.effort=+p.daily.effort||0;
   return p;
@@ -2008,8 +1992,7 @@ function applyPaperBaseline(p){
     const old=p.items[uid];
     // Actual app attempts after a report remain authoritative, including mistakes.
     if(old)continue;
-    const finalReviewDue=planFinalReviewDate(uid,p),mastered=report.round===5;
-    p.items[uid]={round:report.round,stage:report.round-1,due:mastered?finalReviewDue:report.date,last:report.date,mastered,completed:mastered,explained:false,correctStreak:0,finalReviewDue,finalReviewDone:false,updatedAt:report.updatedAt,paperBaseline:true};
+    p.items[uid]={round:report.round,stage:report.round-1,due:report.date,last:report.date,mastered:false,completed:false,explained:false,correctStreak:0,correctStreakDate:null,updatedAt:report.updatedAt,paperBaseline:true};
   }
 }
 function registerPaperProgress(book,through,mastery){
@@ -2028,7 +2011,7 @@ function registerPaperProgress(book,through,mastery){
 }
 function renderPaperPreview(){
   const count=paperRange(el('paperBook').value,el('paperThrough').value).length;
-  el('paperPreview').textContent=count?`先頭〜${el('paperThrough').value}の末尾：${count}問。${el('paperMastery').value==='mastered'?'最終確認を残し、通常の繰り返しを減らします。':'新規から外し、復習対象にします。'}`:'章を選んでください。';
+  el('paperPreview').textContent=count?`先頭〜${el('paperThrough').value}の末尾：${count}問。${el('paperMastery').value==='mastered'?'新規から外し、3連続正解の復習対象にします。':'新規から外し、復習対象にします。'}`:'章を選んでください。';
   el('paperApply').disabled=!count;
 }
 async function loadPaperChoices(){
@@ -2044,12 +2027,12 @@ async function loadPaperChoices(){
 function rebuildStudyPlan(showMessage=true){
   const old=planFor(),today=dateKey(),latest={};
   Object.values(statsByBook).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>{if(a&&a.u&&(!latest[a.u]||(a.a||0)>latest[a.u]))latest[a.u]=a.a||0;}));
-  const p={active:true,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,lightDays:old.lightDays,augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,minimumFiveRoundsV:PLAN_FINAL_REVIEW_VERSION,items:{},assignments:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
+  const p={active:true,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,lightDays:old.lightDays,augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,streakOnlyV:PLAN_STREAK_ONLY_VERSION,items:{},assignments:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
   Object.values(statsByBook).forEach(bookStats=>Object.entries(bookStats.perQ||{}).forEach(([uid,r])=>{
     if(((r.correct||0)+(r.wrong||0))<1)return;
     const last=latest[uid]?dateKey(new Date(latest[uid])):today;
-    const round=Math.min(PLAN_MINIMUM_ROUNDS,(r.correct||0)+(r.wrong||0));
-    p.items[uid]={round,stage:Math.max(0,round-1),due:addPlanDays(last,1),last,explained:false,correctStreak:0,correctStreakDate:null,mastered:false,completed:false,finalReviewDue:planFinalReviewDate(uid,p),finalReviewDone:false,updatedAt:Date.now()};
+    const round=(r.correct||0)+(r.wrong||0);
+    p.items[uid]={round,stage:Math.max(0,round-1),due:addPlanDays(last,1),last,explained:false,correctStreak:0,correctStreakDate:null,mastered:false,completed:false,updatedAt:Date.now()};
   }));
   p.paperProgress=old.paperProgress||{};applyPaperBaseline(p);
   studyPlans.shared=p;saveStudyPlans();
@@ -2086,26 +2069,27 @@ function updateStudyPlan(uid,correct){
   if(!existing){
     p.daily.count=(p.daily.count||0)+1;
     const streak=advancePlanCorrectStreak(null,correct,today);
-    p.items[uid]={round:1,stage:0,due:planNextDue(uid,1,correct,today,p),last:today,explained:false,...streak,mastered:false,completed:false,finalReviewDue:planFinalReviewDate(uid,p),finalReviewDone:false,updatedAt:Date.now()};
+    const mastered=streak.correctStreak>=PLAN_CORRECT_STREAK_TARGET;
+    p.items[uid]={round:1,stage:0,due:planNextDue(uid,streak.correctStreak,correct,today,p),last:today,explained:false,...streak,mastered,completed:mastered,updatedAt:Date.now()};
   }else{
-    const round=Math.min(PLAN_MINIMUM_ROUNDS,planItemRound(existing)+1),stage=correct?Math.min(round-1,PLAN_INTERVALS.length-1):0;
+    const round=(+existing.round||0)+1;
     const streak=advancePlanCorrectStreak(existing,correct,today);
     const explained=correct&&!!existing.explained;
     const mastered=correct&&streak.correctStreak>=PLAN_CORRECT_STREAK_TARGET;
-    const finalReviewDue=existing.finalReviewDue||planFinalReviewDate(uid,p);
-    const finalReviewDone=planItemRound(existing)>=PLAN_MINIMUM_ROUNDS&&today>=finalReviewDue;
-    p.items[uid]={round,stage,due:finalReviewDone?'9999-12-31':planNextDue(uid,round,correct,today,p),last:today,explained,...streak,mastered,completed:mastered,finalReviewDue,finalReviewDone,updatedAt:Date.now()};
+    const stage=correct?Math.min(streak.correctStreak,PLAN_INTERVALS.length-1):0;
+    p.items[uid]={...existing,round,stage,due:planNextDue(uid,streak.correctStreak,correct,today,p),last:today,explained,...streak,mastered,completed:mastered,updatedAt:Date.now()};
   }
+  if(planIsMastered(p.items[uid]))Object.values(p.assignments||{}).forEach(assignment=>{
+    if(!assignment||assignment.done||!Array.isArray(assignment.uids)||!assignment.uids.includes(uid))return;
+    assignment.completedUids=assignment.completedUids||{};assignment.completedUids[uid]=true;
+    assignment.completed=assignment.uids.filter(id=>assignment.completedUids[id]).length;
+    assignment.done=assignment.completed>=assignment.uids.length;if(assignment.done)assignment.completedAt=Date.now();assignment.updatedAt=Date.now();
+  });
   p.updatedAt=Date.now();saveStudyPlans();
 }
 function setPlanExplanation(uid,explained){
   const p=planFor();if(!p.active||!p.items[uid])return;
   p.items[uid].explained=!!explained;
-  if(!explained){
-    p.items[uid].stage=0;p.items[uid].correctStreak=0;p.items[uid].correctStreakDate=null;
-    p.items[uid].mastered=false;p.items[uid].completed=false;p.items[uid].finalReviewDone=false;
-    p.items[uid].due=planNextDue(uid,planItemRound(p.items[uid]),false,dateKey(),p);
-  }
   p.items[uid].updatedAt=Date.now();p.updatedAt=Date.now();saveStudyPlans();
 }
 function studyPlanSummary(){
@@ -2136,7 +2120,7 @@ function studyPlanSummary(){
     });
     if(migrated){p.updatedAt=Date.now();saveStudyPlans();}
   }
-  const dueEntries=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.finalReviewDone&&item.due<=today&&(phaseBook!=='book1'||planBookForUid(uid)==='book1')).sort((a,b)=>a[1].due.localeCompare(b[1].due)||personal.scoreFor(b[0])-personal.scoreFor(a[0]));
+  const dueEntries=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!planIsMastered(item)&&item.due<=today&&(phaseBook!=='book1'||planBookForUid(uid)==='book1')).sort((a,b)=>a[1].due.localeCompare(b[1].due)||personal.scoreFor(b[0])-personal.scoreFor(a[0]));
   const dueAll=dueEntries.map(([uid])=>uid);
   const remainingEffort=all.reduce((sum,q)=>sum+(p.items[qkey(q)]?planRemainingEffort(p.items[qkey(q)]):PLAN_FULL_EFFORT),0);
   const capacity=Math.max(1,planCapacitySum(today,addPlanDays(finishDate,1),p));
@@ -2164,7 +2148,7 @@ function formatPlanDate(key){
 }
 function planUpcomingRows(s){
   const p=s.p;
-  let queue=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!item.finalReviewDone).map(([uid,item])=>({due:item.due,round:planItemRound(item),score:s.personal.scoreFor(uid),book:planBookForUid(uid)}));
+  let queue=Object.entries(p.items).filter(([uid,item])=>planQuestion(uid)&&!planIsMastered(item)).map(([uid,item])=>({due:item.due,streak:planItemStreak(item),score:s.personal.scoreFor(uid),book:planBookForUid(uid)}));
   let key=s.today,unseenBook1=s.unseenBook1,unseenBook2=s.unseenBook2,guard=0;
   const rows=[];
   while(key<=s.finishDate&&rows.length<10&&guard++<1000){
@@ -2173,20 +2157,19 @@ function planUpcomingRows(s){
       const ready=queue.filter(item=>item.due<=key&&(activePhase!=='book1'||item.book==='book1')).sort((a,b)=>a.due.localeCompare(b.due)||(b.score||1)-(a.score||1));
       const deferred=queue.filter(item=>item.due<=key&&activePhase==='book1'&&item.book!=='book1');
       const light=planIsLightDay(key,p),augustPrep=planIsAugustPrep(key),future=queue.filter(item=>item.due>key),alreadyDone=key===s.today&&!!p.assignments?.[key]?.done;
-      const queueEffort=queue.reduce((sum,item)=>sum+(item.round>=5?PLAN_EFFORTS[4]:PLAN_EFFORTS.slice(item.round).reduce((a,b)=>a+b,0)),0);
+      const queueEffort=queue.reduce((sum,item)=>sum+PLAN_EFFORTS.slice(item.streak).reduce((a,b)=>a+b,0),0);
       const unseen=unseenBook1+unseenBook2,remainingEffort=queueEffort+unseen*PLAN_FULL_EFFORT;
       const capacity=Math.max(1,planCapacitySum(key,addPlanDays(s.finishDate,1),p));
       const budget=remainingEffort/capacity*planDayFactor(key,p);
-      const reviewCount=alreadyDone?0:planReviewCountForEffort(ready.map(item=>PLAN_EFFORTS[Math.min(item.round,4)]),budget,planReviewMaximum(key,p));
+      const reviewCount=alreadyDone?0:planReviewCountForEffort(ready.map(item=>PLAN_EFFORTS[Math.min(item.streak,PLAN_EFFORTS.length-1)]),budget,planReviewMaximum(key,p));
       const reviewed=ready.slice(0,reviewCount);
       queue=[...future,...deferred,...ready.slice(reviewed.length)];
       reviewed.forEach(item=>{
-        const round=Math.min(PLAN_MINIMUM_ROUNDS,(item.round||0)+1);
-        if(round<PLAN_MINIMUM_ROUNDS){const base=PLAN_INTERVALS[Math.min(round-1,PLAN_INTERVALS.length-1)],multiplier=Math.max(.7,Math.min(1.4,1/(item.score||1)));queue.push({round,score:item.score,book:item.book,due:addPlanDays(key,Math.max(1,Math.round(base*multiplier)))});}
-        else if(key<s.finishDate)queue.push({round,score:item.score,book:item.book,due:s.finishDate});
+        const streak=Math.min(PLAN_CORRECT_STREAK_TARGET,(item.streak||0)+1);
+        if(streak<PLAN_CORRECT_STREAK_TARGET){const base=PLAN_INTERVALS[Math.min(streak-1,PLAN_INTERVALS.length-1)],multiplier=Math.max(.7,Math.min(1.4,1/(item.score||1)));queue.push({streak,score:item.score,book:item.book,due:addPlanDays(key,Math.max(1,Math.round(base*multiplier)))});}
       });
       const review=reviewed.length;
-      const reviewEffort=reviewed.reduce((sum,item)=>sum+PLAN_EFFORTS[Math.min(item.round,4)],0);
+      const reviewEffort=reviewed.reduce((sum,item)=>sum+PLAN_EFFORTS[Math.min(item.streak,PLAN_EFFORTS.length-1)],0);
       let fresh=Math.max(0,Math.floor((budget-reviewEffort)/PLAN_EFFORTS[0]));
       const introEnd=planNewQuestionDeadline(p);
       const introDays=Math.max(1,countPlanStudyDays(key,addPlanDays(introEnd<key?s.finishDate:introEnd,1),p));
@@ -2197,7 +2180,7 @@ function planUpcomingRows(s){
       const activeUnseen=unseenBook1>0?unseenBook1:unseenBook2;
       fresh=Math.min(fresh,activeUnseen);
       const freshBook=unseenBook1>0?'book1':'book2';if(freshBook==='book1')unseenBook1-=fresh;else unseenBook2-=fresh;
-      for(let i=0;i<fresh;i++)queue.push({round:1,book:freshBook,due:addPlanDays(key,1)});
+      for(let i=0;i<fresh;i++)queue.push({streak:1,book:freshBook,due:addPlanDays(key,1)});
       rows.push({key,review,fresh,light,augustPrep,reason:(p.lightDays||{})[key]||'',highLoad:planIsHighLoadDay(key,p)});
     }
     key=addPlanDays(key,1);
@@ -2542,12 +2525,10 @@ function recentCorrectStreak(attempts){
 }
 function questionRouteStatus(uid,p=planFor()){
   if(!p?.active)return null;
-  const item=p.items?.[uid],round=item?planItemRound(item):0,streak=Math.max(0,Math.min(PLAN_CORRECT_STREAK_TARGET,+item?.correctStreak||0));
-  if(item?.finalReviewDone)return {done:true,title:'ルート完了',detail:`通常復習 ${PLAN_MINIMUM_ROUNDS}/${PLAN_MINIMUM_ROUNDS}回・仕上げ確認済み`};
-  const finalDate=item?.finalReviewDue||planFinalReviewDate(uid,p);
-  if(round>=PLAN_MINIMUM_ROUNDS)return {done:false,title:`通常復習 ${PLAN_MINIMUM_ROUNDS}/${PLAN_MINIMUM_ROUNDS}回・別日の連続正解 ${streak}/${PLAN_CORRECT_STREAK_TARGET}回`,detail:`最後の出題は仕上げ確認（${formatPlanDate(finalDate)}）`};
-  const remaining=PLAN_MINIMUM_ROUNDS-round;
-  return {done:false,title:`通常復習 ${round}/${PLAN_MINIMUM_ROUNDS}回・別日の連続正解 ${streak}/${PLAN_CORRECT_STREAK_TARGET}回`,detail:`終了まで通常復習あと${remaining}回＋仕上げ確認1回`};
+  const item=p.items?.[uid],streak=planItemStreak(item);
+  if(planIsMastered(item))return {done:true,title:'ルート完了',detail:'3回連続正解を達成'};
+  const remaining=PLAN_CORRECT_STREAK_TARGET-streak;
+  return {done:false,title:`連続正解 ${streak}/${PLAN_CORRECT_STREAK_TARGET}回`,detail:`あと${remaining}回連続正解で終了`};
 }
 function renderQuestionProgress(uid,r=stats.perQ[uid]){
   const box=el('qProgress'),correct=+r?.correct||0,wrong=+r?.wrong||0,total=correct+wrong,available=recentQuestionAttempts(uid,r,20),recent=available.slice(-5),streak=recentCorrectStreak(available),route=questionRouteStatus(uid);
@@ -3004,8 +2985,8 @@ function submit(skip){
   r.history=Array.isArray(r.history)?r.history:[];
   r.history.push({picked:skip?null:picked,pickedDisplay:skip?null:pickedDisplay,answer:q.answer,answerDisplay,correct,skip:!!skip,time:+t.toFixed(1),at:Date.now()});
   r.history=r.history.slice(-20);
+  if(planFor().active)updateStudyPlan(qkey(q),correct);
   if(session.mode==='plan'){
-    updateStudyPlan(qkey(q),correct);
     const progress=markPlanAssignment(qkey(q));
     if(progress){el('qPlanRemaining').textContent=`残り ${progress.remaining}問`;}
   }

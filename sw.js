@@ -1,4 +1,4 @@
-const APP_BUILD='20261027-question-progress-2';
+const APP_BUILD='20261027-streak-only-1';
 const CACHE_NAME='cbtpass-offline-v1';
 const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js','./mock-assets/azabu-2026/photo-pages.js'];
 // Remove stale copies of source-image data. Each selected book is fetched and cached on demand,

@@ -22,20 +22,31 @@ recent=ctx.recentQuestionAttempts('q1',{history:[{correct:false,skip:true,at:9}]
 assert.deepEqual(recent.map(a=>a.correct),[true,false,true],'uses the longer synced attempt history for this question');
 assert.equal(ctx.recentCorrectStreak(recent),1);
 
+const planStart=source.indexOf('function planItemStreak(');
+const planEnd=source.indexOf('function planFor(',planStart);
+Object.assign(ctx,{PLAN_CORRECT_STREAK_TARGET:3,PLAN_EFFORTS:[100,80,70],PLAN_INTERVALS:[1,3,7],planFinishDate:()=> '2027-01-22',planPersonalInterval:(_uid,days)=>days,addPlanDays:(key,days)=>{
+  const date=new Date(key+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+days);return date.toISOString().slice(0,10);
+}});
+vm.runInContext(source.slice(planStart,planEnd),ctx);
+let learning={correctStreak:1,correctStreakDate:'2026-10-27'};
+assert.equal(ctx.advancePlanCorrectStreak(learning,true,'2026-10-27').correctStreak,2,'same-day correct answer advances the attempt streak');
+assert.equal(ctx.advancePlanCorrectStreak({correctStreak:2},false,'2026-10-27').correctStreak,0,'a wrong answer resets the streak');
+assert.equal(ctx.planIsMastered({correctStreak:3}),true,'three consecutive correct answers finish the question');
+assert.equal(ctx.planRemainingEffort({correctStreak:2}),70,'only one answer remains after a two-correct streak');
+assert.equal(ctx.planNextDue('q1',3,true,'2026-10-27',{}),'9999-12-31','mastered question is no longer scheduled');
+
 const routeStart=source.indexOf('function questionRouteStatus(');
 const routeEnd=source.indexOf('function renderQuestionProgress(',routeStart);
-Object.assign(ctx,{PLAN_CORRECT_STREAK_TARGET:3,PLAN_MINIMUM_ROUNDS:5,planItemRound:item=>item.round,planFinalReviewDate:()=> '2027-01-22',formatPlanDate:key=>key});
 vm.runInContext(source.slice(routeStart,routeEnd),ctx);
-let status=ctx.questionRouteStatus('q1',{active:true,items:{q1:{round:3,correctStreak:2,finalReviewDone:false}}});
-assert.match(status.title,/3\/5回.*2\/3回/);assert.match(status.detail,/あと2回＋仕上げ確認1回/);
-status=ctx.questionRouteStatus('q1',{active:true,items:{q1:{round:5,correctStreak:3,finalReviewDue:'2027-01-22',finalReviewDone:false}}});
-assert.match(status.detail,/仕上げ確認/);
-status=ctx.questionRouteStatus('q1',{active:true,items:{q1:{round:5,correctStreak:3,finalReviewDone:true}}});
+let status=ctx.questionRouteStatus('q1',{active:true,items:{q1:{round:8,correctStreak:2}}});
+assert.equal(status.title,'連続正解 2/3回');assert.equal(status.detail,'あと1回連続正解で終了');
+status=ctx.questionRouteStatus('q1',{active:true,items:{q1:{round:3,correctStreak:3}}});
 assert.equal(status.done,true);assert.equal(status.title,'ルート完了');
 
 assert.ok(source.includes('id="qProgress"'),'quiz contains the progress panel');
 assert.ok(/renderQuestionProgress\(qkey\(q\),r\)/.test(source),'answer immediately refreshes progress');
 assert.ok(/renderQuestionProgress\(r\.uid,pr\)/.test(source),'understanding feedback immediately refreshes route progress');
+assert.ok(/if\(planFor\(\)\.active\)updateStudyPlan\(qkey\(q\),correct\);/.test(source),'every practice mode advances the active three-correct route');
 assert.ok(!source.includes('renderQuestionProgress(qkey(q));'),'progress is not rendered before answering');
 assert.match(source,/id="resultBlock"[^>]*>[\s\S]*?id="qProgress"/,'progress panel is inside the explanation result block');
-console.log('PASS question progress: correct totals, recent five results, streak, five rounds and final review status');
+console.log('PASS question progress: correct totals, recent five results, streak-only route completion status');

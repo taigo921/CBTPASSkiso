@@ -17,7 +17,7 @@ assert.equal(ctx.planReviewCountForEffort(efforts,0),0);
 
 assert.ok(!source.includes('PLAN_REVIEW_BASE_LIMIT'),'fixed normal-day review cap removed');
 assert.ok(/dueEntries\.map\(\(\[,item\]\)=>planNextEffort\(item\)\),todayBudget/.test(source),'today uses remaining-work budget');
-assert.ok(/ready\.map\(item=>PLAN_EFFORTS\[Math\.min\(item\.round,4\)\]\),budget/.test(source),'upcoming preview uses the same budget');
+assert.ok(/ready\.map\(item=>PLAN_EFFORTS\[Math\.min\(item\.streak,PLAN_EFFORTS\.length-1\)\]\),budget/.test(source),'upcoming preview uses the same streak-based budget');
 assert.match(source,/const CAMPUS_SCHOOL_OFF=new Set\(\[[^\]]*'2026-10-30'/,'October 30 school holiday is part of the high-load calendar');
 
 const highLoadStart=source.indexOf('function planIsHighLoadDay(');
