@@ -9,6 +9,7 @@
 ## Start here
 
 - 作業再開・現在の優先順位: [`docs/CODEX_PROGRESS.md`](docs/CODEX_PROGRESS.md)
+- 自動／手動再開時の中断点: [`CONTINUATION.md`](CONTINUATION.md)
 - 機能の変更: [`docs/feature-map.md`](docs/feature-map.md)
 - 画面・遷移の変更: [`docs/routes.md`](docs/routes.md)
 - 全体構造・依存方向: [`docs/architecture.md`](docs/architecture.md)

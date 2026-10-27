@@ -36,4 +36,6 @@ assert.equal(status.done,true);assert.equal(status.title,'ルート完了');
 assert.ok(source.includes('id="qProgress"'),'quiz contains the progress panel');
 assert.ok(/renderQuestionProgress\(qkey\(q\),r\)/.test(source),'answer immediately refreshes progress');
 assert.ok(/renderQuestionProgress\(r\.uid,pr\)/.test(source),'understanding feedback immediately refreshes route progress');
+assert.ok(!source.includes('renderQuestionProgress(qkey(q));'),'progress is not rendered before answering');
+assert.match(source,/id="resultBlock"[^>]*>[\s\S]*?id="qProgress"/,'progress panel is inside the explanation result block');
 console.log('PASS question progress: correct totals, recent five results, streak, five rounds and final review status');

@@ -64,14 +64,14 @@ const server=http.createServer((req,res)=>{
    const p=planFor();p.active=true;p.items[uid]={round:3,stage:2,due:dateKey(),last:addPlanDays(dateKey(),-1),correctStreak:2,correctStreakDate:addPlanDays(dateKey(),-1),mastered:false,completed:false,explained:false,finalReviewDue:planFinalReviewDate(uid,p),finalReviewDone:false,updatedAt:now};
    startSingle(uid,'list');
   });
-  assert.match(await page.locator('#qProgress').textContent(),/正解 3回.*回答 4回.*○ 2連続.*3\/5回.*2\/3回/s);
-  assert.equal(await page.locator('#qProgress .question-result-dot').count(),5);
-  assert.equal(await page.locator('#qProgress .question-result-dot.ok').count(),3);
-  assert.equal(await page.locator('#qProgress .question-result-dot.ng').count(),1);
-  assert.equal(await page.locator('#qProgress .question-result-dot.empty').count(),1);
+  assert.ok(await page.locator('#qProgress').isHidden(),'question progress stays hidden before answering');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'question progress fits phone viewport');
   await page.evaluate(()=>{picked=byUid(session.uids[0]).answer;submit(false);});
   assert.match(await page.locator('#qProgress').textContent(),/正解 4回.*回答 5回.*○ 3連続.*3\/5回.*2\/3回/s);
+  assert.ok(await page.locator('#qProgress').isVisible(),'question progress appears with the explanation');
+  assert.equal(await page.locator('#qProgress .question-result-dot').count(),5);
+  assert.equal(await page.locator('#qProgress .question-result-dot.ok').count(),4);
+  assert.equal(await page.locator('#qProgress .question-result-dot.ng').count(),1);
   for(const book of ['book1','book2']){
    const result=await page.evaluate(async book=>{
     await switchBook(book);startSession('order');

@@ -806,7 +806,6 @@
       <button class="fav-btn" id="favBtn" title="お気に入り">☆</button>
     </div>
     <div class="card">
-      <div class="question-progress" id="qProgress" aria-live="polite"></div>
       <p class="qtext" id="qText"></p>
       <img class="qfig hidden" id="qFig" alt="問題の図">
       <button type="button" class="image-zoom-hint hidden" id="qFigZoomBtn">🔍 タップして拡大</button>
@@ -820,6 +819,7 @@
 
       <div id="resultBlock" class="hidden">
         <div class="verdict" id="qVerdict"></div>
+        <div class="question-progress" id="qProgress" aria-live="polite"></div>
         <div class="previous-answer hidden" id="qPreviousAnswer"></div>
         <div class="confrow" id="postConf">
           <span class="clab">理解確認</span>
@@ -1253,7 +1253,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261027-question-progress-1';
+const SERVICE_WORKER_BUILD='20261027-question-progress-2';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -2881,7 +2881,6 @@ function renderQuestion(){
   else if(session.mode==='routeReview')planRemaining.textContent=`復習のみ・残り ${session.uids.length-session.idx}問`;
   planRemaining.classList.toggle('hidden',!assignment&&!session.endless&&session.mode!=='routeReview');
   el('qEndlessStop').classList.toggle('hidden',!session.endless);
-  renderQuestionProgress(qkey(q));
   el('qText').textContent=q.question;
 
   const fig=el('qFig'),img=el('qImg');
