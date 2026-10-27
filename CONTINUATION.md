@@ -18,17 +18,16 @@
 - 問題別の累計正解数、直近5回の○×・スキップ、連続○、ルート終了進捗のUIとロジックを実装。
 - 上記を回答前には隠し、回答後の解説欄だけに表示する修正を実装。
 - ロジック回帰、390px／1024pxの2端末ブラウザ、停止ログイン、全標準回帰に成功。
+- Pages run `40504510391` の再実行で全jobと公開に成功。本番build ID `20261027-question-progress-2`、解説内 `#qProgress`、公開HTMLのSHA-256一致を確認。
 
 ## 現在の作業
 
-- 解説欄だけに表示する修正をcommit・mainへpushし、GitHub ActionsとPagesの本番配信を確認する。
+- 作業中の実装なし。新しいユーザー報告待ち。
 
 ## 残作業と次回の具体的な作業
 
-1. 作業ツリーの変更をcommitし、`codex/maintenance-foundation` と `main` へpushする。
-2. Pages workflowの全job成功を確認する。
-3. 本番 `index.html` のbuild ID、解説内 `#qProgress`、SHA-256一致を確認する。
-4. `docs/CODEX_PROGRESS.md` とこのファイルを公開済みに更新する。
+1. 次の依頼・不具合報告を確認する。
+2. 該当Featureのsource of truth、実コード、回帰テストから再開する。
 
 ## 発見した不具合
 
