@@ -18,6 +18,15 @@ assert.equal(ctx.planReviewCountForEffort(efforts,0),0);
 assert.ok(!source.includes('PLAN_REVIEW_BASE_LIMIT'),'fixed normal-day review cap removed');
 assert.ok(/dueEntries\.map\(\(\[,item\]\)=>planNextEffort\(item\)\),todayBudget/.test(source),'today uses remaining-work budget');
 assert.ok(/ready\.map\(item=>PLAN_EFFORTS\[Math\.min\(item\.round,4\)\]\),budget/.test(source),'upcoming preview uses the same budget');
+assert.match(source,/const CAMPUS_SCHOOL_OFF=new Set\(\[[^\]]*'2026-10-30'/,'October 30 school holiday is part of the high-load calendar');
+
+const highLoadStart=source.indexOf('function planIsHighLoadDay(');
+const highLoadEnd=source.indexOf('function planReviewCountForEffort(',highLoadStart);
+Object.assign(ctx,{CAMPUS_SCHOOL_OFF:new Set(['2026-10-30']),JP_HOLIDAYS:new Set(),planIsLightDay:()=>false,planIsAugustPrep:()=>false});
+vm.runInContext(source.slice(highLoadStart,highLoadEnd),ctx);
+const octoberPlan={schoolOff:{'2026-10-30':true}};
+assert.equal(ctx.planIsHighLoadDay('2026-10-30',octoberPlan),true,'October 30 is shown as a high-load day');
+assert.equal(ctx.planDayFactor('2026-10-30',octoberPlan),1.5,'October 30 receives 1.5x study capacity');
 
 const migrateStart=source.indexOf('function migrateAdaptiveTodayAssignment(');
 const migrateEnd=source.indexOf('function updateStudyPlan(',migrateStart);

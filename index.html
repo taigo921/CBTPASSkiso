@@ -1236,7 +1236,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261022-adaptive-review-load-1';
+const SERVICE_WORKER_BUILD='20261027-oct30-high-load-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1804,7 +1804,7 @@ const JP_HOLIDAYS=new Set([
   '2026-01-01','2026-01-12','2026-02-11','2026-02-23','2026-03-20','2026-04-29','2026-05-03','2026-05-04','2026-05-05','2026-05-06','2026-07-20','2026-08-11','2026-09-21','2026-09-22','2026-09-23','2026-10-12','2026-11-03','2026-11-23',
   '2027-01-01','2027-01-11','2027-02-11','2027-02-23','2027-03-21','2027-03-22','2027-04-29','2027-05-03','2027-05-04','2027-05-05','2027-07-19','2027-08-11','2027-09-20','2027-09-23','2027-10-11','2027-11-03','2027-11-23'
 ]);
-const CAMPUS_SCHOOL_OFF=new Set(['2026-12-24','2026-12-28','2026-12-29','2026-12-30','2026-12-31','2027-01-04','2027-01-05','2027-01-06','2027-01-22','2027-01-25']);
+const CAMPUS_SCHOOL_OFF=new Set(['2026-10-30','2026-12-24','2026-12-28','2026-12-29','2026-12-30','2026-12-31','2027-01-04','2027-01-05','2027-01-06','2027-01-22','2027-01-25']);
 const AUGUST_PREP_START='2026-08-04',AUGUST_PREP_END='2026-08-19';
 const CAMPUS_ROUTE_OFF=new Set(['2026-08-20','2026-08-21','2026-08-22','2026-08-23','2026-08-24','2026-08-25','2026-08-26','2026-08-27','2026-08-28','2026-08-29','2026-08-30','2026-08-31']);
 const CAMPUS_LIGHT_DAYS={
