@@ -296,6 +296,22 @@
   .qfig{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);margin:14px 0 2px;background:#fff;cursor:zoom-in;}
   .image-zoom-hint{display:block;margin:7px auto 2px;border:0;background:transparent;color:var(--green);font-size:11px;font-weight:800;cursor:pointer;}
 
+  .question-progress{margin:0 0 15px;padding:12px 13px;border:1px solid #D8E4F5;border-radius:13px;background:#F5F8FD;}
+  .question-progress-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .question-progress-head strong{font-size:14px;color:var(--green-d);}
+  .question-progress-head span{font-size:11px;color:var(--muted);font-weight:700;}
+  .question-recent{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px;}
+  .question-recent-label{font-size:10px;color:var(--muted);font-weight:800;margin-right:2px;}
+  .question-result-dot{width:25px;height:25px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-style:normal;font-weight:900;color:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);}
+  .question-result-dot.ok{background:var(--correct);}
+  .question-result-dot.ng{background:var(--wrong);}
+  .question-result-dot.skip{background:#929CAD;}
+  .question-result-dot.empty{background:#E2E8F1;color:#8B96A8;}
+  .question-recent-streak{font-size:11px;font-weight:800;color:var(--correct);margin-left:3px;}
+  .question-route-progress{margin-top:10px;padding-top:9px;border-top:1px dashed #CBD8EA;font-size:11px;line-height:1.55;color:var(--muted);}
+  .question-route-progress b{display:block;color:var(--green-d);font-size:12px;}
+  .question-route-progress.done b{color:var(--correct);}
+
   .confrow{display:flex;align-items:center;gap:8px;margin:16px 0 2px;flex-wrap:wrap;}
   .confrow .clab{font-size:12px;font-weight:800;color:var(--muted);}
   .confrow button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;}
@@ -790,6 +806,7 @@
       <button class="fav-btn" id="favBtn" title="お気に入り">☆</button>
     </div>
     <div class="card">
+      <div class="question-progress" id="qProgress" aria-live="polite"></div>
       <p class="qtext" id="qText"></p>
       <img class="qfig hidden" id="qFig" alt="問題の図">
       <button type="button" class="image-zoom-hint hidden" id="qFigZoomBtn">🔍 タップして拡大</button>
@@ -1236,7 +1253,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261027-oct30-high-load-1';
+const SERVICE_WORKER_BUILD='20261027-question-progress-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -2512,6 +2529,32 @@ function renderPreviousAnswer(q,attempt){
   box.innerHTML=`<b>前回の回答</b>${answerText}<span class="previous-result ${attempt.correct?'ok':'ng'}">${result}</span>${when?`<time>${escapeHtml(when)}</time>`:''}`;
   box.classList.remove('hidden');
 }
+function recentQuestionAttempts(uid,r,limit=5,source=stats){
+  const history=(Array.isArray(r?.history)?r.history:[]).filter(Boolean).map(a=>({correct:!!a.correct,skip:!!a.skip,at:+a.at||0}));
+  const ranked=(source?.rankAttempts||[]).filter(a=>a&&a.u===uid).map(a=>({correct:!!a.c,skip:false,at:+a.a||0}));
+  // Local history has the richest skip detail; synced rank attempts can contain more older events.
+  return (history.length>=ranked.length?history:ranked).sort((a,b)=>a.at-b.at).slice(-Math.max(0,limit));
+}
+function recentCorrectStreak(attempts){
+  let streak=0;
+  for(let index=attempts.length-1;index>=0&&attempts[index].correct;index--)streak++;
+  return streak;
+}
+function questionRouteStatus(uid,p=planFor()){
+  if(!p?.active)return null;
+  const item=p.items?.[uid],round=item?planItemRound(item):0,streak=Math.max(0,Math.min(PLAN_CORRECT_STREAK_TARGET,+item?.correctStreak||0));
+  if(item?.finalReviewDone)return {done:true,title:'ルート完了',detail:`通常復習 ${PLAN_MINIMUM_ROUNDS}/${PLAN_MINIMUM_ROUNDS}回・仕上げ確認済み`};
+  const finalDate=item?.finalReviewDue||planFinalReviewDate(uid,p);
+  if(round>=PLAN_MINIMUM_ROUNDS)return {done:false,title:`通常復習 ${PLAN_MINIMUM_ROUNDS}/${PLAN_MINIMUM_ROUNDS}回・別日の連続正解 ${streak}/${PLAN_CORRECT_STREAK_TARGET}回`,detail:`最後の出題は仕上げ確認（${formatPlanDate(finalDate)}）`};
+  const remaining=PLAN_MINIMUM_ROUNDS-round;
+  return {done:false,title:`通常復習 ${round}/${PLAN_MINIMUM_ROUNDS}回・別日の連続正解 ${streak}/${PLAN_CORRECT_STREAK_TARGET}回`,detail:`終了まで通常復習あと${remaining}回＋仕上げ確認1回`};
+}
+function renderQuestionProgress(uid,r=stats.perQ[uid]){
+  const box=el('qProgress'),correct=+r?.correct||0,wrong=+r?.wrong||0,total=correct+wrong,available=recentQuestionAttempts(uid,r,20),recent=available.slice(-5),streak=recentCorrectStreak(available),route=questionRouteStatus(uid);
+  const empty=Array.from({length:Math.max(0,5-recent.length)},()=>'<i class="question-result-dot empty" aria-label="記録なし">・</i>').join('');
+  const dots=recent.map(a=>`<i class="question-result-dot ${a.skip?'skip':(a.correct?'ok':'ng')}" aria-label="${a.skip?'スキップ':(a.correct?'正解':'不正解')}">${a.skip?'−':(a.correct?'○':'×')}</i>`).join('');
+  box.innerHTML=`<div class="question-progress-head"><strong>この問題：正解 ${correct}回</strong><span>回答 ${total}回</span></div><div class="question-recent"><span class="question-recent-label">最近5回</span>${empty}${dots}<span class="question-recent-streak">${streak?`○ ${streak}連続`:'連続○なし'}</span></div>${route?`<div class="question-route-progress${route.done?' done':''}"><b>${escapeHtml(route.title)}</b>${escapeHtml(route.detail)}</div>`:''}`;
+}
 function migrateGameData(){
   let changed=false,credit=0,stamp=Date.now()-100000;
   Object.entries(statsByBook).forEach(([book,s])=>{
@@ -2838,6 +2881,7 @@ function renderQuestion(){
   else if(session.mode==='routeReview')planRemaining.textContent=`復習のみ・残り ${session.uids.length-session.idx}問`;
   planRemaining.classList.toggle('hidden',!assignment&&!session.endless&&session.mode!=='routeReview');
   el('qEndlessStop').classList.toggle('hidden',!session.endless);
+  renderQuestionProgress(qkey(q));
   el('qText').textContent=q.question;
 
   const fig=el('qFig'),img=el('qImg');
@@ -2920,7 +2964,7 @@ document.querySelectorAll('#postConf button').forEach(b=>{
     }else{
       b.classList.add('on');r.post=b.dataset.oc;pr.post.push(b.dataset.oc);setPlanExplanation(r.uid,b.dataset.oc==='explained');
     }
-    saveStats();saveSession();cloudSyncSoon();
+    saveStats();saveSession();renderQuestionProgress(r.uid,pr);cloudSyncSoon();
   });
 });
 
@@ -2968,6 +3012,7 @@ function submit(skip){
   }
   r.rankV=1;
   saveStats();
+  renderQuestionProgress(qkey(q),r);
   cloudSyncSoon();
   const planItemBeforeFeedback=session.mode==='plan'&&planFor().items[qkey(q)]?{...planFor().items[qkey(q)]}:null;
   session.records.push({uid:qkey(q),no:qno(q),section:q.section,picked:skip?null:picked,pickedDisplay:skip?null:pickedDisplay,answer:q.answer,answerDisplay,choiceMap:{...choiceCanonicalToDisplay},correct,skip:!!skip,time:+t.toFixed(1),pre:null,post:null,planItemBeforeFeedback});

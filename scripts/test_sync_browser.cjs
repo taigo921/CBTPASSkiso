@@ -54,6 +54,24 @@ const server=http.createServer((req,res)=>{
   await pages[1].locator('#syncNowBtn').click();await pages[1].waitForFunction(()=>document.getElementById('cloudStatus').textContent.includes('permission-denied'));
   assert.equal(await pages[1].evaluate(()=>cbtFullPayload().books.book1.answered),1977);
   await page.evaluate(()=>{window.cbtCloud=null;clearTimeout(_syncT);});
+  await page.evaluate(async()=>{
+   await switchBook('book1');
+   const uid=qkey(DEFAULT_QUESTIONS_BY_BOOK.book1[0]),now=Date.now();
+   stats.perQ[uid]={correct:3,wrong:1,last:'correct',times:[],pre:[],post:[],fav:false,xpV:1,rankV:1,history:[
+    {correct:true,at:now-4000},{correct:false,at:now-3000},{correct:true,at:now-2000},{correct:true,at:now-1000}
+   ]};
+   stats.rankAttempts=[];
+   const p=planFor();p.active=true;p.items[uid]={round:3,stage:2,due:dateKey(),last:addPlanDays(dateKey(),-1),correctStreak:2,correctStreakDate:addPlanDays(dateKey(),-1),mastered:false,completed:false,explained:false,finalReviewDue:planFinalReviewDate(uid,p),finalReviewDone:false,updatedAt:now};
+   startSingle(uid,'list');
+  });
+  assert.match(await page.locator('#qProgress').textContent(),/正解 3回.*回答 4回.*○ 2連続.*3\/5回.*2\/3回/s);
+  assert.equal(await page.locator('#qProgress .question-result-dot').count(),5);
+  assert.equal(await page.locator('#qProgress .question-result-dot.ok').count(),3);
+  assert.equal(await page.locator('#qProgress .question-result-dot.ng').count(),1);
+  assert.equal(await page.locator('#qProgress .question-result-dot.empty').count(),1);
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'question progress fits phone viewport');
+  await page.evaluate(()=>{picked=byUid(session.uids[0]).answer;submit(false);});
+  assert.match(await page.locator('#qProgress').textContent(),/正解 4回.*回答 5回.*○ 3連続.*3\/5回.*2\/3回/s);
   for(const book of ['book1','book2']){
    const result=await page.evaluate(async book=>{
     await switchBook(book);startSession('order');

@@ -28,7 +28,7 @@
 
 - 機能: 順番、ランダム、復習、お気に入り、図・画像、連問、単問、途中再開、採点・解説。
 - Route / 画面: `#quiz`、完了時 `#finish`。
-- 主なUI: `#qText`、`#qChoices`、`#qFig`、`#resultBlock`、`#prevBtn`、`#nextBtn`、`#favBtn`。
+- 主なUI: `#qProgress`（問題別の正解数・直近回答・ルート終了進捗）、`#qText`、`#qChoices`、`#qFig`、`#resultBlock`、`#prevBtn`、`#nextBtn`、`#favBtn`。
 - state / hooks相当: `session`、`timer`、`startSession()`、`renderQuestion()`、`pick()`、`next()`、`finish()`、`saveSession()`。
 - API / service: `saveStats()`、`saveStudyPlans()`、`addStudyTime()`、`cloudSyncSoon()`。
 - DB: LocalStorageの本別session・成績。Firestore `users/{uid}` の `progressDataV2` manifest・要約と `users/{uid}/progressChunks/*` の詳細記録。

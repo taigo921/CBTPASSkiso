@@ -33,6 +33,7 @@ node scripts/test_admin_ranking.cjs
 node scripts/test_paper_progress.cjs
 node scripts/test_route_review.cjs
 node scripts/test_study_plan_load.cjs
+node scripts/test_question_progress.cjs
 node scripts/test_rank_progression.cjs
 git diff --check
 ```
@@ -54,7 +55,7 @@ Firestore権限を変えた場合は、実プロジェクトではなくロー�
 |---|---|
 |問題JSON・問題数|JSON parse、UID重複・answer・画像、該当画面。登録は `BOOKS` と `sw.js` も確認|
 |通常演習・進捗|sync、progress preservation、browser two-device|
-|学習ルート|paper progress、route review、study plan load、sync|
+|学習ルート|paper progress、route review、study plan load、question progress、sync|
 |模試|mock exam、mock subjects|
 |XP・ランク|rank progression、sync|
 |認証・停止・授業|access control、school hours、blocked login browser、rules emulator|
