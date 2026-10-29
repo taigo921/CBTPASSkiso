@@ -11,7 +11,7 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 |オフライン|`sw.js`、Cache Storage、LocalStorage|
 |認証|Firebase Authentication。Google Identity Servicesとメール・パスワード|
 |データベース|Cloud Firestore（Firebase compat SDK 10.12.2をCDN読込）|
-|問題データ|`data/*.json`、模試は `mock-assets/azabu-2026/*.js` と画像|
+|問題データ|`data/*.json`、模試は `mock-assets/azabu-2026/`、辞典演習は `dictionary-assets/exercises/`|
 |テスト|Node.jsの静的・DOM・同期回帰、Playwright、Firestore Emulator、Python/Shell検査|
 
 アプリ固有のサーバーやServer Actionはない。ブラウザがFirebase AuthとFirestoreへ直接接続し、`firestore.rules` が認可と書込形状を強制する。
@@ -25,6 +25,8 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 |`data/`|通常問題集のJSON。問題本文のsource of truth|
 |`guide/`|ガイド編ページ画像|
 |`mock-assets/azabu-2026/`|模試の設問、正解、科目分類、写真ページ、問題・解説画像|
+|`dictionary-assets/exercises/`|辞典②の検証済みmanifest、問題画像、公式解説画像。原本PDFは含めない|
+|`features/dictionary-practice/`|辞典演習専用のUI、端末進捗、出題・採点ロジック|
 |`assets/`|アプリUIで使う静的メディア|
 |`firestore.rules`|Firestoreの権限・公開データ形状のsource of truth|
 |`scripts/`|回帰テスト、Firebaseルール公開補助、クラウド設定補助|
@@ -44,6 +46,7 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 |Study Route|忘却曲線、日次課題、追加学習、本の進捗登録|Question Catalog、Practice、Progress|
 |Browse & Analysis|問題一覧、セクション演習、成績・苦手・学習時間|Question Catalog、Progress|
 |Mock Exam|ブロック別模試、連問、科目別演習、解説画像|模試アセット、Progressの一部|
+|Dictionary Practice|辞典②の原本ID別演習、採点、公式解説、専用端末進捗|辞典manifest、画像viewer|
 |Progress & Sync|LocalStorage、バックアップ、複数端末マージ、Firestore保存|Firestore、各学習Feature|
 |Gamification|XP、レベル、ランク、連続記録|Practice、Progress|
 |Leaderboard & Profile|表示名・写真、公開集計、ランキング表示|Progressの集計、Access|
@@ -58,6 +61,7 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 4. Progress & Syncが各Featureの保存対象を集約してFirestoreへ同期する。同期処理が画面Featureの内部UIを所有しない。
 5. Leaderboardは個人進捗から許可された集計だけを派生させる。公開集計から個人進捗へは書き戻さない。
 6. Access Administrationは権限データを管理するが、個人の学習記録を編集・削除しない。
+7. Dictionary Practiceは通常問題集の成績・Study Route・Gamification・Leaderboardへ書き込まない。共通依存は画面切替と画像viewerだけに限定する。
 
 新規ファイルへ切り出す場合は、まず `features/<feature-name>/` にUI・状態・サービス・型相当を同居させる。共有候補は2つ以上のFeatureが同じ契約で使用することを確認してから、認証・保存・問題カタログなどの基盤へ昇格する。この静的構成で複数JSを追加するときは、`index.html` の読込順と `sw.js` のアプリシェルも同時に扱う。
 
@@ -67,7 +71,7 @@ URLルーターはない。`showOnly(id)` が `index.html` 内のsectionを切�
 
 状態管理ライブラリは使わず、次の3層で管理する。
 
-- メモリ: `activeBook`、`statsByBook`、`session`、`studyPlans`、`mockProgress` など。
+- メモリ: `activeBook`、`statsByBook`、`session`、`studyPlans`、`mockProgress`、辞典Feature内部stateなど。
 - LocalStorage: 端末即時保存とオフライン継続。利用不能時は `_memStore` に退避し警告する。
 - Firestore: 認証ユーザー単位の複数端末同期。`runCloudSync()` → `window.cbtCloud.save()` のtransactionでサーバー値とマージする。
 
@@ -108,6 +112,10 @@ Firestore側でも許可メール、個別停止、授業時間を再判定す�
 ### 模試
 
 問題と正解は模試アセットから読み、ブロック進捗は通常問題集と分離する。ブロック1〜6の進捗は個人進捗へ同期するが、科目別演習の `togo_mock_subject_v1_*` は現状端末のみで、クラウド同期・エクスポート対象外である。
+
+### 辞典演習
+
+`dictionary-assets/exercises/manifest.json` から956問の原本ID・正答・問題／解説画像を読み、`features/dictionary-practice/` が専用画面を所有する。回答はユーザー別LocalStorageへ保存し、回答確定後だけ公式解説を表示する。通常問題集・学習ルート・XP・ランキング・Firestore同期とは意図的に分離している。
 
 ## 認証・権限
 

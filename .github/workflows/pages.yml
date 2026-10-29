@@ -29,7 +29,7 @@ jobs:
       - name: Assemble tracked public files only
         run: |
           mkdir "$RUNNER_TEMP/site"
-          git archive HEAD index.html sw.js icon.svg icon-180.png icon-192.png icon-512.png assets data guide mock-assets CLOUD_HANDOFF.md | tar -x -C "$RUNNER_TEMP/site"
+          git archive HEAD index.html sw.js icon.svg icon-180.png icon-192.png icon-512.png assets data guide mock-assets dictionary-assets features CLOUD_HANDOFF.md | tar -x -C "$RUNNER_TEMP/site"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ runner.temp }}/site

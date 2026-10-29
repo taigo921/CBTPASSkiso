@@ -15,10 +15,10 @@
 
 ## ホーム・問題集選択・教材読込
 
-- 機能: 問題集1/2/模試の切替、概要、再開、オフライン準備状況。
-- Route / 画面: `#home` 内の `#regularHome` と `#mockHome`。URLは `?book=book1|book2` のみ保持。
+- 機能: 問題集1/2/模試/CBT辞典の切替、概要、再開、オフライン準備状況。
+- Route / 画面: `#home` 内の `#regularHome`、`#mockHome`、`#dictionaryHome`。URLは `?book=book1|book2` のみ保持。
 - 主なUI: `.book-tab`、`#resumeCard`、`#offlineStatus`、`#cloudStatus`。
-- state / hooks相当: `BOOKS`、`activeBook`、`QUESTIONS`、`mockHomeSelected`、`renderHome()`、`switchBook()`、`loadBookQuestions()`。
+- state / hooks相当: `BOOKS`、`activeBook`、`QUESTIONS`、`mockHomeSelected`、`dictionaryHomeSelected`、`renderHome()`、`switchBook()`、`loadBookQuestions()`。
 - API / service: `fetch()`、Cache Storage、Service Worker。
 - DB: 問題本文はDB不使用。選択中の本はLocalStorage `cbt_settings_v2`。
 - 関連ファイル: `index.html` の `BOOKS`/question loading/home、`data/*.json`、`sw.js`。
@@ -78,6 +78,17 @@
 - DB: ブロック別 `togo_mock_azabu2026_block*_v1_{uid}` は圧縮進捗の `mockExams` として同期。科目別 `togo_mock_subject_v1_{uid}_{subject}` は端末のみ。
 - 関連ファイル: `index.html` のmock部分、`mock-assets/azabu-2026/blocks.js`、`subjects.js`、`photo-pages.js` と画像、`scripts/test_mock_exam.cjs`、`scripts/test_mock_subjects.cjs`。
 - 他Featureとの依存: 通常問題集・通常成績・XPとは分離。Progressはブロック別進捗だけを扱う。
+
+## CBT辞典演習
+
+- 機能: 辞典②のA〜E4全956問を原本ID順または領域別に解き、正誤確定後に公式解説を表示し、端末別に再開する。
+- Route / 画面: `#dictionaryHome`、`#dictionaryPractice`。
+- 主なUI: `#dictionaryStart`、`[data-dictionary-group]`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
+- state / hooks相当: `features/dictionary-practice/dictionary-practice.js` 内の `manifest`、`progress`、`currentIndex`、`renderHome()`、`open()`、`renderQuestion()`、`submit()`。
+- API / service: `fetch('dictionary-assets/exercises/manifest.json')`、LocalStorage、共通 `openImageZoom()`。
+- DB: Firestore不使用。LocalStorage `togo_dictionary2_progress_v1_{uid}`。
+- 関連ファイル: `features/dictionary-practice/`、`dictionary-assets/exercises/`、`scripts/import_cbt_dictionary.py`、`scripts/test_dictionary_practice.cjs`、`scripts/test_dictionary_browser.cjs`。
+- 他Featureとの依存: Access後に利用し、画面切替と画像viewerだけを共用する。通常問題集、Study Route、Progress & Sync、Gamification、Leaderboardとは記録を分離する。
 
 ## ガイド編・画像viewer
 

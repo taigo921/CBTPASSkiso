@@ -40,6 +40,7 @@ jobs:
           node scripts/test_study_plan_load.cjs
           node scripts/test_question_progress.cjs
           node scripts/test_reported_question_images.cjs
+          node scripts/test_dictionary_practice.cjs
           node scripts/test_rank_progression.cjs
           git diff --check
           python3 - <<'PY'
@@ -60,6 +61,7 @@ jobs:
         run: |
           node scripts/test_sync_browser.cjs
           node scripts/test_blocked_login_browser.cjs
+          node scripts/test_dictionary_browser.cjs
   firestore-rules:
     runs-on: ubuntu-latest
     timeout-minutes: 15

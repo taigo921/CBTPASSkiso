@@ -9,6 +9,7 @@
 <link rel="apple-touch-icon" href="icon-180.png?v=20260918-rainbow-icon-1">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=20260918-rainbow-icon-1">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=20260918-rainbow-icon-1">
+<link rel="stylesheet" href="features/dictionary-practice/dictionary-practice.css">
 <title>toGO</title>
 <!-- ▼ ログイン＆ランキング（Firebase） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -137,7 +138,8 @@
   .hero h1{font-size:25px;line-height:1.3;margin:0 0 6px;font-weight:800;}
   .hero p{margin:0;color:var(--muted);font-size:14px;}
 
-  .book-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0 4px;padding:5px;background:#eaf0fa;border-radius:18px;}
+  .book-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 4px;padding:5px;background:#eaf0fa;border-radius:18px;}
+  @media(min-width:680px){.book-switch{grid-template-columns:repeat(4,minmax(0,1fr));}}
   .book-tab{border:0;background:transparent;color:var(--muted);border-radius:14px;padding:12px 8px;cursor:pointer;text-align:center;}
   .book-tab b{display:block;font-size:15px;font-weight:800;}
   .book-tab span{display:block;font-size:11px;margin-top:1px;}
@@ -637,6 +639,7 @@
       <button class="book-tab on" data-book="book1" role="tab" aria-selected="true"><b>問題集1</b><span>基礎系</span></button>
       <button class="book-tab" data-book="book2" role="tab" aria-selected="false"><b>問題集2</b><span>臨床系</span></button>
       <button class="book-tab" data-book="mock" role="tab" aria-selected="false"><b>2026 9/19</b><span>麻布模試</span></button>
+      <button class="book-tab" data-book="dictionary" role="tab" aria-selected="false"><b>CBT辞典</b><span>辞典②</span></button>
     </div>
     <div id="mockHome" class="hidden">
       <div class="sec-h">科目ごとに解く</div>
@@ -653,6 +656,30 @@
       <div class="filterbar" id="mockFilters"><button class="fbtn on" data-mock-filter="all">すべて</button><button class="fbtn" data-mock-filter="unanswered">未解答</button><button class="fbtn" data-mock-filter="wrong">不正解</button></div>
       <div id="mockQuestionList" class="mock-question-list"></div>
       <p class="mock-note">途中の問題・選んだ回答・解答結果をこの端末のブラウザに保存します。</p>
+      </div>
+    </div>
+    <div id="dictionaryHome" class="hidden">
+      <div class="dictionary-home-card">
+        <h2>📚 CBTの辞典② 基礎臨床</h2>
+        <p>問題画像を見てA〜Eから回答し、回答後に公式解説を確認できます。通常問題集・学習ルート・ランキングとは別記録です。</p>
+        <div class="dictionary-summary" aria-label="辞典演習の進捗">
+          <div><b id="dictionaryAnswered">0</b>解答済み</div>
+          <div><b id="dictionaryCorrect">0</b>前回正解</div>
+          <div><b id="dictionaryAttempts">0</b>総回答</div>
+        </div>
+        <button type="button" class="btn" id="dictionaryStart" disabled>読み込み中…</button>
+        <div class="sec-h">領域から始める</div>
+        <div class="dictionary-groups">
+          <button type="button" class="dictionary-group" data-dictionary-group="A">A<span>準備中</span></button>
+          <button type="button" class="dictionary-group" data-dictionary-group="B">B<span>準備中</span></button>
+          <button type="button" class="dictionary-group" data-dictionary-group="C">C<span>準備中</span></button>
+          <button type="button" class="dictionary-group" data-dictionary-group="D">D<span>準備中</span></button>
+          <button type="button" class="dictionary-group" data-dictionary-group="E1">E1<span>準備中</span></button>
+          <button type="button" class="dictionary-group" data-dictionary-group="E2">E2<span>準備中</span></button>
+          <button type="button" class="dictionary-group" data-dictionary-group="E3">E3<span>準備中</span></button>
+          <button type="button" class="dictionary-group" data-dictionary-group="E4">E4<span>準備中</span></button>
+        </div>
+        <p class="dictionary-status" id="dictionaryStatus" role="status">辞典②を読み込み中…</p>
       </div>
     </div>
     <div id="regularHome">
@@ -871,6 +898,30 @@
     </div>
   </section>
 
+  <section id="dictionaryPractice" class="hidden dictionary-practice">
+    <div class="dictionary-head">
+      <div><h1>CBTの辞典②</h1><p id="dictionaryProgress">問題を準備中</p></div>
+      <button type="button" class="ghost-btn" id="dictionaryHomeBack">辞典一覧へ</button>
+    </div>
+    <div class="dictionary-card">
+      <span class="dictionary-source-id" id="dictionaryNumber">—</span>
+      <img id="dictionaryQuestionImage" class="dictionary-image" alt="辞典②の問題">
+      <p id="dictionaryHistory" class="dictionary-note hidden"></p>
+      <div id="dictionaryChoices" class="dictionary-choices" aria-label="回答を選ぶ"></div>
+      <div class="dictionary-actions">
+        <button type="button" id="dictionaryPrev">前へ</button>
+        <button type="button" id="dictionarySubmit" class="primary" disabled>回答する</button>
+        <button type="button" id="dictionaryNext">次へ</button>
+      </div>
+      <div id="dictionaryResult" class="dictionary-result hidden" aria-live="polite"></div>
+      <div id="dictionaryExplanation" class="dictionary-explanation hidden">
+        <h2>📣 公式解説</h2>
+        <img id="dictionaryExplanationImage" class="dictionary-image" alt="辞典②の公式解説">
+      </div>
+    </div>
+    <p class="dictionary-note">辞典演習の記録はこの端末に保存します。問題集1・2の成績、3連続正解、指定課題、XP、ランキングには加算しません。</p>
+  </section>
+
   <!-- FINISH / REVIEW -->
   <section id="finish" class="hidden">
     <div class="finish-head">
@@ -997,6 +1048,7 @@
 <script src="mock-assets/azabu-2026/blocks.js"></script>
 <script src="mock-assets/azabu-2026/subjects.js"></script>
 <script src="mock-assets/azabu-2026/photo-pages.js"></script>
+<script src="features/dictionary-practice/dictionary-practice.js"></script>
 <script>
 const BOOKS = {
   book1: {
@@ -1064,7 +1116,7 @@ const AZABU_MOCK_2026_BLOCK1=[{
   explanationImage:`mock-assets/azabu-2026/block1/pages/page-${page}.jpg`
 }))];
 let mockExamState={index:0,picked:null,answered:false,startedAt:0,clock:null};
-let mockHomeSelected=false,mockListFilter='all',mockProgress={index:0,answers:{}};
+let mockHomeSelected=false,dictionaryHomeSelected=false,mockListFilter='all',mockProgress={index:0,answers:{}};
 let selectedMockBlock=1;
 function mockQuestions(block=selectedMockBlock){return block===1?AZABU_MOCK_2026_BLOCK1:(window.TOGO_MOCK_BLOCKS?.[block]||[]);}
 function mockPhotoPage(block,no){return window.TOGO_MOCK_PHOTO_PAGES?.[`${block}-${no}`]||'';}
@@ -2559,7 +2611,7 @@ function migrateGameData(){
 function toast(m){const t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
 function showOnly(id){
   el('routeBackBtn').classList.toggle('hidden',id!=='quiz');
-  ['home','studyPlan','quiz','mockExam','mockSubjectPractice','finish','stats','list','sectionList','sectionStart','leaderboard','accessAdmin'].forEach(s=>el(s).classList.toggle('hidden',s!==id));
+  ['home','studyPlan','quiz','mockExam','mockSubjectPractice','dictionaryPractice','finish','stats','list','sectionList','sectionStart','leaderboard','accessAdmin'].forEach(s=>el(s).classList.toggle('hidden',s!==id));
   if(id!=='mockExam'&&mockExamState.clock){clearInterval(mockExamState.clock);mockExamState.clock=null;}
 }
 
@@ -2713,14 +2765,16 @@ function renderHome(){
   commitExplanationTime();timer.active=false;timer.running=false;
   el('timerChip').classList.remove('show'); clearInterval(timer.iv);
   const book=BOOKS[activeBook];
-  el('regularHome').classList.toggle('hidden',mockHomeSelected);el('mockHome').classList.toggle('hidden',!mockHomeSelected);
-  el('bookTitle').textContent=book.title;
-  el('qcount').textContent=`${book.subtitle} ・ 全 ${QUESTIONS.length} 問`;
+  el('regularHome').classList.toggle('hidden',mockHomeSelected||dictionaryHomeSelected);
+  el('mockHome').classList.toggle('hidden',!mockHomeSelected);
+  el('dictionaryHome').classList.toggle('hidden',!dictionaryHomeSelected);
+  el('bookTitle').textContent=dictionaryHomeSelected?'CBT辞典':mockHomeSelected?'2026 9/19 麻布模試':book.title;
+  el('qcount').textContent=dictionaryHomeSelected?'原本から検証した専用演習':mockHomeSelected?'6ブロック・320問':`${book.subtitle} ・ 全 ${QUESTIONS.length} 問`;
   document.querySelectorAll('.book-tab').forEach(tab=>{
-    const on=tab.dataset.book===(mockHomeSelected?'mock':activeBook);
+    const on=tab.dataset.book===(dictionaryHomeSelected?'dictionary':mockHomeSelected?'mock':activeBook);
     tab.classList.toggle('on',on);tab.setAttribute('aria-selected',on?'true':'false');
   });
-  const logoSmall=document.querySelector('.logo small');if(logoSmall)logoSmall.textContent=mockHomeSelected?'模試':book.title;
+  const logoSmall=document.querySelector('.logo small');if(logoSmall)logoSmall.textContent=dictionaryHomeSelected?'辞典':mockHomeSelected?'模試':book.title;
   console.log(`[${book.title}] 総問題数:`, QUESTIONS.length);
   console.log('[問題集] has_image=true:', QUESTIONS.filter(q=>q.has_image).length);
   console.log('[問題集] imageあり:', QUESTIONS.filter(q=>q.image).length);
@@ -2753,11 +2807,13 @@ function renderHome(){
   } else el('resumeCard').classList.add('hidden');
   showOnly('home'); el('footer').classList.add('hidden'); setProgress(0);
   if(mockHomeSelected)renderMockHome();
+  if(dictionaryHomeSelected)window.dictionaryPractice?.renderHome();
 }
 
 async function switchBook(book){
-  if(book==='mock'){mockHomeSelected=true;renderHome();return;}
-  if(mockHomeSelected){mockHomeSelected=false;if(book===activeBook){renderHome();return;}}
+  if(book==='mock'){mockHomeSelected=true;dictionaryHomeSelected=false;renderHome();return;}
+  if(book==='dictionary'){dictionaryHomeSelected=true;mockHomeSelected=false;renderHome();return;}
+  if(mockHomeSelected||dictionaryHomeSelected){mockHomeSelected=false;dictionaryHomeSelected=false;if(book===activeBook){renderHome();return;}}
   if(!BOOKS[book]||book===activeBook)return;
   if(!questionsLoaded(book)){
     toast(`${BOOKS[book].title}を準備中…`);

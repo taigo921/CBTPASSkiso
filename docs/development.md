@@ -35,6 +35,7 @@ node scripts/test_route_review.cjs
 node scripts/test_study_plan_load.cjs
 node scripts/test_question_progress.cjs
 node scripts/test_reported_question_images.cjs
+node scripts/test_dictionary_practice.cjs
 node scripts/test_rank_progression.cjs
 git diff --check
 ```
@@ -44,6 +45,7 @@ git diff --check
 ```sh
 PLAYWRIGHT_MODULE=/absolute/path/to/playwright node scripts/test_sync_browser.cjs
 PLAYWRIGHT_MODULE=/absolute/path/to/playwright node scripts/test_blocked_login_browser.cjs
+PLAYWRIGHT_MODULE=/absolute/path/to/playwright node scripts/test_dictionary_browser.cjs
 ```
 
 Playwright管理外のChromiumを使う環境では、両スクリプトに `PLAYWRIGHT_EXECUTABLE_PATH=/absolute/path/to/chromium` も渡せる。
@@ -58,6 +60,7 @@ Firestore権限を変えた場合は、実プロジェクトではなくロー�
 |通常演習・進捗|sync、progress preservation、browser two-device|
 |学習ルート|paper progress、route review、study plan load、question progress、sync|
 |模試|mock exam、mock subjects|
+|辞典manifest・画像・演習|dictionary practice、dictionary browser。原本を再生成する場合はimporterが未解決0件で終了すること|
 |XP・ランク|rank progression、sync|
 |認証・停止・授業|access control、school hours、blocked login browser、rules emulator|
 |ランキング|admin ranking、leaderboard rules、sync|

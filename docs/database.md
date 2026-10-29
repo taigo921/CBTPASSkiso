@@ -7,6 +7,7 @@
 - 同期形式の背景と制限: `scripts/README-sync.md`。
 - 通常問題: `data/*.json`。登録対象は `index.html` の `BOOKS`。
 - 模試: `mock-assets/azabu-2026/blocks.js`、`subjects.js`、`photo-pages.js`。
+- 辞典演習: `dictionary-assets/exercises/manifest.json`。原本PDFからの生成規則は `scripts/import_cbt_dictionary.py`。
 
 この文書は索引であり、schema全文を複製しない。フィールドを変える場合は上記実装とルールを先に更新する。
 
@@ -79,6 +80,7 @@
 |`cbt_study_time_v1`|日別秒数・問題数・本別時間|はい|
 |`togo_mock_azabu2026_block{1..6}_v1_{uid}`|ブロック別模試の位置・回答|はい|
 |`togo_mock_subject_v1_{uid}_{subject}`|科目別模試session|いいえ。export対象外|
+|`togo_dictionary2_progress_v1_{uid}`|辞典②の現在位置、問題別回答履歴、最終正誤|いいえ。通常成績・export・Firestore対象外|
 |`togo_sync_backup_20260923_{uid}`|同期形式移行前の端末backup|いいえ|
 |`togo_blocked_login_notice_v1`|停止画面mediaの再表示状態|いいえ|
 
@@ -91,6 +93,8 @@ LocalStorageが失敗した場合は最新値を `_memStore` に保持して警�
 通常問題の1要素は、`uid`、`display_no`、`section`、`category`、`subject`、`guide_ref`、`has_image`、`question`、`choices`、`answer`、`explanation_intro`、`explanation` を基本とし、図がある問題は `image_base64` または画像参照を持つ。UIDが回答履歴、計画、セクション、同期の結合keyであるため、公開後のUID変更はmigrationなしで行わない。
 
 模試問題はblockと問番号の組で識別し、正解、選択肢key、問題画像、解説画像を持つ。科目分類は `(block, no)` から `subjects.js` で引く。通常問題のUID空間や成績へ混ぜない。
+
+辞典②は `DICT2-{sourceId}` をUIDとし、manifestが原本ID、正答、問題画像、公式解説画像の対応を持つ。manifestは956問、ID一意、未解決0件を公開条件とし、原本PDFそのものはリポジトリや配信物へ含めない。
 
 ## データフロー上の不変条件
 

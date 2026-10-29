@@ -29,6 +29,7 @@
 
 - 問題集の登録と件数: `index.html` の `BOOKS`、問題本文: `data/*.json`
 - 模試: `mock-assets/azabu-2026/blocks.js`、`subjects.js`、`photo-pages.js` と同配下の画像
+- 辞典演習: `dictionary-assets/exercises/manifest.json` と画像。再生成・検証は `scripts/import_cbt_dictionary.py` と `scripts/test_dictionary_practice.cjs`
 - Firestoreの許可条件・書込形状: `firestore.rules`
 - ローカル／クラウド進捗形式とマージ: `index.html` の storage/sync 部分、補足は `scripts/README-sync.md`
 - CI: `.github/workflows/tests.yml`、Pages公開: `.github/workflows/pages.yml`、ルール公開: `.github/workflows/firebase-rules.yml`

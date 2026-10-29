@@ -10,7 +10,7 @@ const server=http.createServer((req,res)=>{
   html=html.replace(/<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->[\s\S]*?<\/script>/,'<script>window.cbtUser={uid:"sync-test"};document.getElementById("authGate").classList.add("ok");</script>');
   res.setHeader('Content-Type','text/html');res.end(html);return;
  }
- res.setHeader('Content-Type',file.endsWith('.json')?'application/json':file.endsWith('.js')?'application/javascript':file.endsWith('.mp4')?'video/mp4':file.endsWith('.gif')?'image/gif':'application/octet-stream');fs.createReadStream(file).pipe(res);
+ res.setHeader('Content-Type',file.endsWith('.json')?'application/json':file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':file.endsWith('.webp')?'image/webp':file.endsWith('.mp4')?'video/mp4':file.endsWith('.gif')?'image/gif':'application/octet-stream');fs.createReadStream(file).pipe(res);
 });
 (async()=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -37,6 +37,19 @@ const server=http.createServer((req,res)=>{
    },count);pages.push(page);
   }
   let remote=null;
+  for(const page of pages){
+   const regularBefore=await page.evaluate(()=>({answered:statsByBook.book1.answered,xp:game.xp}));
+   await page.evaluate(()=>{window.cbtUser={uid:'dictionary-integration'};switchBook('dictionary');});
+   await page.waitForFunction(()=>document.getElementById('dictionaryStatus').textContent.includes('956'));
+   assert.ok(await page.locator('#dictionaryHome').isVisible());
+   await page.locator('#dictionaryStart').click();assert.equal(await page.locator('#dictionaryNumber').textContent(),'A001');
+   await page.waitForFunction(()=>document.getElementById('dictionaryQuestionImage').naturalWidth>0);
+   await page.locator('#dictionaryChoices button').filter({hasText:/^B$/}).click();await page.locator('#dictionarySubmit').click();
+   assert.match(await page.locator('#dictionaryResult').textContent(),/○ 正解/);
+   await page.waitForFunction(()=>document.getElementById('dictionaryExplanationImage').naturalWidth>0);
+   assert.deepEqual(await page.evaluate(()=>({answered:statsByBook.book1.answered,xp:game.xp})),regularBefore,'dictionary result stays outside regular progress and XP');
+   await page.evaluate(()=>{window.cbtUser={uid:'sync-test'};switchBook('book1');});
+  }
   for(const page of pages){
    await page.exposeFunction('testRead',()=>remote);
    await page.exposeFunction('testSave',async payload=>{remote=await page.evaluate(([remote,payload])=>encodeCloudProgress(cbtMergePayloads(remote?decodeCloudProgress(remote):{},payload)),[remote,payload]);return remote;});
