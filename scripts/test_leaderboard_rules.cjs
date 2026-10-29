@@ -5,7 +5,11 @@ const {doc,getDoc,getDocs,collection,setDoc,deleteDoc,serverTimestamp,writeBatch
 (async()=>{
  assert.ok(process.env.FIRESTORE_EMULATOR_HOST);const [host,port]=process.env.FIRESTORE_EMULATOR_HOST.split(':');
  const rules=fs.readFileSync(path.join(__dirname,'../firestore.rules'),'utf8'),html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
- const hashes=s=>[...s.matchAll(/["']([a-f0-9]{64})["']/g)].map(m=>m[1]).sort();assert.deepEqual(hashes(rules),hashes(html.slice(html.indexOf('const ALLOW ='),html.indexOf('// ================',html.indexOf('const ALLOW =')))));
+ const hashes=s=>[...s.matchAll(/["']([a-f0-9]{64})["']/g)].map(m=>m[1]).sort();
+ const ruleHashes=hashes(rules),clientHashes=hashes(html.slice(html.indexOf('const ALLOW ='),html.indexOf('// ================',html.indexOf('const ALLOW ='))));
+ assert.deepEqual(ruleHashes,clientHashes);
+ assert.equal(ruleHashes.length,19,'approved user count');
+ for(const expected of ['3c6967cf79a525bf8767fdc601b8f4c17990633300f150a63e44b65798f377aa','1f98ff78c6738b7bf5c8ae34b1019f542619a29c6d3c489450d5120a7b7b8c06'])assert.ok(ruleHashes.includes(expected));
  const env=await initializeTestEnvironment({projectId:'demo-cbtpass-access',firestore:{host,port:+port,rules}});
  const summary=()=>({username:'Test',avatar:'',answered:40,correct:24,accuracy:60,bestStreak:0,dayStreak:0,lastDay:null,game:{xp:100},updatedAt:serverTimestamp()});
  try{

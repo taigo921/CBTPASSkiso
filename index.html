@@ -1305,7 +1305,7 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261027-streak-only-1';
+const SERVICE_WORKER_BUILD='20261029-access-19';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -4188,6 +4188,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     "00bb6be79512a3ed1c1f5ffa94def0690b031a07f1a97f1d46fe78fe4881239f", // 友達13
     "052879fed32ec59c2707536d4b7d82ad566456f44df43371cf05d5f5383c222e", // 追加ユーザー（2026-10-15）
     "a52045bf8642f5ecd5484d7955bb0d3039a48d6c42cd5fdba038c0a8367e652e", // 追加ユーザー（2026-10-22）
+    "3c6967cf79a525bf8767fdc601b8f4c17990633300f150a63e44b65798f377aa", // 追加ユーザー（2026-10-29 1）
+    "1f98ff78c6738b7bf5c8ae34b1019f542619a29c6d3c489450d5120a7b7b8c06", // 追加ユーザー（2026-10-29 2）
     // ↑ 友達のハッシュはこの下に足していく
   ];
   // ================
