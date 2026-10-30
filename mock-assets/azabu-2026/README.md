@@ -24,6 +24,8 @@ Blocks 1–4 permit question-list and previous/next navigation. Blocks 5–6 are
 
 Progress is stored locally, separately for each block and signed-in UID, under `togo_mock_azabu2026_block{N}_v1_{uid}`. The existing block 1 key is preserved. This does not add cloud synchronization for mock progress.
 
+Block 1 questions 7–60 are rebuilt from the tracked `block1/pages/` source pages with `scripts/recrop_azabu_block1_questions.py`. The reviewed boundaries end above the official answer area; `block1/question-crops.json` records the source page, crop rectangle, dimensions, and output SHA-256 for every question. Do not crop these panels through the answer/explanation area.
+
 ## Verification
 
 Run `node scripts/test_mock_exam.cjs`: 2,049 assertions cover catalog counts, image paths, answer choices, block/user isolation, interrupted selection and answer restoration, all 80 linked confirmations, navigation locks, and read-only review. All inline JavaScript is syntax-checked.

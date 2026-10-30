@@ -1,9 +1,21 @@
 // Run with Node.js. Tests the real mock-exam functions with a minimal DOM.
-const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..'),source=fs.readFileSync(path.join(root,'index.html'),'utf8');
 for(const match of source.matchAll(/<script>([\s\S]*?)<\/script>/g))new Function(match[1]);
 let checks=0;
 function check(value,label){assert.ok(value,label);checks++;}
+function jpegSize(buffer){
+ let offset=2;
+ while(offset<buffer.length){
+  if(buffer[offset]!==0xff){offset++;continue;}
+  const marker=buffer[offset+1];offset+=2;
+  if(marker===0xd8||marker===0xd9)continue;
+  const length=buffer.readUInt16BE(offset);
+  if([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker))return {height:buffer.readUInt16BE(offset+3),width:buffer.readUInt16BE(offset+5)};
+  offset+=length;
+ }
+ throw new Error('JPEG dimensions not found');
+}
 class Element{
  constructor(){this.children=[];this.events={};this.classes=new Set();this.dataset={};this.disabled=false;this.textContent='';this.classList={add:(...xs)=>xs.forEach(x=>this.classes.add(x)),remove:(...xs)=>xs.forEach(x=>this.classes.delete(x)),contains:x=>this.classes.has(x),toggle:(x,on)=>{on=on===undefined?!this.classes.has(x):on;on?this.classes.add(x):this.classes.delete(x);}};}
  set innerHTML(v){this.children=[];} get innerHTML(){return '';}
@@ -75,5 +87,15 @@ check(Object.keys(photoPages).length===188,'188 questions mapped to photo bookle
 for(const [key,file] of Object.entries(photoPages)){
  check(/^[1-6]-(?:[1-9]|[1-5][0-9]|60)$/.test(key),`photo key ${key}`);
  check(fs.existsSync(path.join(root,file)),file);
+}
+const cropManifest=JSON.parse(fs.readFileSync(path.join(root,'mock-assets/azabu-2026/block1/question-crops.json'),'utf8'));
+check(cropManifest.count===54&&cropManifest.questions.length===54,'54 reviewed block 1 crops');
+check(cropManifest.questions.map(q=>q.question).join(',')===Array.from({length:54},(_,i)=>i+7).join(','),'block 1 crop inventory');
+for(const record of cropManifest.questions){
+ const file=path.join(root,`mock-assets/azabu-2026/block1/q${String(record.question).padStart(3,'0')}.jpg`),contents=fs.readFileSync(file),size=jpegSize(contents);
+ check(size.width===record.width&&size.height===record.height,`block 1 crop geometry ${record.question}`);
+ check(crypto.createHash('sha256').update(contents).digest('hex')===record.sha256,`block 1 crop hash ${record.question}`);
+ check(record.crop[1]<record.crop[3]&&record.crop[3]-record.crop[1]===record.height,`block 1 question-only boundary ${record.question}`);
+ check(fs.existsSync(path.join(root,`mock-assets/azabu-2026/block1/pages/page-${String(record.sourcePage).padStart(3,'0')}.jpg`)),`block 1 source page ${record.question}`);
 }
 console.log(`PASS: ${checks} checks; JavaScript syntax, 320 question counts, block/user isolation, save/resume, 80 linked confirmations, navigation locks, choices, and assets.`);

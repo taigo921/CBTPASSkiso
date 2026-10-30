@@ -1,0 +1,709 @@
+{
+  "version": 1,
+  "purpose": "Question-only crops; official answer and explanation begin below each crop.",
+  "count": 54,
+  "questions": [
+    {
+      "question": 7,
+      "sourcePage": 8,
+      "crop": [
+        0,
+        66,
+        903,
+        255
+      ],
+      "width": 903,
+      "height": 189,
+      "sha256": "4655173b2084dcf32ec7aca608ec45871327893d124a0483af851bda81366245"
+    },
+    {
+      "question": 8,
+      "sourcePage": 8,
+      "crop": [
+        0,
+        574,
+        903,
+        1014
+      ],
+      "width": 903,
+      "height": 440,
+      "sha256": "16c5eaa3c01d28e50622923a66bfc01cb537d44af579f4e997ea2c73c4112ec8"
+    },
+    {
+      "question": 9,
+      "sourcePage": 9,
+      "crop": [
+        0,
+        69,
+        903,
+        277
+      ],
+      "width": 903,
+      "height": 208,
+      "sha256": "c7731c188a76948c79d67ac0528c1a0ae270bca9373ad9fb54f3b791957fd9fa"
+    },
+    {
+      "question": 10,
+      "sourcePage": 10,
+      "crop": [
+        0,
+        62,
+        903,
+        710
+      ],
+      "width": 903,
+      "height": 648,
+      "sha256": "2b161046399f814ca82a8b6118a62e398dbca34131dc9d7dd1a6fee907d99f01"
+    },
+    {
+      "question": 11,
+      "sourcePage": 11,
+      "crop": [
+        0,
+        65,
+        901,
+        528
+      ],
+      "width": 901,
+      "height": 463,
+      "sha256": "7498bd27ef7fec7fd2fc16d6875ee5c4967ee17b57b67be995998ef378b72b69"
+    },
+    {
+      "question": 12,
+      "sourcePage": 11,
+      "crop": [
+        0,
+        733,
+        901,
+        919
+      ],
+      "width": 901,
+      "height": 186,
+      "sha256": "5dfdcc7aca66621a0953fc26dcecac139ae7d9c69522d6060d032a04bef4a188"
+    },
+    {
+      "question": 13,
+      "sourcePage": 12,
+      "crop": [
+        0,
+        61,
+        903,
+        249
+      ],
+      "width": 903,
+      "height": 188,
+      "sha256": "8f7828156b74c68ddd95d6e9149833864895fa8d5d214f926b8588fa5b34d496"
+    },
+    {
+      "question": 14,
+      "sourcePage": 12,
+      "crop": [
+        0,
+        522,
+        903,
+        940
+      ],
+      "width": 903,
+      "height": 418,
+      "sha256": "2ea544d3b6d228cb6cde6b1ebd6e654591719da4fd1cf4e605d98ead05877b61"
+    },
+    {
+      "question": 15,
+      "sourcePage": 13,
+      "crop": [
+        0,
+        66,
+        903,
+        274
+      ],
+      "width": 903,
+      "height": 208,
+      "sha256": "2897476e273eb75acd6cc151da0c62d24c7cac49d7bc3cdefb498e84443f30ce"
+    },
+    {
+      "question": 16,
+      "sourcePage": 13,
+      "crop": [
+        0,
+        596,
+        903,
+        804
+      ],
+      "width": 903,
+      "height": 208,
+      "sha256": "8838448ba8146f935372cee68a77c2dd17118b53c906f6222a50d408c59b2128"
+    },
+    {
+      "question": 17,
+      "sourcePage": 14,
+      "crop": [
+        0,
+        63,
+        903,
+        250
+      ],
+      "width": 903,
+      "height": 187,
+      "sha256": "6abef3200be671be343e2e36ea7b135f7338ee32063b951b9616b4001ce6d55e"
+    },
+    {
+      "question": 18,
+      "sourcePage": 14,
+      "crop": [
+        0,
+        615,
+        903,
+        848
+      ],
+      "width": 903,
+      "height": 233,
+      "sha256": "5808f9520a44a614cd3ee26579ba9726197010864f91b02198654d37dc83ab22"
+    },
+    {
+      "question": 19,
+      "sourcePage": 15,
+      "crop": [
+        0,
+        65,
+        901,
+        273
+      ],
+      "width": 901,
+      "height": 208,
+      "sha256": "aad6148f10f75108f65a5c21606773871afb1ae9fc4dc70d7edc332ca70f1dc9"
+    },
+    {
+      "question": 20,
+      "sourcePage": 15,
+      "crop": [
+        0,
+        456,
+        901,
+        642
+      ],
+      "width": 901,
+      "height": 186,
+      "sha256": "a44758ab7add02b13e13a2ed5ad51bfdf6ec0fdf71cd35b738262be0c1ca24b8"
+    },
+    {
+      "question": 21,
+      "sourcePage": 15,
+      "crop": [
+        0,
+        870,
+        901,
+        1078
+      ],
+      "width": 901,
+      "height": 208,
+      "sha256": "dc713df360fc3b61777843ff8cb4fc8937114317eff1956dc7573bf60bef82c0"
+    },
+    {
+      "question": 22,
+      "sourcePage": 16,
+      "crop": [
+        0,
+        63,
+        901,
+        250
+      ],
+      "width": 901,
+      "height": 187,
+      "sha256": "c16fefee13092438e5c609ce88ca2d31a26839aaa25d3fab09e14803c5ce3ad4"
+    },
+    {
+      "question": 23,
+      "sourcePage": 16,
+      "crop": [
+        0,
+        684,
+        901,
+        1030
+      ],
+      "width": 901,
+      "height": 346,
+      "sha256": "b674ff2160f7b14861d003955c1c0ad0f377f9aee03fe8e525f3f22684945967"
+    },
+    {
+      "question": 24,
+      "sourcePage": 17,
+      "crop": [
+        0,
+        67,
+        901,
+        253
+      ],
+      "width": 901,
+      "height": 186,
+      "sha256": "dd07b78b1e15a58fd06844778731e25855197a971d912a81b28e7a297462523b"
+    },
+    {
+      "question": 25,
+      "sourcePage": 17,
+      "crop": [
+        0,
+        504,
+        901,
+        713
+      ],
+      "width": 901,
+      "height": 209,
+      "sha256": "64cd50b2402a3b4f2c06e6355d48fcea74756ba415bec3e7d5fda88823c39a15"
+    },
+    {
+      "question": 26,
+      "sourcePage": 17,
+      "crop": [
+        0,
+        850,
+        901,
+        1034
+      ],
+      "width": 901,
+      "height": 184,
+      "sha256": "d80c73ec9638270fc694f02c778a2b719eac70735b0901ff73fecefab2492fad"
+    },
+    {
+      "question": 27,
+      "sourcePage": 18,
+      "crop": [
+        0,
+        67,
+        901,
+        392
+      ],
+      "width": 901,
+      "height": 325,
+      "sha256": "34df2116cd9ab810c1631eb4937c1dc8d925341cb3347f2355c77ff8166194a6"
+    },
+    {
+      "question": 28,
+      "sourcePage": 18,
+      "crop": [
+        0,
+        596,
+        901,
+        829
+      ],
+      "width": 901,
+      "height": 233,
+      "sha256": "e961dc46fe634da821cc3060567ac508dd1c6f08580c88d8259d3be49cdf522e"
+    },
+    {
+      "question": 29,
+      "sourcePage": 19,
+      "crop": [
+        0,
+        69,
+        901,
+        278
+      ],
+      "width": 901,
+      "height": 209,
+      "sha256": "74422d18d36a637ba75e0971eefc717fbf11ba987aac9d8b16defbbc609c4ace"
+    },
+    {
+      "question": 30,
+      "sourcePage": 19,
+      "crop": [
+        0,
+        668,
+        901,
+        1014
+      ],
+      "width": 901,
+      "height": 346,
+      "sha256": "e71879f9e6555af265421c4dc3fc1a4daaa66dc1ea34a57d95b40a286f8c258e"
+    },
+    {
+      "question": 31,
+      "sourcePage": 20,
+      "crop": [
+        0,
+        66,
+        901,
+        483
+      ],
+      "width": 901,
+      "height": 417,
+      "sha256": "9ef2e903c7a8dd7a8136eae6c84b78eeee1e4cba0a3bdaadf4be6f2a6c40c553"
+    },
+    {
+      "question": 32,
+      "sourcePage": 20,
+      "crop": [
+        0,
+        641,
+        901,
+        828
+      ],
+      "width": 901,
+      "height": 187,
+      "sha256": "2f8c7256b5a79c8a661537218edd7248cebbb9c6f4141a5b47458e3c2841fe4b"
+    },
+    {
+      "question": 33,
+      "sourcePage": 21,
+      "crop": [
+        0,
+        68,
+        901,
+        529
+      ],
+      "width": 901,
+      "height": 461,
+      "sha256": "6ef239a5532c1ffbef01684dd8562b304fc57db8ce7d01008a9b8571f1756fa5"
+    },
+    {
+      "question": 34,
+      "sourcePage": 21,
+      "crop": [
+        0,
+        666,
+        901,
+        921
+      ],
+      "width": 901,
+      "height": 255,
+      "sha256": "83e6f1ca53bcadcc94f6fc9c673ec1608a8d2f622c37e0153465447d74ab8536"
+    },
+    {
+      "question": 35,
+      "sourcePage": 22,
+      "crop": [
+        0,
+        64,
+        901,
+        303
+      ],
+      "width": 901,
+      "height": 239,
+      "sha256": "29779fd513f9d5c5b5a227449f9607a5ee9571b388f09b206dbff3af8798eb3f"
+    },
+    {
+      "question": 36,
+      "sourcePage": 22,
+      "crop": [
+        0,
+        576,
+        901,
+        787
+      ],
+      "width": 901,
+      "height": 211,
+      "sha256": "9509fd780b8e7b8345f6934b3848b7eb746920bcef01eef56ae1811bfb632d16"
+    },
+    {
+      "question": 37,
+      "sourcePage": 23,
+      "crop": [
+        0,
+        68,
+        891,
+        255
+      ],
+      "width": 891,
+      "height": 187,
+      "sha256": "84fc2654eb1fb5d9b3f3c2554240695954794c9f4e2286c3ea59b74f3ee48d7f"
+    },
+    {
+      "question": 38,
+      "sourcePage": 23,
+      "crop": [
+        0,
+        553,
+        891,
+        809
+      ],
+      "width": 891,
+      "height": 256,
+      "sha256": "0baed9851d7b7b4b673064ca389b6b53a565708891022ac938a6b53fe6a99088"
+    },
+    {
+      "question": 39,
+      "sourcePage": 24,
+      "crop": [
+        0,
+        65,
+        900,
+        254
+      ],
+      "width": 900,
+      "height": 189,
+      "sha256": "cc27e6bcb08ff847485097bb8a104210853b586399cf6680b32726ac7b59b2a3"
+    },
+    {
+      "question": 40,
+      "sourcePage": 24,
+      "crop": [
+        0,
+        457,
+        900,
+        644
+      ],
+      "width": 900,
+      "height": 187,
+      "sha256": "6fc390c2aa40eeb4172cc62e1e0aada0bf97dafbab172a524d448439312531c1"
+    },
+    {
+      "question": 41,
+      "sourcePage": 25,
+      "crop": [
+        0,
+        68,
+        903,
+        252
+      ],
+      "width": 903,
+      "height": 184,
+      "sha256": "8415afda701530e6671906d90bccd15dc1acd99f25c0ffdaa60a18b7d2c11cc2"
+    },
+    {
+      "question": 42,
+      "sourcePage": 25,
+      "crop": [
+        0,
+        574,
+        903,
+        851
+      ],
+      "width": 903,
+      "height": 277,
+      "sha256": "c5592a77c3320c6884b48ade474665f3d47297c781cdc25723493a070ff2f11b"
+    },
+    {
+      "question": 43,
+      "sourcePage": 26,
+      "crop": [
+        0,
+        62,
+        901,
+        250
+      ],
+      "width": 901,
+      "height": 188,
+      "sha256": "d16c2d06b21be6c05290ad1da7d88e61ee63468206d228f1098f0d4415124648"
+    },
+    {
+      "question": 44,
+      "sourcePage": 26,
+      "crop": [
+        0,
+        431,
+        901,
+        710
+      ],
+      "width": 901,
+      "height": 279,
+      "sha256": "45d3e2933a33f0e32b190d3e97968ab69e5ce7f5b201ce42bd3711a1f31a18c5"
+    },
+    {
+      "question": 45,
+      "sourcePage": 27,
+      "crop": [
+        0,
+        66,
+        892,
+        299
+      ],
+      "width": 892,
+      "height": 233,
+      "sha256": "9bfd52c63909b0386ce62842b8fba08c35654591ab0c2d72fb3a65b955131ed6"
+    },
+    {
+      "question": 46,
+      "sourcePage": 27,
+      "crop": [
+        0,
+        481,
+        892,
+        667
+      ],
+      "width": 892,
+      "height": 186,
+      "sha256": "256a14cae376f2daf5ecf77ab9ce1df2d146af2a3d2e2b406b860b77f017e4b0"
+    },
+    {
+      "question": 47,
+      "sourcePage": 28,
+      "crop": [
+        0,
+        62,
+        901,
+        365
+      ],
+      "width": 901,
+      "height": 303,
+      "sha256": "f95206bfcfb2814caf4820f7b427fb5a486ba1cdf74a400ca8c4f350d79be5d0"
+    },
+    {
+      "question": 48,
+      "sourcePage": 28,
+      "crop": [
+        0,
+        707,
+        901,
+        916
+      ],
+      "width": 901,
+      "height": 209,
+      "sha256": "8f59e589cfddf753f35dfb8bc771278cb791d728435983dcc6752f7e4483e99b"
+    },
+    {
+      "question": 49,
+      "sourcePage": 29,
+      "crop": [
+        0,
+        67,
+        894,
+        276
+      ],
+      "width": 894,
+      "height": 209,
+      "sha256": "2667a0e950f626235e9e5c60c10c0c293a3c885cb0ae694a8e91a3f86ee4d56f"
+    },
+    {
+      "question": 50,
+      "sourcePage": 29,
+      "crop": [
+        0,
+        527,
+        894,
+        714
+      ],
+      "width": 894,
+      "height": 187,
+      "sha256": "ae8f46cc35007a9af89579a50be585b54fd6ffda3d6838d00710e398ef45699b"
+    },
+    {
+      "question": 51,
+      "sourcePage": 30,
+      "crop": [
+        0,
+        64,
+        900,
+        297
+      ],
+      "width": 900,
+      "height": 233,
+      "sha256": "a4078687e3fb00550916f3a8aaab5dbb87daf6fe70c7d962cee77cda584349cd"
+    },
+    {
+      "question": 52,
+      "sourcePage": 30,
+      "crop": [
+        0,
+        617,
+        900,
+        895
+      ],
+      "width": 900,
+      "height": 278,
+      "sha256": "056674061f35ba52d5e998e10dfc31659957edc5c8fff4de1be6d019b7fd1057"
+    },
+    {
+      "question": 53,
+      "sourcePage": 31,
+      "crop": [
+        0,
+        68,
+        894,
+        255
+      ],
+      "width": 894,
+      "height": 187,
+      "sha256": "570e1bef35d8f11e26ca3af157affee26d3177b0ae2bb788adeba16191c88b7b"
+    },
+    {
+      "question": 54,
+      "sourcePage": 31,
+      "crop": [
+        0,
+        552,
+        894,
+        739
+      ],
+      "width": 894,
+      "height": 187,
+      "sha256": "1ad1dd2e22e232038cb5390cb74c8649ac121ac2189a49a6d40c6535c4323c24"
+    },
+    {
+      "question": 55,
+      "sourcePage": 32,
+      "crop": [
+        0,
+        66,
+        900,
+        253
+      ],
+      "width": 900,
+      "height": 187,
+      "sha256": "173367454795a9b4801752ae308703a546534792d1d7704e079be10fc7046ead"
+    },
+    {
+      "question": 56,
+      "sourcePage": 32,
+      "crop": [
+        0,
+        411,
+        900,
+        988
+      ],
+      "width": 900,
+      "height": 577,
+      "sha256": "5b685c47a7f1b489ae12ea92badc40458e0af00ba400ba25f08ede07318b2095"
+    },
+    {
+      "question": 57,
+      "sourcePage": 33,
+      "crop": [
+        0,
+        68,
+        898,
+        255
+      ],
+      "width": 898,
+      "height": 187,
+      "sha256": "98bdc338bb90e71a57bc2388a35e4004950ddb3bb48b45c9c59734b1375c15f3"
+    },
+    {
+      "question": 58,
+      "sourcePage": 33,
+      "crop": [
+        0,
+        437,
+        898,
+        762
+      ],
+      "width": 898,
+      "height": 325,
+      "sha256": "bc2111892262102e1e2b56fb970ee531b6bb09c2c66139a7cb32786cc452b52a"
+    },
+    {
+      "question": 59,
+      "sourcePage": 34,
+      "crop": [
+        0,
+        65,
+        901,
+        298
+      ],
+      "width": 901,
+      "height": 233,
+      "sha256": "e51bb8da3a877ad34b1028654c76999aec24faeae487f24a34f23cdfc0d83190"
+    },
+    {
+      "question": 60,
+      "sourcePage": 34,
+      "crop": [
+        0,
+        457,
+        901,
+        666
+      ],
+      "width": 901,
+      "height": 209,
+      "sha256": "81efda3f7ed4b1b71ce8abb0f452108273c5098d4c440708b3c6b7e94244c72d"
+    }
+  ]
+}

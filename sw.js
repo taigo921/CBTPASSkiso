@@ -1,4 +1,4 @@
-const APP_BUILD='20261029-access-19';
+const APP_BUILD='20261030-mock-block1-crops-1';
 const CACHE_NAME='cbtpass-offline-v1';
 const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js','./mock-assets/azabu-2026/photo-pages.js','./features/dictionary-practice/dictionary-practice.css','./features/dictionary-practice/dictionary-practice.js','./dictionary-assets/exercises/manifest.json'];
 // Remove stale copies of source-image data. Each selected book is fetched and cached on demand,
