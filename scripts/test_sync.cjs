@@ -19,12 +19,12 @@ for(const [a,b] of [[phone,ipad],[ipad,phone]]){
  const merged=mergeCloudPayloads(a,b);
  const encoded=encodeCloudProgress(merged),decoded=decodeCloudProgress(encoded);
  for(const key of ['books','studyPlans','mockExams','sessions'])assert(JSON.stringify(merged[key])===JSON.stringify(decoded[key]),'packed roundtrip '+key);
- assert(merged.books.book1.answered===1&&merged.books.book1.correct===1,'latest per-question result summarized in both directions');
- assert(merged.books.book2.answered===1&&merged.books.book2.correct===1,'book2 latest result remains separate');
+ assert(merged.books.book1.answered===1977&&merged.books.book1.correct===1977,'cumulative book1 totals survive both directions');
+ assert(merged.books.book2.answered===5&&merged.books.book2.correct===3,'cumulative book2 totals remain separate');
  assert(merged.game.xp===13179,'XP never rolled back');
  assert(merged.studyTime.days['2026-09-23'].seconds===1977,'study time retained');
  assert(merged.studyPlans.shared.items.q.round===1977,'latest plan item retained');
- assert(mergeCloudPayloads(merged,merged).books.book1.answered===1,'idempotent current stats');
+ assert(mergeCloudPayloads(merged,merged).books.book1.answered===1977,'idempotent cumulative totals');
 }
 const old={5:{index:0,answers:{1:{picked:'B',answered:false,updatedAt:50}}}},fresh={5:{index:2,answers:{1:{picked:'A',answered:true,updatedAt:10},2:{picked:'C',answered:true,updatedAt:20}}}};
 for(const [a,b] of [[old,fresh],[fresh,old]]){const m=mergeMockPayload(a,b);assert(m[5].index===2,'linked frontier retained');assert(m[5].answers[1].picked==='A','confirmed answer beats newer unconfirmed selection');}
@@ -32,7 +32,7 @@ assert(mergeSessionPayload({book1:{idx:3,updatedAt:1}},{book1:{idx:9,updatedAt:2
 assert(mergeSessionPayload({book1:{deleted:true,updatedAt:3}},{book1:{idx:9,updatedAt:2}}).book1.deleted,'deleted resume does not resurrect');
 const packed=encodeCloudProgress(mergeCloudPayloads({},phone));
 const mixed=decodeCloudProgress({...packed,books:payload(2200,14000).books});
-assert(mixed.books.book1.answered===1&&mixed.books.book1.perQ.q.c===2200,'legacy attempt history survives while its current summary counts one question');
+assert(mixed.books.book1.answered===2200&&mixed.books.book1.perQ.q.c===2200,'legacy cumulative attempt history survives while accuracy counts the latest result only');
 let rejected=false;try{decodeCloudProgress({progressDataV1:'broken'});}catch(_){rejected=true;}assert(rejected,'invalid packed data blocks overwrite');
 const oversized={books:{book1:{perQ:{q:{note:'あ'.repeat(400000)}}},book2:{perQ:{b:{note:'x'.repeat(300000)}}}},studyPlans:{shared:{}},mockExams:{},sessions:{book1:{uids:['q']}}};
 const chunked=encodeCloudProgressV2(oversized);

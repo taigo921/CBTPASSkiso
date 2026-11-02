@@ -2780,7 +2780,7 @@ function renderHome(){
   console.log('[問題集] imageあり:', QUESTIONS.filter(q=>q.image).length);
   const currentSummary=statsSummaryFor(stats);
   el('sAnswered').textContent=currentSummary.answered;
-  el('sAcc').textContent=currentSummary.answered?Math.round(currentSummary.correct/currentSummary.answered*100)+'%':'—';
+  el('sAcc').textContent=currentSummary.distinct?Math.round(currentSummary.accuracy)+'%':'—';
   el('sFav').textContent=favList().length;
   el('studyTimeHome').textContent=`今日の勉強時間 ${formatStudyDuration(studyTime.days[dateKey()]?.seconds||0)}`;
   renderOfflineStatus();
@@ -3171,12 +3171,12 @@ function openStats(){
   // セクション集計
   const secs={};
   QUESTIONS.forEach(q=>{const r=stats.perQ[qkey(q)],latest=latestQuestionOutcome(r);if(!latest)return;
-    const s=secs[q.section]||(secs[q.section]={ans:0,cor:0,tsum:0,tn:0});
-    s.ans++;if(latest.correct)s.cor++;
-    if(Number.isFinite(latest.time)){s.tsum+=latest.time;s.tn++;}
+    const s=secs[q.section]||(secs[q.section]={ans:0,currentAnswered:0,currentCorrect:0,tsum:0,tn:0});
+    s.ans+=(r.correct||0)+(r.wrong||0);s.currentAnswered++;if(latest.correct)s.currentCorrect++;
+    (r.times||[]).forEach(time=>{if(Number.isFinite(+time)){s.tsum+=+time;s.tn++;}});
   });
   const arr=Object.entries(secs).map(([name,s])=>{
-    const acc=s.ans?s.cor/s.ans:0, avgT=s.tn?s.tsum/s.tn:0;
+    const acc=s.currentAnswered?s.currentCorrect/s.currentAnswered:0, avgT=s.tn?s.tsum/s.tn:0;
     const weak=(1-acc)*0.75+Math.min(avgT/Math.max(settings.slowSec,1),1)*0.25;
     return {name,acc,avgT,ans:s.ans,weak};
   }).sort((a,b)=>b.weak-a.weak);
@@ -3533,10 +3533,15 @@ function latestQuestionOutcome(record){
 }
 function statsSummaryFor(s){
   const outcomes=Object.values(s.perQ||{}).map(latestQuestionOutcome).filter(Boolean);
-  const answered=outcomes.length,correct=outcomes.filter(outcome=>outcome.correct).length;
+  const records=Object.values(s.perQ||{});
+  const derivedAnswered=records.reduce((sum,record)=>sum+(record.correct||record.c||0)+(record.wrong||record.w||0),0);
+  const derivedCorrect=records.reduce((sum,record)=>sum+(record.correct||record.c||0),0);
+  const answered=Math.max(Number.isFinite(+s.answered)?Math.max(0,+s.answered):0,derivedAnswered);
+  const correct=Math.min(answered,Math.max(Number.isFinite(+s.correct)?Math.max(0,+s.correct):0,derivedCorrect));
+  const accuracyAnswered=outcomes.length,accuracyCorrect=outcomes.filter(outcome=>outcome.correct).length;
   return {
-    answered,correct,accuracy:answered?Math.round(correct/answered*1000)/10:0,
-    distinct:answered,bestStreak:s.bestStreak||0,dayStreak:s.dayStreak||0
+    answered,correct,accuracy:accuracyAnswered?Math.round(accuracyCorrect/accuracyAnswered*1000)/10:0,
+    distinct:accuracyAnswered,accuracyAnswered,accuracyCorrect,bestStreak:s.bestStreak||0,dayStreak:s.dayStreak||0
   };
 }
 function statsSummary(){return statsSummaryFor(stats);}
@@ -4015,8 +4020,10 @@ function combinedLeaderboardStats(user){
   if(!books.length)return {...user,lastDay:leaderboardDateKey(user.lastDay)}; // Preserve legacy root summaries.
   const answered=books.reduce((sum,book)=>sum+(book.answered||0),0);
   const correct=books.reduce((sum,book)=>sum+(book.correct||0),0);
+  const accuracyAnswered=books.reduce((sum,book)=>sum+(Number.isFinite(+book.accuracyAnswered)?+book.accuracyAnswered:(book.answered||0)),0);
+  const accuracyCorrect=books.reduce((sum,book)=>sum+(Number.isFinite(+book.accuracyCorrect)?+book.accuracyCorrect:(book.correct||0)),0);
   const lastDay=books.reduce((latest,book)=>String(book.lastDay||'')>latest?String(book.lastDay):latest,'');
-  return {...user,answered,correct,accuracy:answered?Math.round(correct/answered*1000)/10:0,
+  return {...user,answered,correct,accuracy:accuracyAnswered?Math.round(accuracyCorrect/accuracyAnswered*1000)/10:0,
     bestStreak:Math.max(...books.map(book=>book.bestStreak||0)),lastDay:lastDay||null,
     dayStreak:Math.max(0,...books.filter(book=>book.lastDay===lastDay).map(book=>book.dayStreak||0))};
 }
@@ -4024,7 +4031,7 @@ function leaderboardPublicSummary(data){
   const stats=combinedLeaderboardStats(data),count=value=>Number.isFinite(+value)?Math.max(0,Math.floor(+value)):0;
   const answered=count(stats.answered),correct=Math.min(answered,count(stats.correct));
   return {username:String(data.username||'名無し').slice(0,16),avatar:safeAvatar(data.avatar),
-    answered,correct,accuracy:answered?Math.round(correct/answered*1000)/10:0,
+    answered,correct,accuracy:Number.isFinite(+stats.accuracy)?Math.max(0,Math.min(100,+stats.accuracy)):(answered?Math.round(correct/answered*1000)/10:0),
     bestStreak:count(stats.bestStreak),dayStreak:count(stats.dayStreak),lastDay:leaderboardDateKey(stats.lastDay),
     game:{xp:count(data.game?.xp)}};
 }

@@ -17,7 +17,7 @@ assert.equal(ctx.leaderboardPublicSummary({username:'Old',lastDay:'2026-9-2'}).l
 assert.equal(ctx.leaderboardDateKey('2026-2-30'),null);assert.equal(ctx.leaderboardDateKey('invalid'),null);
 assert.equal(data.books.book1.lastDay,'2026-9-22','original progress dates unchanged');
 const current=ctx.leaderboardPublicSummary({username:'Current',books:{book1:{perQ:{a:{c:8,w:2,l:'wrong',h:{correct:true,at:2}},b:{c:4,w:1,l:'correct',h:{correct:false,at:3}}}},book2:{perQ:{c:{c:1,w:0,l:'correct'}}}},game:{xp:0}});
-assert.equal(current.answered,3);assert.equal(current.correct,2);assert.equal(current.accuracy,66.7);
+assert.equal(current.answered,16);assert.equal(current.correct,13);assert.equal(current.accuracy,66.7);
 let reads=[],writes=[],deletes=[];const profiles={member:data,blocked:{...data,email:'blocked@test'},outsider:{...data,email:'no@test'}};
 const admin={uid:'owner',email:'itaigo921@gmail.com',emailVerified:true,allowed:true};const member={uid:'member',email:'approved@test',emailVerified:true,allowed:true,getIdTokenResult:async()=>({claims:{email:'approved@test',email_verified:true}})};
 ctx.auth={currentUser:member};ctx.window.cbtUser=member;ctx.isAllowedEmail=async e=>['approved@test','blocked@test'].includes(e);ctx.transactionCloudProgress=async(_transaction,_ref,snapshot)=>snapshot.data();ctx.firebase={firestore:{FieldValue:{serverTimestamp:()=>42}}};
