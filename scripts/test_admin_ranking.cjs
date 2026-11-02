@@ -5,6 +5,7 @@ const slice=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b));
 assert.ok(!source.includes('id="lbVisibility"'));assert.ok(!source.includes('getLeaderboardVisibility:'));
 const nodes={};const ctx={window:{},el:id=>nodes[id]??={textContent:'',classList:{toggle(k,v){this[k]=v;}}},Map,Set,console};vm.createContext(ctx);
 vm.runInContext('let leaderboardUsersCache=null;'+slice('const LEADERBOARD_ENABLED=','const offlineCacheWrites='),ctx);
+vm.runInContext(slice('function latestQuestionOutcome(', 'function compactStatsPayload('),ctx);
 for(const user of [null,{uid:'member',email:'approved@test',emailVerified:true,allowed:true},{uid:'owner',email:'itaigo921@gmail.com',emailVerified:true,allowed:true}]){
  ctx.window.cbtUser=user;ctx.updateLeaderboardAccess();assert.equal(nodes.rankBtn.classList.hidden,!user);assert.equal(nodes.accessAdminBtn.classList.hidden,user?.uid!=='owner');
 }
@@ -15,9 +16,11 @@ assert.equal(publicData.lastDay,'2026-10-16');assert.equal(publicData.dayStreak,
 assert.equal(ctx.leaderboardPublicSummary({username:'Old',lastDay:'2026-9-2'}).lastDay,'2026-09-02');
 assert.equal(ctx.leaderboardDateKey('2026-2-30'),null);assert.equal(ctx.leaderboardDateKey('invalid'),null);
 assert.equal(data.books.book1.lastDay,'2026-9-22','original progress dates unchanged');
+const current=ctx.leaderboardPublicSummary({username:'Current',books:{book1:{perQ:{a:{c:8,w:2,l:'wrong',h:{correct:true,at:2}},b:{c:4,w:1,l:'correct',h:{correct:false,at:3}}}},book2:{perQ:{c:{c:1,w:0,l:'correct'}}}},game:{xp:0}});
+assert.equal(current.answered,3);assert.equal(current.correct,2);assert.equal(current.accuracy,66.7);
 let reads=[],writes=[],deletes=[];const profiles={member:data,blocked:{...data,email:'blocked@test'},outsider:{...data,email:'no@test'}};
 const admin={uid:'owner',email:'itaigo921@gmail.com',emailVerified:true,allowed:true};const member={uid:'member',email:'approved@test',emailVerified:true,allowed:true,getIdTokenResult:async()=>({claims:{email:'approved@test',email_verified:true}})};
-ctx.auth={currentUser:member};ctx.window.cbtUser=member;ctx.isAllowedEmail=async e=>['approved@test','blocked@test'].includes(e);ctx.firebase={firestore:{FieldValue:{serverTimestamp:()=>42}}};
+ctx.auth={currentUser:member};ctx.window.cbtUser=member;ctx.isAllowedEmail=async e=>['approved@test','blocked@test'].includes(e);ctx.transactionCloudProgress=async(_transaction,_ref,snapshot)=>snapshot.data();ctx.firebase={firestore:{FieldValue:{serverTimestamp:()=>42}}};
 ctx.db={collection(name){return {doc(uid){return {name,uid};},async get(o){assert.equal(o.source,'server');reads.push(name);const rows=name==='users'?profiles:name==='accessControl'?{blocked:{blocked:true}}:{blocked:{},old:{}};return {forEach(fn){for(const [id,v] of Object.entries(rows))fn({id,data:()=>v});}};} };},async runTransaction(fn){await fn({get:async()=>({exists:true,data:()=>data}),set(ref,v){writes.push([ref.uid,v]);}});},batch(){return {set(ref,v){writes.push([ref.uid,v]);},delete(ref){deletes.push(ref.uid);},async commit(){}};}};
 const api=vm.runInContext('({'+slice('    publishLeaderboard:','    fetchAccessUsers:')+'})',ctx);
 (async()=>{

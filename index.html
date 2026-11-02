@@ -2778,8 +2778,9 @@ function renderHome(){
   console.log(`[${book.title}] 総問題数:`, QUESTIONS.length);
   console.log('[問題集] has_image=true:', QUESTIONS.filter(q=>q.has_image).length);
   console.log('[問題集] imageあり:', QUESTIONS.filter(q=>q.image).length);
-  el('sAnswered').textContent=stats.answered;
-  el('sAcc').textContent=stats.answered?Math.round(stats.correct/stats.answered*100)+'%':'—';
+  const currentSummary=statsSummaryFor(stats);
+  el('sAnswered').textContent=currentSummary.answered;
+  el('sAcc').textContent=currentSummary.answered?Math.round(currentSummary.correct/currentSummary.answered*100)+'%':'—';
   el('sFav').textContent=favList().length;
   el('studyTimeHome').textContent=`今日の勉強時間 ${formatStudyDuration(studyTime.days[dateKey()]?.seconds||0)}`;
   renderOfflineStatus();
@@ -3169,10 +3170,10 @@ function openStats(){
   renderStudyTime();
   // セクション集計
   const secs={};
-  QUESTIONS.forEach(q=>{const r=stats.perQ[qkey(q)];if(!r||(r.correct+r.wrong)===0)return;
+  QUESTIONS.forEach(q=>{const r=stats.perQ[qkey(q)],latest=latestQuestionOutcome(r);if(!latest)return;
     const s=secs[q.section]||(secs[q.section]={ans:0,cor:0,tsum:0,tn:0});
-    s.ans+=r.correct+r.wrong; s.cor+=r.correct;
-    r.times.forEach(t=>{s.tsum+=t;s.tn++;});
+    s.ans++;if(latest.correct)s.cor++;
+    if(Number.isFinite(latest.time)){s.tsum+=latest.time;s.tn++;}
   });
   const arr=Object.entries(secs).map(([name,s])=>{
     const acc=s.ans?s.cor/s.ans:0, avgT=s.tn?s.tsum/s.tn:0;
@@ -3291,7 +3292,7 @@ function openSectionList(){
 }
 function sectionStat(list){
   let att=0,cor=0,solved=0;
-  list.forEach(q=>{ const r=stats.perQ[qkey(q)]; if(r){ const a=(r.correct||0)+(r.wrong||0); if(a>0){ solved++; att+=a; cor+=(r.correct||0); } } });
+  list.forEach(q=>{const latest=latestQuestionOutcome(stats.perQ[qkey(q)]);if(latest){solved++;att++;if(latest.correct)cor++;}});
   return { solved, total:list.length, acc:att?Math.round(cor/att*100):null, progress:list.length?Math.round(solved/list.length*100):0 };
 }
 function renderSectionList(){
@@ -3520,11 +3521,22 @@ function updateStreak(correct){
     stats.lastDay=ymd;
   }
 }
+function latestQuestionOutcome(record){
+  if(!record||typeof record!=='object')return null;
+  const history=Array.isArray(record.history)?record.history:[];
+  const latest=history.length?history[history.length-1]:(record.h&&typeof record.h==='object'?record.h:null);
+  if(latest&&typeof latest.correct==='boolean')return {correct:latest.correct,time:Number.isFinite(+latest.time)?+latest.time:null,at:+latest.at||0};
+  const attempts=(record.correct||record.c||0)+(record.wrong||record.w||0),last=record.last||record.l;
+  if(!attempts||!['correct','wrong'].includes(last))return null;
+  const times=Array.isArray(record.times)?record.times:[];
+  return {correct:last==='correct',time:times.length&&Number.isFinite(+times[times.length-1])?+times[times.length-1]:null,at:0};
+}
 function statsSummaryFor(s){
+  const outcomes=Object.values(s.perQ||{}).map(latestQuestionOutcome).filter(Boolean);
+  const answered=outcomes.length,correct=outcomes.filter(outcome=>outcome.correct).length;
   return {
-    answered:s.answered||0, correct:s.correct||0,
-    accuracy:s.answered?Math.round(s.correct/s.answered*1000)/10:0,
-    distinct:Object.keys(s.perQ).length,bestStreak:s.bestStreak||0,dayStreak:s.dayStreak||0
+    answered,correct,accuracy:answered?Math.round(correct/answered*1000)/10:0,
+    distinct:answered,bestStreak:s.bestStreak||0,dayStreak:s.dayStreak||0
   };
 }
 function statsSummary(){return statsSummaryFor(stats);}
@@ -3556,16 +3568,19 @@ function mergeStatsTarget(target,cd){
   for(const uid in cp){
     const c=cp[uid]; const cAtt=(c.c||0)+(c.w||0);
     const l=target.perQ[uid];const lAtt=l?((l.correct||0)+(l.wrong||0)):-1;
+    const localLast=Array.isArray(l?.history)&&l.history.length?l.history[l.history.length-1]:null;
     const localFav=!!(l&&l.fav);
     const markers={xpV:!!((l&&l.xpV)||c.x),rankV:!!((l&&l.rankV)||c.r),xpDay:(l&&l.xpDay)||c.d||null};
     if(cAtt>lAtt){
-      target.perQ[uid]={correct:c.c||0,wrong:c.w||0,last:c.l||(c.c>0?'correct':'wrong'),times:(l&&l.times)||[],pre:(l&&l.pre)||[],post:(l&&l.post)||[],history:c.h?[c.h]:((l&&l.history)||[]),fav:false,...markers};
+      const cloudIsLatest=c.h&&(!localLast||(+c.h.at||0)>=(+localLast.at||0));
+      const history=cloudIsLatest?[c.h]:((l&&l.history)||[]);
+      const last=cloudIsLatest?(c.h.correct?'correct':'wrong'):(localLast?(localLast.correct?'correct':'wrong'):(c.l||(c.c>0?'correct':'wrong')));
+      target.perQ[uid]={correct:c.c||0,wrong:c.w||0,last,times:(l&&l.times)||[],pre:(l&&l.pre)||[],post:(l&&l.post)||[],history,fav:false,...markers};
     } else if(!l){
       target.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],history:c.h?[c.h]:[],fav:false,...markers};
     } else {
       Object.assign(target.perQ[uid],markers);
-      const localLast=Array.isArray(l.history)&&l.history.length?l.history[l.history.length-1]:null;
-      if(c.h&&(!localLast||(c.h.at||0)>(localLast.at||0)))l.history=[c.h];
+      if(c.h&&(!localLast||(c.h.at||0)>(localLast.at||0))){l.history=[c.h];l.last=c.h.correct?'correct':'wrong';}
     }
     if(localFav||c.f)target.perQ[uid].fav=true;
   }
@@ -3993,7 +4008,10 @@ function leaderboardDateKey(value){
   return `${match[1]}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 }
 function combinedLeaderboardStats(user){
-  const books=['book1','book2'].map(book=>user.books?.[book]).filter(Boolean).map(book=>({...book,lastDay:leaderboardDateKey(book.lastDay)}));
+  const books=['book1','book2'].map(book=>user.books?.[book]).filter(Boolean).map(book=>{
+    const current=book.perQ?statsSummaryFor(book):book;
+    return {...book,...current,lastDay:leaderboardDateKey(book.lastDay)};
+  });
   if(!books.length)return {...user,lastDay:leaderboardDateKey(user.lastDay)}; // Preserve legacy root summaries.
   const answered=books.reduce((sum,book)=>sum+(book.answered||0),0);
   const correct=books.reduce((sum,book)=>sum+(book.correct||0),0);
@@ -4484,7 +4502,8 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
         const snapshot=await transaction.get(ref);
         if(auth.currentUser?.uid!==user.uid)throw Error('ログインが変更されました');
         if(!snapshot.exists)return;
-        const summary=leaderboardPublicSummary(snapshot.data());summary.updatedAt=firebase.firestore.FieldValue.serverTimestamp();transaction.set(publicRef,summary);
+        const progress=await transactionCloudProgress(transaction,ref,snapshot);
+        const summary=leaderboardPublicSummary({...snapshot.data(),...progress});summary.updatedAt=firebase.firestore.FieldValue.serverTimestamp();transaction.set(publicRef,summary);
       });
     },
     refreshLeaderboardMembers: async function(){
@@ -4494,7 +4513,15 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       if(auth.currentUser?.uid!==user.uid)throw Error('ログインが変更されました');
       const blocked=new Set(),members=new Map();controls.forEach(d=>{if(d.data().blocked===true)blocked.add(d.id);});
       const candidates=[];profiles.forEach(d=>candidates.push({uid:d.id,data:d.data()}));
-      for(const row of candidates){if(!blocked.has(row.uid)&&await isAllowedEmail(row.data.email||''))members.set(row.uid,leaderboardPublicSummary(row.data));}
+      for(const row of candidates){
+        if(blocked.has(row.uid)||!await isAllowedEmail(row.data.email||''))continue;
+        let data=row.data;
+        if(data.progressDataV2){
+          const ref=db.collection('users').doc(row.uid),snapshot={exists:true,data:()=>row.data};
+          data={...data,...await readCloudProgress(ref,snapshot)};
+        }
+        members.set(row.uid,leaderboardPublicSummary(data));
+      }
       if(auth.currentUser?.uid!==user.uid)throw Error('ログインが変更されました');
       const operations=[];
       for(const [uid,summary] of members)operations.push({uid,summary});

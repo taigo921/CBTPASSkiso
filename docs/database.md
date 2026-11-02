@@ -42,7 +42,7 @@
 ### `leaderboard/{uid}`
 
 - 役割: 許可ユーザーへ公開できるランキング用summaryだけを保持。
-- 主なフィールド: `username`、`avatar`、`answered`、`correct`、`accuracy`、`bestStreak`、`dayStreak`、`lastDay`、`game: {xp}`、`updatedAt`。
+- 主なフィールド: `username`、`avatar`、`answered`、`correct`、`accuracy`、`bestStreak`、`dayStreak`、`lastDay`、`game: {xp}`、`updatedAt`。`answered`／`correct`／`accuracy` は問題集1・2の各問題の最新回答だけから派生する（解き直し履歴は保持するが公開集計へ重複加算しない）。
 - リレーション: `users/{uid}` と同じUID。コピー元はprivate user documentだが、詳細進捗・メール・学習計画は含めない。
 - 使用Feature: Leaderboard & Profile。
 - DBアクセス: `leaderboardPublicSummary()`、`publishLeaderboard()`、`refreshLeaderboardMembers()`、`fetchLeaderboard()`。

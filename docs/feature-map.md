@@ -59,7 +59,7 @@
 
 ## 学習分析・学習時間・XP
 
-- 機能: 正答率、苦手分野、回答時間、日別学習時間、XP、レベル、ランク、連続正解・連続使用。
+- 機能: 現在正答率、苦手分野、回答時間、日別学習時間、XP、レベル、ランク、連続正解・連続使用。現在正答率は、回答済みの各問題について最新回答だけを1件ずつ集計する。
 - Route / 画面: `#stats` とホームのgame card、完了画面。
 - 主なUI: `#studyTimeChart`、`#rankList`、`#slowList`、`#fastList`、`#levelUp`。
 - state / hooks相当: `statsByBook`、`studyTime`、`game`、`openStats()`、`renderStudyTime()`、`awardXp()`、`rankInfo()`、`levelInfo()`。
@@ -113,7 +113,7 @@
 
 ## プロフィール・ランキング
 
-- 機能: 表示名、アバター、許可ユーザー全員の集計ランキング、管理者による既存ユーザー集計更新。
+- 機能: 表示名、アバター、許可ユーザー全員の集計ランキング、管理者による既存ユーザー集計更新。回答数・正解数・正答率は問題集1・2の各回答済み問題の最新回答だけを合算し、過去の解き直し回数は含めない。
 - Route / 画面: `#leaderboard`、`#unameModal`、`#avatarCropModal`。
 - 主なUI: `#rankBtn`、`#lbBody`、`#lbRename`、`#lbAvatarInput`、ランキングtab。
 - state / hooks相当: `lbMetric`、`leaderboardUsersCache`、`openLeaderboard()`、`renderLeaderboard()`、`leaderboardPublicSummary()`。

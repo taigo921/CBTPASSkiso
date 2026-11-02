@@ -29,7 +29,7 @@ const server=http.createServer((req,res)=>{
    const loadedRank=await page.evaluate(async()=>{await loadBookQuestions('book2');renderGameCard();return {rank:el('gameRank').textContent,thresholds:rankStepsWithXp().map(step=>step.xp)};});
    assert.equal(loadedRank.rank,initialRank.rank);assert.deepEqual(loadedRank.thresholds,initialRank.thresholds);
    await page.evaluate(count=>{
-    statsByBook.book1=emptyStats();statsByBook.book1.perQ.test={correct:count,wrong:0,xpV:true,times:[],history:[]};statsByBook.book1.answered=count;statsByBook.book1.correct=count;stats=statsByBook.book1;saveStats();
+    statsByBook.book1=emptyStats();statsByBook.book1.perQ.test={correct:count,wrong:0,last:'correct',xpV:true,times:[],history:[]};statsByBook.book1.answered=count;statsByBook.book1.correct=count;stats=statsByBook.book1;saveStats();
     game.xp=count===1977?13179:11294;saveGame();
     safeSet(mockKeyFor(5),{index:count===1977?2:0,updatedAt:count,answers:count===1977?{1:{picked:'A',answered:true,updatedAt:1},2:{picked:'C',answered:true,updatedAt:2}}:{}});
     safeSet(sessionStoreKey('book1'),{uids:['test'],idx:0,resumeIdx:0,records:[],updatedAt:count,mode:'review',book:'book1'});
@@ -58,14 +58,14 @@ const server=http.createServer((req,res)=>{
   }
   for(const page of pages){
    const payload=await page.evaluate(()=>cbtFullPayload());
-   assert.equal(payload.books.book1.answered,1977);assert.equal(payload.game.xp,13179);assert.equal(payload.mockExams[5].index,2);assert.equal(payload.sessions.book1.updatedAt,1977);
+   assert.equal(payload.books.book1.answered,1);assert.equal(payload.books.book1.correct,1);assert.equal(payload.books.book1.perQ.test.c,1977);assert.equal(payload.game.xp,13179);assert.equal(payload.mockExams[5].index,2);assert.equal(payload.sessions.book1.updatedAt,1977);
    assert.deepEqual(await page.evaluate(()=>window.syncTransportCounts),{read:0,save:1});
    assert.ok(await page.evaluate(()=>localStorage.getItem('togo_sync_backup_20260923_sync-test')));
   }
   const page=pages[0],download=page.waitForEvent('download');await page.locator('#exportProgressBtn').click();assert.match((await download).suggestedFilename(),/^toGO-progress-/);
   await pages[1].evaluate(()=>{window.cbtCloud.save=async()=>{throw {code:'permission-denied'};};});
   await pages[1].locator('#syncNowBtn').click();await pages[1].waitForFunction(()=>document.getElementById('cloudStatus').textContent.includes('permission-denied'));
-  assert.equal(await pages[1].evaluate(()=>cbtFullPayload().books.book1.answered),1977);
+  assert.equal(await pages[1].evaluate(()=>cbtFullPayload().books.book1.answered),1);
   await page.evaluate(()=>{window.cbtCloud=null;clearTimeout(_syncT);});
   await page.evaluate(async()=>{
    await switchBook('book1');
@@ -280,6 +280,6 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>el('authGate').classList.add('ok'));
   }
   assert.deepEqual(errors,[]);
-  console.log('PASS two isolated browsers: 1977/1692 -> 1977/1977, XP 13179, mock frontier 2, resume, automatic backup, JSON export, permission-denied preserves records; both books correct/wrong/skip/home/resume; no page errors. Real Firebase/device verification still required.');
+  console.log('PASS two isolated browsers: cumulative attempts preserved while current accuracy counts each latest question once; XP 13179, mock frontier 2, resume, automatic backup, JSON export, permission-denied preserves records; both books correct/wrong/skip/home/resume; no page errors. Real Firebase/device verification still required.');
  }finally{await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});
