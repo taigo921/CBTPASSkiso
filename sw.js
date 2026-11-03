@@ -1,4 +1,4 @@
-const APP_BUILD='20261103-dental-materials-forms-3';
+const APP_BUILD='20261103-sync-v2-refresh-1';
 const CACHE_NAME='cbtpass-offline-v1';
 const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js','./mock-assets/azabu-2026/photo-pages.js','./features/dictionary-practice/dictionary-practice.css','./features/dictionary-practice/dictionary-practice.js','./dictionary-assets/exercises/manifest.json','./dictionary-assets/mock-exams/manifest.json','./dictionary-assets/dental-materials/manifest.json'];
 // Remove stale copies of source-image data. Each selected book is fetched and cached on demand,

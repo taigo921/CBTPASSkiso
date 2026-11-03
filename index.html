@@ -1311,7 +1311,10 @@ async function saveSchoolSettings(policy){
  catch(_){el('schoolAdminStatus').textContent='保存できませんでした。通信状態・Firebaseルールを確認してください。';}
  finally{el('schoolEnabled').checked=schoolPolicy.enabled;controls.forEach(b=>b.disabled=false);renderSchoolReleaseButton();}
 }
-const SERVICE_WORKER_BUILD='20261030-mock-block1-crops-1';
+// Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
+// home-screen app its own one-time reload key, so sync/schema fixes do not
+// leave the previous JavaScript running indefinitely.
+const SERVICE_WORKER_BUILD='20261103-sync-v2-refresh-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1434,7 +1437,7 @@ function renderCloudStatus(){
   }else if(cloudSyncState.phase==='pending'){
     target.textContent=`☁️ 学習記録を同期中…${id}`;
   }else if(cloudSyncState.savedAt){
-    target.textContent=`☁️ 同期済み ${formatSyncClock(cloudSyncState.savedAt)}${id}・同期版 9/23`;
+    target.textContent=`☁️ 同期済み ${formatSyncClock(cloudSyncState.savedAt)}${id}・同期版 11/3`;
   }else{
     target.textContent=`☁️ クラウドに接続済み${id}`;
   }

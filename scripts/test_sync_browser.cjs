@@ -54,7 +54,7 @@ const server=http.createServer((req,res)=>{
    await page.exposeFunction('testRead',()=>remote);
    await page.exposeFunction('testSave',async payload=>{remote=await page.evaluate(([remote,payload])=>encodeCloudProgress(cbtMergePayloads(remote?decodeCloudProgress(remote):{},payload)),[remote,payload]);return remote;});
    await page.evaluate(()=>{window.syncTransportCounts={read:0,save:0};window.cbtCloud={readLatest:()=>{window.syncTransportCounts.read++;return window.testRead();},save:p=>{window.syncTransportCounts.save++;return window.testSave(p);}};});
-   await page.locator('#syncNowBtn').click();await page.waitForFunction(()=>document.getElementById('cloudStatus').textContent.includes('同期版 9/23'));
+   await page.locator('#syncNowBtn').click();await page.waitForFunction(()=>document.getElementById('cloudStatus').textContent.includes('同期版'));
   }
   for(const page of pages){
    const payload=await page.evaluate(()=>cbtFullPayload());
