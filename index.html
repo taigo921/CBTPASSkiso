@@ -767,7 +767,7 @@
       <div class="plan-about-body">
         <div class="plan-rule"><b>新規問題を先に、そのあと復習</b>新規は問題集1の最初から掲載順で出題し、問題集1の初回出題をすべて終えてから問題集2へ進みます。問題集2へ移った後も、忘れ頃になった問題集1の復習は続きます。</div>
         <div class="plan-rule"><b>その日の課題だけを、順番どおりにこなすだけ！</b>復習数は、一律の上限ではなく、個人の残り復習量と仕上げ日までの学習可能日から毎日再計算します。終わらなかった課題は翌日に繰り越し、必ず残りを終えてから次の課題へ進みます。ほかの演習で3連続正解を達成した問題も課題から自動で外れます。</div>
-        <div class="plan-rule"><b>仕上がりの判定</b>3回連続正解すると「習得済み」になり、その問題のルート出題は終了します。間違えた場合は連続回数をリセットします。</div>
+        <div class="plan-rule"><b>仕上がりの判定</b>3回連続正解するか、解説画面で「誤答理由まで説明できる」を押すと「習得済み」になり、その問題のルート出題は終了します。間違えた場合は連続回数をリセットします。</div>
         <div class="plan-rule"><b>あなた専用に毎日調整</b><span id="planPersonalNote">科目別の正答率・回答時間・連続正解から、復習の間隔と優先度を調整します。</span></div>
         <div class="plan-rule"><b>3連続正解までの労力から毎日の量を逆算</b>1回目100・2回目80・3回目70として計算します。土日祝と学校がない日は、平日の1.5倍を目安に多めの課題を出します。</div>
       </div>
@@ -1967,7 +1967,7 @@ function planCapacitySum(from,to,p){
   return total;
 }
 function planItemStreak(item){return Math.max(0,Math.min(PLAN_CORRECT_STREAK_TARGET,+item?.correctStreak||0));}
-function planIsMastered(item){return planItemStreak(item)>=PLAN_CORRECT_STREAK_TARGET;}
+function planIsMastered(item){return !!item?.explained||planItemStreak(item)>=PLAN_CORRECT_STREAK_TARGET;}
 function planRemainingEffort(item){
   return planIsMastered(item)?0:PLAN_EFFORTS.slice(planItemStreak(item)).reduce((sum,value)=>sum+value,0);
 }
@@ -2127,7 +2127,7 @@ function updateStudyPlan(uid,correct){
     const round=(+existing.round||0)+1;
     const streak=advancePlanCorrectStreak(existing,correct,today);
     const explained=correct&&!!existing.explained;
-    const mastered=correct&&streak.correctStreak>=PLAN_CORRECT_STREAK_TARGET;
+    const mastered=explained||correct&&streak.correctStreak>=PLAN_CORRECT_STREAK_TARGET;
     const stage=correct?Math.min(streak.correctStreak,PLAN_INTERVALS.length-1):0;
     p.items[uid]={...existing,round,stage,due:planNextDue(uid,streak.correctStreak,correct,today,p),last:today,explained,...streak,mastered,completed:mastered,updatedAt:Date.now()};
   }
@@ -2141,8 +2141,17 @@ function updateStudyPlan(uid,correct){
 }
 function setPlanExplanation(uid,explained){
   const p=planFor();if(!p.active||!p.items[uid])return;
-  p.items[uid].explained=!!explained;
-  p.items[uid].updatedAt=Date.now();p.updatedAt=Date.now();saveStudyPlans();
+  const item=p.items[uid];item.explained=!!explained;
+  const mastered=planIsMastered(item);item.mastered=mastered;item.completed=mastered;
+  if(mastered)item.due='9999-12-31';
+  else if(item.due==='9999-12-31')item.due=dateKey();
+  if(mastered)Object.values(p.assignments||{}).forEach(assignment=>{
+    if(!assignment||!Array.isArray(assignment.uids)||!assignment.uids.includes(uid))return;
+    assignment.completedUids=assignment.completedUids||{};assignment.completedUids[uid]=true;
+    assignment.completed=assignment.uids.filter(id=>assignment.completedUids[id]).length;
+    assignment.done=assignment.completed>=assignment.uids.length;if(assignment.done)assignment.completedAt=Date.now();assignment.updatedAt=Date.now();
+  });
+  item.updatedAt=Date.now();p.updatedAt=Date.now();saveStudyPlans();
 }
 function studyPlanSummary(){
   const p=ensureStudyPlan(),today=dateKey();
@@ -2578,7 +2587,7 @@ function recentCorrectStreak(attempts){
 function questionRouteStatus(uid,p=planFor()){
   if(!p?.active)return null;
   const item=p.items?.[uid],streak=planItemStreak(item);
-  if(planIsMastered(item))return {done:true,title:'ルート完了',detail:'3回連続正解を達成'};
+  if(planIsMastered(item))return {done:true,title:'ルート完了',detail:item?.explained?'誤答理由まで説明できる':'3回連続正解を達成'};
   const remaining=PLAN_CORRECT_STREAK_TARGET-streak;
   return {done:false,title:`連続正解 ${streak}/${PLAN_CORRECT_STREAK_TARGET}回`,detail:`あと${remaining}回連続正解で終了`};
 }

@@ -32,8 +32,22 @@ let learning={correctStreak:1,correctStreakDate:'2026-10-27'};
 assert.equal(ctx.advancePlanCorrectStreak(learning,true,'2026-10-27').correctStreak,2,'same-day correct answer advances the attempt streak');
 assert.equal(ctx.advancePlanCorrectStreak({correctStreak:2},false,'2026-10-27').correctStreak,0,'a wrong answer resets the streak');
 assert.equal(ctx.planIsMastered({correctStreak:3}),true,'three consecutive correct answers finish the question');
+assert.equal(ctx.planIsMastered({correctStreak:0,explained:true}),true,'explanation mastery button finishes the question');
 assert.equal(ctx.planRemainingEffort({correctStreak:2}),70,'only one answer remains after a two-correct streak');
 assert.equal(ctx.planNextDue('q1',3,true,'2026-10-27',{}),'9999-12-31','mastered question is no longer scheduled');
+
+const feedbackStart=source.indexOf('function setPlanExplanation(');
+const feedbackEnd=source.indexOf('function studyPlanSummary(',feedbackStart);
+ctx.testPlan={active:true,items:{q1:{correctStreak:0,due:'2026-10-28',explained:false}},assignments:{day:{uids:['q1'],completedUids:{},assigned:1,completed:0,done:false}}};
+Object.assign(ctx,{planFor:()=>ctx.testPlan,dateKey:()=> '2026-10-27',saveStudyPlans:()=>{}});
+vm.runInContext(source.slice(feedbackStart,feedbackEnd),ctx);
+ctx.setPlanExplanation('q1',true);
+assert.equal(ctx.testPlan.items.q1.mastered,true,'explanation mastery button marks the item mastered');
+assert.equal(ctx.testPlan.items.q1.due,'9999-12-31','explanation mastery removes the item from future scheduling');
+assert.equal(ctx.testPlan.assignments.day.done,true,'explanation mastery completes an assignment containing the item');
+ctx.setPlanExplanation('q1',false);
+assert.equal(ctx.testPlan.items.q1.mastered,false,'removing explanation mastery reopens an item without a three-answer streak');
+assert.equal(ctx.testPlan.items.q1.due,'2026-10-27','reopened item becomes due again');
 
 const routeStart=source.indexOf('function questionRouteStatus(');
 const routeEnd=source.indexOf('function renderQuestionProgress(',routeStart);
@@ -42,6 +56,8 @@ let status=ctx.questionRouteStatus('q1',{active:true,items:{q1:{round:8,correctS
 assert.equal(status.title,'連続正解 2/3回');assert.equal(status.detail,'あと1回連続正解で終了');
 status=ctx.questionRouteStatus('q1',{active:true,items:{q1:{round:3,correctStreak:3}}});
 assert.equal(status.done,true);assert.equal(status.title,'ルート完了');
+status=ctx.questionRouteStatus('q1',{active:true,items:{q1:{round:1,correctStreak:0,explained:true}}});
+assert.equal(status.done,true);assert.equal(status.detail,'誤答理由まで説明できる');
 
 assert.ok(source.includes('id="qProgress"'),'quiz contains the progress panel');
 assert.ok(/renderQuestionProgress\(qkey\(q\),r\)/.test(source),'answer immediately refreshes progress');
@@ -49,4 +65,4 @@ assert.ok(/renderQuestionProgress\(r\.uid,pr\)/.test(source),'understanding feed
 assert.ok(/if\(planFor\(\)\.active\)updateStudyPlan\(qkey\(q\),correct\);/.test(source),'every practice mode advances the active three-correct route');
 assert.ok(!source.includes('renderQuestionProgress(qkey(q));'),'progress is not rendered before answering');
 assert.match(source,/id="resultBlock"[^>]*>[\s\S]*?id="qProgress"/,'progress panel is inside the explanation result block');
-console.log('PASS question progress: correct totals, recent five results, streak-only route completion status');
+console.log('PASS question progress: correct totals, recent five results, and streak/explanation mastery completion status');

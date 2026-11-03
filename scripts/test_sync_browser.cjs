@@ -83,6 +83,14 @@ const server=http.createServer((req,res)=>{
   assert.match(await page.locator('#qProgress').textContent(),/正解 4回.*回答 5回.*○ 3連続.*ルート完了.*3回連続正解を達成/s);
   assert.ok(await page.locator('#qProgress').isVisible(),'question progress appears with the explanation');
   assert.equal(await page.locator('#qProgress .question-result-dot').count(),5);
+  await page.evaluate(()=>{
+    const record=session.records.at(-1),item=planFor().items[record.uid];
+    Object.assign(item,{correctStreak:2,explained:false,mastered:false,completed:false,due:dateKey()});
+    record.planItemBeforeFeedback={...item};session.mode='plan';el('postConf').classList.remove('hidden');renderQuestionProgress(record.uid,rec(record.uid));
+  });
+  await page.locator('#postConf [data-oc="explained"]').click();
+  assert.deepEqual(await page.evaluate(()=>{const item=planFor().items[session.records.at(-1).uid];return {explained:item.explained,mastered:item.mastered,due:item.due};}),{explained:true,mastered:true,due:'9999-12-31'});
+  assert.match(await page.locator('#qProgress').textContent(),/ルート完了.*誤答理由まで説明できる/s);
   assert.equal(await page.locator('#qProgress .question-result-dot.ok').count(),4);
   assert.equal(await page.locator('#qProgress .question-result-dot.ng').count(),1);
   for(const book of ['book1','book2']){

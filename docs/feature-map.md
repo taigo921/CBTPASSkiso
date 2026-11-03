@@ -37,7 +37,7 @@
 
 ## 学習ルート・忘却曲線
 
-- 機能: 試験日からの日次割当、1/3/7日間隔の復習、全問題共通の3回連続正解による終了判定、追加・無限学習、休み／軽め設定、本で進めた範囲登録。
+- 機能: 試験日からの日次割当、1/3/7日間隔の復習、3回連続正解または解説内容を説明できる自己確認による終了判定、追加・無限学習、休み／軽め設定、本で進めた範囲登録。
 - Route / 画面: `#studyPlan`。出題は共通の `#quiz`。
 - 主なUI: `#planStartBtn`、`#planReviewBtn`、`#planCalendarDays`、`#planExtraBox`、`#paperApply`、`#planWhitePassOpen`。
 - state / hooks相当: `studyPlans.shared`、`planFor()`、`studyPlanSummary()`、`renderStudyPlan()`、`startStudyPlan()`、`startExtraStudy()`、`startRouteReview()`、`paperProgress`。
