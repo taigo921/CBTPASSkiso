@@ -16,6 +16,9 @@
 .dictionary-group { border: 1px solid var(--line); border-radius: 11px; background: #fff; padding: 10px; color: var(--green-d); font-weight: 800; cursor: pointer; }
 .dictionary-group span { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; font-weight: 700; }
 .dictionary-status { min-height: 20px; margin-top: 10px; color: var(--muted); font-size: 12px; }
+.dictionary-sources { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 12px 0; }
+.dictionary-sources button { min-height: 42px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--muted); font-size: 11px; font-weight: 800; cursor: pointer; }
+.dictionary-sources button.on { border-color: var(--green); background: #eaf2ff; color: var(--green-d); }
 
 .dictionary-practice { max-width: 920px; margin: 0 auto; padding-top: 18px; }
 .dictionary-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -39,3 +42,4 @@
 .dictionary-explanation h2 { margin: 0 0 8px; font-size: 15px; }
 .dictionary-note { margin: 12px 2px 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
 @media (min-width: 780px) { .dictionary-card { padding: 20px; } .dictionary-groups { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 480px) { .dictionary-sources { grid-template-columns: 1fr; } .dictionary-choices { grid-template-columns: repeat(5, 1fr); } }

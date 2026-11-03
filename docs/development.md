@@ -37,6 +37,7 @@ node scripts/test_question_progress.cjs
 node scripts/test_current_accuracy.cjs
 node scripts/test_reported_question_images.cjs
 node scripts/test_dictionary_practice.cjs
+node scripts/test_dictionary3_practice.cjs
 node scripts/test_rank_progression.cjs
 git diff --check
 ```

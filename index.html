@@ -639,7 +639,7 @@
       <button class="book-tab on" data-book="book1" role="tab" aria-selected="true"><b>問題集1</b><span>基礎系</span></button>
       <button class="book-tab" data-book="book2" role="tab" aria-selected="false"><b>問題集2</b><span>臨床系</span></button>
       <button class="book-tab" data-book="mock" role="tab" aria-selected="false"><b>2026 9/19</b><span>麻布模試</span></button>
-      <button class="book-tab" data-book="dictionary" role="tab" aria-selected="false"><b>CBT辞典</b><span>辞典②</span></button>
+      <button class="book-tab" data-book="dictionary" role="tab" aria-selected="false"><b>CBT辞典</b><span>辞典②・③</span></button>
     </div>
     <div id="mockHome" class="hidden">
       <div class="sec-h">科目ごとに解く</div>
@@ -660,8 +660,13 @@
     </div>
     <div id="dictionaryHome" class="hidden">
       <div class="dictionary-home-card">
-        <h2>📚 CBTの辞典② 基礎臨床</h2>
+        <h2 id="dictionaryHomeTitle">📚 CBTの辞典② 基礎臨床</h2>
         <p>問題画像を見てA〜Eから回答し、回答後に公式解説を確認できます。通常問題集・学習ルート・ランキングとは別記録です。</p>
+        <div class="dictionary-sources" role="group" aria-label="辞典を選ぶ">
+          <button type="button" class="on" data-dictionary-source="dictionary2">辞典② 基礎臨床</button>
+          <button type="button" data-dictionary-source="mock1">辞典③ 模試1</button>
+          <button type="button" data-dictionary-source="mock2">辞典③ 模試2</button>
+        </div>
         <div class="dictionary-summary" aria-label="辞典演習の進捗">
           <div><b id="dictionaryAnswered">0</b>解答済み</div>
           <div><b id="dictionaryCorrect">0</b>前回正解</div>
@@ -669,7 +674,7 @@
         </div>
         <button type="button" class="btn" id="dictionaryStart" disabled>読み込み中…</button>
         <div class="sec-h">領域から始める</div>
-        <div class="dictionary-groups">
+        <div class="dictionary-groups" id="dictionaryGroups">
           <button type="button" class="dictionary-group" data-dictionary-group="A">A<span>準備中</span></button>
           <button type="button" class="dictionary-group" data-dictionary-group="B">B<span>準備中</span></button>
           <button type="button" class="dictionary-group" data-dictionary-group="C">C<span>準備中</span></button>
@@ -900,7 +905,7 @@
 
   <section id="dictionaryPractice" class="hidden dictionary-practice">
     <div class="dictionary-head">
-      <div><h1>CBTの辞典②</h1><p id="dictionaryProgress">問題を準備中</p></div>
+      <div><h1 id="dictionaryPracticeTitle">CBTの辞典②</h1><p id="dictionaryProgress">問題を準備中</p></div>
       <button type="button" class="ghost-btn" id="dictionaryHomeBack">辞典一覧へ</button>
     </div>
     <div class="dictionary-card">

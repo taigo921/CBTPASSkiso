@@ -1,6 +1,6 @@
-const APP_BUILD='20261102-explanation-mastery-1';
+const APP_BUILD='20261103-dictionary3-mocks-1';
 const CACHE_NAME='cbtpass-offline-v1';
-const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js','./mock-assets/azabu-2026/photo-pages.js','./features/dictionary-practice/dictionary-practice.css','./features/dictionary-practice/dictionary-practice.js','./dictionary-assets/exercises/manifest.json'];
+const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js','./mock-assets/azabu-2026/photo-pages.js','./features/dictionary-practice/dictionary-practice.css','./features/dictionary-practice/dictionary-practice.js','./dictionary-assets/exercises/manifest.json','./dictionary-assets/mock-exams/manifest.json'];
 // Remove stale copies of source-image data. Each selected book is fetched and cached on demand,
 // avoiding a roughly 57 MB download during service-worker installation.
 const UPDATED_DATA_FILES=[

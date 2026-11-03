@@ -1,8 +1,12 @@
 (function(){
   'use strict';
 
-  const MANIFEST_URL='dictionary-assets/exercises/manifest.json';
-  const STORE_PREFIX='togo_dictionary2_progress_v1_';
+  const SOURCES={
+    dictionary2:{title:'CBTの辞典② 基礎臨床',shortTitle:'CBTの辞典②',url:'dictionary-assets/exercises/manifest.json',count:956,schema:2,prefix:'togo_dictionary2_progress_v1_'},
+    mock1:{title:'CBTの辞典③ 誌上模試1',shortTitle:'辞典③ 模試1',url:'dictionary-assets/mock-exams/manifest.json',count:320,schema:1,mock:1,prefix:'togo_dictionary3_mock1_progress_v1_'},
+    mock2:{title:'CBTの辞典③ 誌上模試2',shortTitle:'辞典③ 模試2',url:'dictionary-assets/mock-exams/manifest.json',count:304,schema:1,mock:2,prefix:'togo_dictionary3_mock2_progress_v1_'}
+  };
+  let sourceKey='dictionary2';
   let manifest=null;
   let loadPromise=null;
   let progress={answers:{},index:0,updatedAt:0};
@@ -12,7 +16,8 @@
 
   const $=id=>document.getElementById(id);
   const owner=()=>window.cbtUser?.uid||'local';
-  const storeKey=()=>STORE_PREFIX+owner();
+  const source=()=>SOURCES[sourceKey];
+  const storeKey=()=>source().prefix+owner();
 
   function loadProgress(){
     try{
@@ -32,18 +37,36 @@
 
   async function loadManifest(){
     if(manifest)return manifest;
-    if(!loadPromise)loadPromise=fetch(MANIFEST_URL,{cache:'no-cache'}).then(async response=>{
+    const requestedKey=sourceKey,selected=source();
+    if(!loadPromise){
+      let guarded;
+      const pending=fetch(selected.url,{cache:'no-cache'}).then(async response=>{
       if(!response.ok)throw new Error(`manifest HTTP ${response.status}`);
       const data=await response.json();
-      if(data.schemaVersion!==2||data.count!==956||data.items?.length!==956||data.unresolved?.length)throw new Error('辞典②の検証済みデータではありません');
-      manifest=data;
-      return data;
-    }).catch(error=>{loadPromise=null;throw error;});
+      if(data.schemaVersion!==selected.schema||data.unresolved?.length)throw new Error(`${selected.shortTitle}の検証済みデータではありません`);
+      const items=selected.mock?data.items?.filter(item=>item.mock===selected.mock):data.items;
+      if(items?.length!==selected.count)throw new Error(`${selected.shortTitle}の問題数が一致しません`);
+      const loaded={...data,count:items.length,items};
+      if(sourceKey===requestedKey&&loadPromise===guarded)manifest=loaded;
+      return loaded;
+      });
+      guarded=pending.catch(error=>{if(loadPromise===guarded)loadPromise=null;throw error;});
+      loadPromise=guarded;
+    }
     return loadPromise;
   }
 
   function groupFor(sourceId){
+    if(source().mock){const item=manifest?.items.find(entry=>entry.sourceId===sourceId);return item?`B${item.block}`:'';}
     return sourceId.startsWith('E')?sourceId.slice(0,2):sourceId.slice(0,1);
+  }
+
+  function groupKeys(){return source().mock?['B1','B2','B3','B4','B5','B6']:['A','B','C','D','E1','E2','E3','E4'];}
+
+  function renderGroupButtons(){
+    const groups=$('dictionaryGroups');if(!groups)return;
+    groups.innerHTML=groupKeys().map(group=>`<button type="button" class="dictionary-group" data-dictionary-group="${group}">${source().mock?`ブロック${group.slice(1)}`:group}<span>準備中</span></button>`).join('');
+    bindGroupButtons();
   }
 
   function summary(){
@@ -56,26 +79,40 @@
   }
 
   async function renderHome(){
+    const requestedKey=sourceKey,selected=source();
     const status=$('dictionaryStatus');
-    if(status)status.textContent='辞典②を読み込み中…';
+    if(status)status.textContent=`${selected.shortTitle}を読み込み中…`;
+    $('dictionaryHomeTitle').textContent=`📚 ${selected.title}`;
+    document.querySelectorAll('[data-dictionary-source]').forEach(button=>button.classList.toggle('on',button.dataset.dictionarySource===sourceKey));
+    renderGroupButtons();
     try{
-      await loadManifest();loadProgress();
+      const loaded=await loadManifest();
+      if(sourceKey!==requestedKey)return;
+      manifest=loaded;loadProgress();
       const sums=summary();
       $('dictionaryAnswered').textContent=sums.answered;
       $('dictionaryCorrect').textContent=sums.correct;
       $('dictionaryAttempts').textContent=sums.attempts;
       $('dictionaryStart').textContent=sums.answered?'続きから再開':'最初から始める';
       $('dictionaryStart').disabled=false;
-      status.textContent=`原本ID・正答・公式解説を検証済み（全${manifest.count}問）`;
+      const gap=sourceKey==='mock2'?' ／ 原本PDFに存在しない16問は未収録':'';
+      status.textContent=`原本ID・正答・公式解説を検証済み（全${manifest.count}問）${gap}`;
       document.querySelectorAll('[data-dictionary-group]').forEach(button=>{
         const count=manifest.items.filter(item=>groupFor(item.sourceId)===button.dataset.dictionaryGroup).length;
         button.querySelector('span').textContent=`${count}問`;
         button.disabled=!count;
       });
     }catch(error){
-      console.error(error);status.textContent='辞典②を読み込めませんでした。通信を確認して開き直してください。';
+      if(sourceKey!==requestedKey)return;
+      console.error(error);status.textContent=`${source().shortTitle}を読み込めませんでした。通信を確認して開き直してください。`;
       $('dictionaryStart').disabled=true;
     }
+  }
+
+  function selectSource(next){
+    if(!SOURCES[next]||next===sourceKey)return;
+    sourceKey=next;manifest=null;loadPromise=null;progress={answers:{},index:0,updatedAt:0};currentIndex=0;
+    renderHome();
   }
 
   async function open(index){
@@ -98,10 +135,11 @@
     $('timerChip').classList.remove('show');
     $('routeBackBtn').classList.add('hidden');
     $('pbarFill').style.width=`${(currentIndex+1)/manifest.items.length*100}%`;
+    $('dictionaryPracticeTitle').textContent=source().shortTitle;
     $('dictionaryNumber').textContent=item.sourceId;
     $('dictionaryProgress').textContent=`${currentIndex+1} / ${manifest.items.length}問`;
     $('dictionaryQuestionImage').src=item.questionImage;
-    $('dictionaryQuestionImage').alt=`辞典② ${item.sourceId} の問題`;
+    $('dictionaryQuestionImage').alt=`${source().shortTitle} ${item.sourceId} の問題`;
     $('dictionaryPrev').disabled=currentIndex===0;
     $('dictionaryNext').disabled=currentIndex===manifest.items.length-1;
     const choices=$('dictionaryChoices');choices.innerHTML='';
@@ -138,7 +176,7 @@
     const result=$('dictionaryResult');result.classList.remove('hidden');result.classList.toggle('bad',!correct);
     result.textContent=`${correct?'○ 正解':'× 不正解'}　あなたの回答：${picked} ／ 正解：${item.answer}`;
     $('dictionaryExplanationImage').src=item.explanationImage;
-    $('dictionaryExplanationImage').alt=`辞典② ${item.sourceId} の公式解説`;
+    $('dictionaryExplanationImage').alt=`${source().shortTitle} ${item.sourceId} の公式解説`;
     $('dictionaryExplanation').classList.remove('hidden');
     const record=progress.answers[item.sourceId]||{attempts:[]};
     if(!Array.isArray(record.attempts))record.attempts=[];
@@ -153,11 +191,16 @@
     saveProgress();currentIndex=Math.max(0,Math.min(manifest.items.length-1,currentIndex+delta));renderQuestion();
   }
 
-  function bind(){
-    $('dictionaryStart')?.addEventListener('click',()=>open(progress.index));
+  function bindGroupButtons(){
     document.querySelectorAll('[data-dictionary-group]').forEach(button=>button.addEventListener('click',async()=>{
       await loadManifest();const index=firstIndexForGroup(button.dataset.dictionaryGroup);if(index>=0)open(index);
     }));
+  }
+
+  function bind(){
+    $('dictionaryStart')?.addEventListener('click',()=>open(progress.index));
+    document.querySelectorAll('[data-dictionary-source]').forEach(button=>button.addEventListener('click',()=>selectSource(button.dataset.dictionarySource)));
+    bindGroupButtons();
     $('dictionaryHomeBack')?.addEventListener('click',()=>window.renderHome());
     $('dictionaryPrev')?.addEventListener('click',()=>move(-1));
     $('dictionaryNext')?.addEventListener('click',()=>move(1));

@@ -4,8 +4,8 @@ const root=path.resolve(__dirname,'..');
 const feature=fs.readFileSync(path.join(root,'features/dictionary-practice/dictionary-practice.js'),'utf8');
 const groups=['A','B','C','D','E1','E2','E3','E4'].map(group=>`<button data-dictionary-group="${group}">${group}<span></span></button>`).join('');
 const fixture=`<!doctype html><html><body>
-<div id="dictionaryHome"><span id="dictionaryAnswered"></span><span id="dictionaryCorrect"></span><span id="dictionaryAttempts"></span><button id="dictionaryStart" disabled></button><div>${groups}</div><p id="dictionaryStatus"></p></div>
-<section id="dictionaryPractice"><button id="dictionaryHomeBack"></button><span id="dictionaryNumber"></span><span id="dictionaryProgress"></span><img id="dictionaryQuestionImage"><p id="dictionaryHistory" class="hidden"></p><div id="dictionaryChoices"></div><button id="dictionaryPrev"></button><button id="dictionarySubmit"></button><button id="dictionaryNext"></button><div id="dictionaryResult" class="hidden"></div><div id="dictionaryExplanation" class="hidden"><img id="dictionaryExplanationImage"></div></section>
+<div id="dictionaryHome"><h2 id="dictionaryHomeTitle"></h2><button data-dictionary-source="dictionary2"></button><button data-dictionary-source="mock1"></button><button data-dictionary-source="mock2"></button><span id="dictionaryAnswered"></span><span id="dictionaryCorrect"></span><span id="dictionaryAttempts"></span><button id="dictionaryStart" disabled></button><div id="dictionaryGroups">${groups}</div><p id="dictionaryStatus"></p></div>
+<section id="dictionaryPractice"><h1 id="dictionaryPracticeTitle"></h1><button id="dictionaryHomeBack"></button><span id="dictionaryNumber"></span><span id="dictionaryProgress"></span><img id="dictionaryQuestionImage"><p id="dictionaryHistory" class="hidden"></p><div id="dictionaryChoices"></div><button id="dictionaryPrev"></button><button id="dictionarySubmit"></button><button id="dictionaryNext"></button><div id="dictionaryResult" class="hidden"></div><div id="dictionaryExplanation" class="hidden"><img id="dictionaryExplanationImage"></div></section>
 <div id="footer"></div><div id="timerChip"></div><div id="routeBackBtn"></div><div id="pbarFill"></div>
 <script>window.cbtUser={uid:'dictionary-test'};window.showOnly=()=>{};window.renderHome=()=>{};window.openImageZoom=()=>{};</script><script>${feature}</script></body></html>`;
 const server=http.createServer((request,response)=>{
@@ -43,6 +43,29 @@ const server=http.createServer((request,response)=>{
     await page.reload();await page.evaluate(()=>window.dictionaryPractice.renderHome());await page.waitForFunction(()=>document.getElementById('dictionaryStatus').textContent.includes('956'));
     assert.equal(await page.locator('#dictionaryAnswered').textContent(),'1');
     await page.locator('#dictionaryStart').click();assert.equal(await page.locator('#dictionaryNumber').textContent(),'E4001');
-    console.log('PASS dictionary browser: manifest load, group navigation, answer grading, official explanation, and per-user resume.');
+    await page.locator('[data-dictionary-source="mock1"]').click();
+    await page.waitForFunction(()=>document.getElementById('dictionaryStatus').textContent.includes('320'));
+    assert.equal(await page.locator('[data-dictionary-group="B6"] span').textContent(),'40問');
+    await page.locator('#dictionaryStart').click();assert.equal(await page.locator('#dictionaryNumber').textContent(),'001');
+    assert.equal(await page.locator('#dictionaryPracticeTitle').textContent(),'辞典③ 模試1');
+    await page.waitForFunction(()=>document.getElementById('dictionaryQuestionImage').naturalWidth>0);
+    await page.locator('#dictionaryChoices button',{hasText:'B'}).click();await page.locator('#dictionarySubmit').click();
+    assert.match(await page.locator('#dictionaryResult').textContent(),/○ 正解/);
+    const mock1Stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('togo_dictionary3_mock1_progress_v1_dictionary-test')));
+    assert.equal(mock1Stored.answers['001'].lastCorrect,true);
+    const d2Stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('togo_dictionary2_progress_v1_dictionary-test')));
+    assert.equal(d2Stored.answers.A001.lastCorrect,true);
+    await page.locator('[data-dictionary-source="mock2"]').click();
+    await page.waitForFunction(()=>document.getElementById('dictionaryStatus').textContent.includes('304'));
+    assert.equal(await page.locator('[data-dictionary-group="B6"] span').textContent(),'24問');
+    assert.match(await page.locator('#dictionaryStatus').textContent(),/原本PDFに存在しない16問は未収録/);
+    await page.locator('#dictionaryStart').click();assert.equal(await page.locator('#dictionaryNumber').textContent(),'001');
+    assert.equal(await page.locator('#dictionaryPracticeTitle').textContent(),'辞典③ 模試2');
+    await page.locator('#dictionaryChoices button',{hasText:'E'}).click();await page.locator('#dictionarySubmit').click();
+    assert.match(await page.locator('#dictionaryResult').textContent(),/○ 正解/);
+    const mock2Stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('togo_dictionary3_mock2_progress_v1_dictionary-test')));
+    assert.equal(mock2Stored.answers['001'].lastCorrect,true);
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('togo_dictionary3_mock1_progress_v1_dictionary-test')).answers['001'].lastCorrect),true);
+    console.log('PASS dictionary browser: all three sources, block navigation, grading, explanations, source gaps, and isolated resume progress.');
   }finally{await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});

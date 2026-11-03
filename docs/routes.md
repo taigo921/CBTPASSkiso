@@ -9,7 +9,7 @@
 |`#schoolGate`|授業中の利用停止と自動解除|Access & Identity|`#schoolGateImage`, `#schoolGateMessage`, logout|`schoolAccess/settings`、JST時間割|`schoolRestriction()`, `updateSchoolGate()`, `firestore.rules`|
 |`#home` / `#regularHome`|問題集選択、成績概要、再開、各機能入口|Question Catalog、Progress|book tabs、`#resumeCard`、mode buttons|問題JSON、本別成績、session、settings|`renderHome()`, `switchBook()`|
 |`#home` / `#mockHome`|模試block・科目選択、問題一覧|Mock Exam|block selector、filters、subject picker|模試assets、block別進捗|`renderMockHome()`|
-|`#home` / `#dictionaryHome`|辞典②の概要、進捗、領域選択|Dictionary Practice|start、A〜E4 group buttons、summary|辞典manifest、端末進捗|辞典Featureの `renderHome()`|
+|`#home` / `#dictionaryHome`|辞典②／辞典③模試1／模試2の選択、概要、進捗、領域選択|Dictionary Practice|source selector、start、領域／block buttons、summary|辞典manifest、教材別端末進捗|辞典Featureの `renderHome()`|
 |`#studyPlan`|日次学習ルート、calendar、追加学習、本の進捗|Study Route|plan buttons/calendar/paper form|両問題集、shared plan、成績|`renderStudyPlan()` とplan関数群|
 |`#quiz`|通常問題・計画・セクションの共通出題|Practice Session|question/choices/figure/answer/footer|問題、`session`、本別成績|`startSession()`, `renderQuestion()`, `pick()`, `next()`|
 |`#finish`|session結果と問題別review|Practice Session|score、review accordion|`session.records`|`finish()`|
@@ -19,7 +19,7 @@
 |`#sectionStart`|掲載順modeの開始位置を選択|Browse & Analysis|`#sectionStartBody`|問題、端末内section再開位置|`openSectionStart()`, `startSectionModeSession()`|
 |`#mockExam`|block別模試、採点、公式解説|Mock Exam|source image、A-E、prev/next、zoom|block問題、写真page、block進捗|`renderMockExam()`, `submitMockExam()`|
 |`#mockSubjectPractice`|科目をblock横断で順番演習|Mock Exam|subject question/choices/review|科目分類、端末内科目session|`startMockSubjectPractice()`, `renderMockSubjectPractice()`|
-|`#dictionaryPractice`|辞典②の出題、採点、回答後の公式解説|Dictionary Practice|問題画像、A〜E、結果、解説画像|辞典manifest／画像、ユーザー別端末進捗|`features/dictionary-practice/`、`dictionary-assets/exercises/`|
+|`#dictionaryPractice`|選択した辞典教材の出題、採点、回答後の公式解説|Dictionary Practice|問題画像、A〜J、結果、解説画像|辞典manifest／画像、教材別ユーザー端末進捗|`features/dictionary-practice/`、`dictionary-assets/exercises/`、`dictionary-assets/mock-exams/`|
 |`#leaderboard`|公開集計の順位、名前・写真編集|Leaderboard & Profile|tabs、list、rename、avatar|`leaderboard/{uid}`、本人profile|`openLeaderboard()`, `renderLeaderboard()`|
 |`#accessAdmin`|停止／解除、授業制限・休校日管理|Access Administration|user list、school controls|`users`, `accessControl`, `schoolAccess`|`openAccessAdmin()`, `renderAccessAdmin()`, `renderSchoolSettings()`|
 |`#guideViewer` overlay|ガイド編の参照と拡大|Guide Viewer|page images、zoom controls|`guide/*.webp`、`guide_ref`|`openGuide()`, `buildGuidePages()`|

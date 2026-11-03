@@ -40,7 +40,9 @@ assert.equal(manifest.items.at(-1).sourceId,'E4114');
 for(const id of ['dictionaryHome','dictionaryPractice','dictionaryStart','dictionaryQuestionImage','dictionaryChoices','dictionarySubmit','dictionaryExplanationImage'])assert.match(html,new RegExp(`id="${id}"`));
 assert.match(html,/data-book="dictionary"/);
 assert.match(html,/features\/dictionary-practice\/dictionary-practice\.js/);
-assert.match(feature,/STORE_PREFIX='togo_dictionary2_progress_v1_'/);
+assert.match(feature,/prefix:'togo_dictionary2_progress_v1_'/);
+assert.match(feature,/prefix:'togo_dictionary3_mock1_progress_v1_'/);
+assert.match(feature,/prefix:'togo_dictionary3_mock2_progress_v1_'/);
 assert.match(html,/通常問題集・学習ルート・ランキング/);
 new Function(feature);
 
