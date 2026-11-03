@@ -7,7 +7,7 @@
 - 同期形式の背景と制限: `scripts/README-sync.md`。
 - 通常問題: `data/*.json`。登録対象は `index.html` の `BOOKS`。
 - 模試: `mock-assets/azabu-2026/blocks.js`、`subjects.js`、`photo-pages.js`。
-- 辞典演習: 辞典②は `dictionary-assets/exercises/manifest.json`、辞典③は `dictionary-assets/mock-exams/manifest.json`。原本PDFからの生成規則は各import script。
+- 辞典演習: 辞典②は `dictionary-assets/exercises/manifest.json`、辞典③は `dictionary-assets/mock-exams/manifest.json`、学校Forms歯科理工は `dictionary-assets/dental-materials/manifest.json`。原本PDFからの生成規則は各import script。
 
 この文書は索引であり、schema全文を複製しない。フィールドを変える場合は上記実装とルールを先に更新する。
 
@@ -83,6 +83,7 @@
 |`togo_dictionary2_progress_v1_{uid}`|辞典②の現在位置、問題別回答履歴、最終正誤|いいえ。通常成績・export・Firestore対象外|
 |`togo_dictionary3_mock1_progress_v1_{uid}`|辞典③模試1の現在位置、問題別回答履歴、最終正誤|いいえ。通常成績・export・Firestore対象外|
 |`togo_dictionary3_mock2_progress_v1_{uid}`|辞典③模試2の現在位置、問題別回答履歴、最終正誤|いいえ。通常成績・export・Firestore対象外|
+|`togo_dental_materials_forms_progress_v1_{uid}`|学校Forms歯科理工の現在位置、問題別回答履歴、最終正誤|いいえ。通常成績・export・Firestore対象外|
 |`togo_sync_backup_20260923_{uid}`|同期形式移行前の端末backup|いいえ|
 |`togo_blocked_login_notice_v1`|停止画面mediaの再表示状態|いいえ|
 
@@ -99,6 +100,8 @@ LocalStorageが失敗した場合は最新値を `_memStore` に保持して警�
 辞典②は `DICT2-{sourceId}` をUIDとし、manifestが原本ID、正答、問題画像、公式解説画像の対応を持つ。manifestは956問、ID一意、未解決0件を公開条件とし、原本PDFそのものはリポジトリや配信物へ含めない。
 
 辞典③は `DICT3-M{mock}-{sourceId}` をUIDとし、manifestが模試番号、ブロック、原本ID、A〜Jの選択肢範囲、正答、問題／公式解説画像を持つ。公開条件は模試1が320問、模試2が304問、未解決0件。模試2ブロック6の表紙記載40問に対し、原本本文は24問で終了するため、不足16問を `sourceGap` に記録し推測補完しない。
+
+学校Forms歯科理工は `DENTAL-MATERIALS-{Forms問題番号}` をUIDとする。原本50問中、提出後の正答表示を確認できた38問だけを採点対象とし、残る12問はmanifestの `unresolved` にForms問題番号と理由を保持する。選択途中のラジオボタンを正答として推測しない。
 
 ## データフロー上の不変条件
 

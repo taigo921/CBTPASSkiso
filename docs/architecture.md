@@ -11,7 +11,7 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 |オフライン|`sw.js`、Cache Storage、LocalStorage|
 |認証|Firebase Authentication。Google Identity Servicesとメール・パスワード|
 |データベース|Cloud Firestore（Firebase compat SDK 10.12.2をCDN読込）|
-|問題データ|`data/*.json`、模試は `mock-assets/azabu-2026/`、辞典演習は `dictionary-assets/exercises/` と `dictionary-assets/mock-exams/`|
+|問題データ|`data/*.json`、模試は `mock-assets/azabu-2026/`、辞典演習は `dictionary-assets/exercises/`、`dictionary-assets/mock-exams/`、`dictionary-assets/dental-materials/`|
 |テスト|Node.jsの静的・DOM・同期回帰、Playwright、Firestore Emulator、Python/Shell検査|
 
 アプリ固有のサーバーやServer Actionはない。ブラウザがFirebase AuthとFirestoreへ直接接続し、`firestore.rules` が認可と書込形状を強制する。
@@ -27,6 +27,7 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 |`mock-assets/azabu-2026/`|模試の設問、正解、科目分類、写真ページ、問題・解説画像|
 |`dictionary-assets/exercises/`|辞典②の検証済みmanifest、問題画像、公式解説画像。原本PDFは含めない|
 |`dictionary-assets/mock-exams/`|辞典③の誌上模試1・2（原本に実在する624問）のmanifest、問題画像、公式解説画像。原本PDFは含めない|
+|`dictionary-assets/dental-materials/`|学校配布の歯科理工Forms 50問のうち、正答画面を確認できた38問のmanifest、問題画像、正答画面。正答未表示12問と原本PDFは含めない|
 |`features/dictionary-practice/`|辞典演習専用のUI、端末進捗、出題・採点ロジック|
 |`assets/`|アプリUIで使う静的メディア|
 |`firestore.rules`|Firestoreの権限・公開データ形状のsource of truth|
@@ -47,7 +48,7 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 |Study Route|忘却曲線、日次課題、追加学習、本の進捗登録|Question Catalog、Practice、Progress|
 |Browse & Analysis|問題一覧、セクション演習、成績・苦手・学習時間|Question Catalog、Progress|
 |Mock Exam|ブロック別模試、連問、科目別演習、解説画像|模試アセット、Progressの一部|
-|Dictionary Practice|辞典②および辞典③誌上模試の原本ID別演習、採点、公式解説、教材別専用端末進捗|辞典manifest、画像viewer|
+|Dictionary Practice|辞典②、辞典③誌上模試、学校Forms歯科理工の原本ID別演習、採点、解説／正答画面、教材別専用端末進捗|辞典manifest、画像viewer|
 |Progress & Sync|LocalStorage、バックアップ、複数端末マージ、Firestore保存|Firestore、各学習Feature|
 |Gamification|XP、レベル、ランク、連続記録|Practice、Progress|
 |Leaderboard & Profile|表示名・写真、公開集計、ランキング表示|Progressの集計、Access|
@@ -116,7 +117,7 @@ Firestore側でも許可メール、個別停止、授業時間を再判定す�
 
 ### 辞典演習
 
-`dictionary-assets/exercises/manifest.json` の辞典② 956問、または `dictionary-assets/mock-exams/manifest.json` の辞典③ 624問を読み、`features/dictionary-practice/` が専用画面を所有する。辞典③は模試1（320問）と模試2（304問）を別教材として選び、進捗も分離する。回答確定後だけ公式解説を表示し、通常問題集・学習ルート・XP・ランキング・Firestore同期には混ぜない。
+`dictionary-assets/exercises/manifest.json` の辞典② 956問、`dictionary-assets/mock-exams/manifest.json` の辞典③ 624問、または `dictionary-assets/dental-materials/manifest.json` の学校Forms歯科理工38問を読み、`features/dictionary-practice/` が専用画面を所有する。教材ごとに進捗を分離する。歯科理工の原本はForms画面をまとめたPDFで、50問中12問には正答確定画面がないため公開対象から除外し、manifestの `unresolved` をsource of truthとする。回答確定後だけ解説／正答画面を表示し、通常問題集・学習ルート・XP・ランキング・Firestore同期には混ぜない。
 
 ## 認証・権限
 

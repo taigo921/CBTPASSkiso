@@ -4,7 +4,8 @@
   const SOURCES={
     dictionary2:{title:'CBTの辞典② 基礎臨床',shortTitle:'CBTの辞典②',url:'dictionary-assets/exercises/manifest.json',count:956,schema:2,prefix:'togo_dictionary2_progress_v1_'},
     mock1:{title:'CBTの辞典③ 誌上模試1',shortTitle:'辞典③ 模試1',url:'dictionary-assets/mock-exams/manifest.json',count:320,schema:1,mock:1,prefix:'togo_dictionary3_mock1_progress_v1_'},
-    mock2:{title:'CBTの辞典③ 誌上模試2',shortTitle:'辞典③ 模試2',url:'dictionary-assets/mock-exams/manifest.json',count:304,schema:1,mock:2,prefix:'togo_dictionary3_mock2_progress_v1_'}
+    mock2:{title:'CBTの辞典③ 誌上模試2',shortTitle:'辞典③ 模試2',url:'dictionary-assets/mock-exams/manifest.json',count:304,schema:1,mock:2,prefix:'togo_dictionary3_mock2_progress_v1_'},
+    dentalMaterials:{title:'学校配布 歯科理工 Forms',shortTitle:'歯科理工 Forms',url:'dictionary-assets/dental-materials/manifest.json',count:38,schema:1,prefix:'togo_dental_materials_forms_progress_v1_',allowUnresolved:true,groups:['2024 Forms'],explanationTitle:'学校Formsの正答画面'}
   };
   let sourceKey='dictionary2';
   let manifest=null;
@@ -43,7 +44,7 @@
       const pending=fetch(selected.url,{cache:'no-cache'}).then(async response=>{
       if(!response.ok)throw new Error(`manifest HTTP ${response.status}`);
       const data=await response.json();
-      if(data.schemaVersion!==selected.schema||data.unresolved?.length)throw new Error(`${selected.shortTitle}の検証済みデータではありません`);
+      if(data.schemaVersion!==selected.schema||(!selected.allowUnresolved&&data.unresolved?.length))throw new Error(`${selected.shortTitle}の検証済みデータではありません`);
       const items=selected.mock?data.items?.filter(item=>item.mock===selected.mock):data.items;
       if(items?.length!==selected.count)throw new Error(`${selected.shortTitle}の問題数が一致しません`);
       const loaded={...data,count:items.length,items};
@@ -57,15 +58,16 @@
   }
 
   function groupFor(sourceId){
+    if(source().groups){const item=manifest?.items.find(entry=>entry.sourceId===sourceId);return item?.group||source().groups[0];}
     if(source().mock){const item=manifest?.items.find(entry=>entry.sourceId===sourceId);return item?`B${item.block}`:'';}
     return sourceId.startsWith('E')?sourceId.slice(0,2):sourceId.slice(0,1);
   }
 
-  function groupKeys(){return source().mock?['B1','B2','B3','B4','B5','B6']:['A','B','C','D','E1','E2','E3','E4'];}
+  function groupKeys(){return source().groups|| (source().mock?['B1','B2','B3','B4','B5','B6']:['A','B','C','D','E1','E2','E3','E4']);}
 
   function renderGroupButtons(){
     const groups=$('dictionaryGroups');if(!groups)return;
-    groups.innerHTML=groupKeys().map(group=>`<button type="button" class="dictionary-group" data-dictionary-group="${group}">${source().mock?`ブロック${group.slice(1)}`:group}<span>準備中</span></button>`).join('');
+    groups.innerHTML=groupKeys().map(group=>`<button type="button" class="dictionary-group" data-dictionary-group="${group}">${source().groups?group:(source().mock?`ブロック${group.slice(1)}`:group)}<span>準備中</span></button>`).join('');
     bindGroupButtons();
   }
 
@@ -96,7 +98,8 @@
       $('dictionaryStart').textContent=sums.answered?'続きから再開':'最初から始める';
       $('dictionaryStart').disabled=false;
       const gap=sourceKey==='mock2'?' ／ 原本PDFに存在しない16問は未収録':'';
-      status.textContent=`原本ID・正答・公式解説を検証済み（全${manifest.count}問）${gap}`;
+      const formsGap=sourceKey==='dentalMaterials'?` ／ 原本50問中、正答表示のない${manifest.unresolved.length}問は未収録`:'';
+      status.textContent=`原本ID・正答・解説画面を検証済み（全${manifest.count}問）${gap}${formsGap}`;
       document.querySelectorAll('[data-dictionary-group]').forEach(button=>{
         const count=manifest.items.filter(item=>groupFor(item.sourceId)===button.dataset.dictionaryGroup).length;
         button.querySelector('span').textContent=`${count}問`;
@@ -140,11 +143,13 @@
     $('dictionaryProgress').textContent=`${currentIndex+1} / ${manifest.items.length}問`;
     $('dictionaryQuestionImage').src=item.questionImage;
     $('dictionaryQuestionImage').alt=`${source().shortTitle} ${item.sourceId} の問題`;
+    $('dictionaryExplanationTitle').textContent=source().explanationTitle||'公式解説';
     $('dictionaryPrev').disabled=currentIndex===0;
     $('dictionaryNext').disabled=currentIndex===manifest.items.length-1;
-    const choices=$('dictionaryChoices');choices.innerHTML='';
+    const choices=$('dictionaryChoices');choices.innerHTML='';choices.classList.toggle('with-labels',Boolean(item.choiceLabels));
     for(const key of item.choices){
-      const button=document.createElement('button');button.type='button';button.className='dictionary-choice';button.textContent=key;
+      const button=document.createElement('button');button.type='button';button.className='dictionary-choice';button.dataset.choice=key;
+      const label=item.choiceLabels?.[key];button.textContent=label?`${key}　${label}`:key;
       button.addEventListener('click',()=>{
         if(answered)return;picked=key;
         choices.querySelectorAll('button').forEach(node=>node.classList.toggle('selected',node===button));
@@ -170,8 +175,8 @@
     const correct=picked===item.answer;
     $('dictionaryChoices').querySelectorAll('button').forEach(button=>{
       button.disabled=true;button.classList.remove('selected');
-      if(button.textContent===item.answer)button.classList.add('correct');
-      else if(button.textContent===picked)button.classList.add('wrong');
+      if(button.dataset.choice===item.answer)button.classList.add('correct');
+      else if(button.dataset.choice===picked)button.classList.add('wrong');
     });
     const result=$('dictionaryResult');result.classList.remove('hidden');result.classList.toggle('bad',!correct);
     result.textContent=`${correct?'○ 正解':'× 不正解'}　あなたの回答：${picked} ／ 正解：${item.answer}`;

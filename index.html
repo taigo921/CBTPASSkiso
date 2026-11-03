@@ -639,7 +639,7 @@
       <button class="book-tab on" data-book="book1" role="tab" aria-selected="true"><b>問題集1</b><span>基礎系</span></button>
       <button class="book-tab" data-book="book2" role="tab" aria-selected="false"><b>問題集2</b><span>臨床系</span></button>
       <button class="book-tab" data-book="mock" role="tab" aria-selected="false"><b>2026 9/19</b><span>麻布模試</span></button>
-      <button class="book-tab" data-book="dictionary" role="tab" aria-selected="false"><b>CBT辞典</b><span>辞典②・③</span></button>
+      <button class="book-tab" data-book="dictionary" role="tab" aria-selected="false"><b>CBT辞典</b><span>辞典②・③・歯科理工</span></button>
     </div>
     <div id="mockHome" class="hidden">
       <div class="sec-h">科目ごとに解く</div>
@@ -666,6 +666,7 @@
           <button type="button" class="on" data-dictionary-source="dictionary2">辞典② 基礎臨床</button>
           <button type="button" data-dictionary-source="mock1">辞典③ 模試1</button>
           <button type="button" data-dictionary-source="mock2">辞典③ 模試2</button>
+          <button type="button" data-dictionary-source="dentalMaterials">歯科理工 Forms</button>
         </div>
         <div class="dictionary-summary" aria-label="辞典演習の進捗">
           <div><b id="dictionaryAnswered">0</b>解答済み</div>
@@ -920,7 +921,7 @@
       </div>
       <div id="dictionaryResult" class="dictionary-result hidden" aria-live="polite"></div>
       <div id="dictionaryExplanation" class="dictionary-explanation hidden">
-        <h2>📣 公式解説</h2>
+        <h2>📣 <span id="dictionaryExplanationTitle">公式解説</span></h2>
         <img id="dictionaryExplanationImage" class="dictionary-image" alt="辞典②の公式解説">
       </div>
     </div>

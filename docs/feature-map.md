@@ -81,13 +81,13 @@
 
 ## CBT辞典演習
 
-- 機能: 辞典② 956問と、辞典③の誌上模試1（320問）・模試2（304問）を選び、原本ID順または領域／ブロック別に解く。正誤確定後に公式解説を表示し、教材別・端末別に再開する。
+- 機能: 辞典② 956問、辞典③の誌上模試1（320問）・模試2（304問）、学校配布の歯科理工Formsで正答確認済みの38問を選び、原本ID順または領域／ブロック別に解く。正誤確定後に公式解説またはForms正答画面を表示し、教材別・端末別に再開する。
 - Route / 画面: `#dictionaryHome`、`#dictionaryPractice`。
 - 主なUI: `[data-dictionary-source]`、`#dictionaryStart`、`[data-dictionary-group]`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
 - state / hooks相当: `features/dictionary-practice/dictionary-practice.js` 内の `SOURCES`、`sourceKey`、`manifest`、`progress`、`currentIndex`、`renderHome()`、`open()`、`renderQuestion()`、`submit()`。
-- API / service: 辞典②／③manifestの静的fetch、LocalStorage、共通 `openImageZoom()`。
-- DB: Firestore不使用。辞典②、辞典③模試1、辞典③模試2で異なるLocalStorage keyを使う。
-- 関連ファイル: `features/dictionary-practice/`、`dictionary-assets/exercises/`、`dictionary-assets/mock-exams/`、`scripts/import_cbt_dictionary.py`、`scripts/import_cbt_dictionary3.py`、`scripts/test_dictionary_practice.cjs`、`scripts/test_dictionary3_practice.cjs`、`scripts/test_dictionary_browser.cjs`。
+- API / service: 各教材manifestの静的fetch、LocalStorage、共通 `openImageZoom()`。
+- DB: Firestore不使用。4教材で異なるLocalStorage keyを使う。歯科理工は `togo_dental_materials_forms_progress_v1_{uid}`。
+- 関連ファイル: `features/dictionary-practice/`、`dictionary-assets/exercises/`、`dictionary-assets/mock-exams/`、`dictionary-assets/dental-materials/`、`scripts/import_cbt_dictionary.py`、`scripts/import_cbt_dictionary3.py`、`scripts/import_dental_materials_forms.py`、各静的テスト、`scripts/test_dictionary_browser.cjs`。
 - 他Featureとの依存: Access後に利用し、画面切替と画像viewerだけを共用する。通常問題集、Study Route、Progress & Sync、Gamification、Leaderboardとは記録を分離する。
 
 ## ガイド編・画像viewer

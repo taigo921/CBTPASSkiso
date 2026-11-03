@@ -29,7 +29,7 @@
 
 - 問題集の登録と件数: `index.html` の `BOOKS`、問題本文: `data/*.json`
 - 模試: `mock-assets/azabu-2026/blocks.js`、`subjects.js`、`photo-pages.js` と同配下の画像
-- 辞典演習: 辞典②は `dictionary-assets/exercises/`、辞典③は `dictionary-assets/mock-exams/`。再生成・検証は対応する `scripts/import_cbt_dictionary*.py` と `scripts/test_dictionary*_practice.cjs`
+- 辞典演習: 辞典②は `dictionary-assets/exercises/`、辞典③は `dictionary-assets/mock-exams/`、学校Forms歯科理工は `dictionary-assets/dental-materials/`。再生成・検証は対応する `scripts/import_*.py` と `scripts/test_dictionary*_practice.cjs`／`scripts/test_dental_materials_forms.cjs`
 - Firestoreの許可条件・書込形状: `firestore.rules`
 - ローカル／クラウド進捗形式とマージ: `index.html` の storage/sync 部分、補足は `scripts/README-sync.md`
 - CI: `.github/workflows/tests.yml`、Pages公開: `.github/workflows/pages.yml`、ルール公開: `.github/workflows/firebase-rules.yml`
