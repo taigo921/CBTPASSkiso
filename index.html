@@ -131,6 +131,7 @@
   .ghost-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:12px;font-weight:700;
     padding:7px 11px;border-radius:999px;cursor:pointer;}
   .ghost-btn:active{background:#EEF3FA;}
+  #listPracticeBtn{width:100%;margin:0 0 14px;}
   .pbar{height:5px;background:#e5ebf5;border-radius:999px;margin:10px auto 0;max-width:560px;overflow:hidden;}
   .pbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--green-l));width:0;transition:width .35s ease;}
 
@@ -977,9 +978,10 @@
     <div class="filterbar" id="filterBar">
       <button class="fbtn on" data-f="all">すべて</button>
       <button class="fbtn" data-f="unanswered">未回答</button>
-      <button class="fbtn" data-f="wrong">間違い</button>
+      <button class="fbtn" data-f="wrong">間違えた問題</button>
       <button class="fbtn" data-f="fav">★お気に入り</button>
     </div>
+    <button class="btn hidden" id="listPracticeBtn" type="button">間違えた問題をまとめて解く</button>
     <div id="listBody"></div>
   </section>
 
@@ -1314,7 +1316,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261103-sync-quota-backoff-1';
+const SERVICE_WORKER_BUILD='20261103-wrong-list-session-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -3256,17 +3258,29 @@ function openList(){
   showOnly('list');
 }
 function statusOf(q){ const r=stats.perQ[qkey(q)]; if(!r||(r.correct+r.wrong)===0)return 'non'; return r.last==='correct'?'ok':'ng'; }
-function renderList(){
-  document.querySelectorAll('#filterBar .fbtn').forEach(b=>b.classList.toggle('on',b.dataset.f===listFilter));
-  const pass=q=>{const r=stats.perQ[qkey(q)];
+function listQuestions(){
+  return QUESTIONS.filter(q=>{const r=stats.perQ[qkey(q)];
     if(listFilter==='unanswered')return !r||(r.correct+r.wrong)===0;
     if(listFilter==='wrong')return r&&r.last==='wrong';
     if(listFilter==='fav')return r&&r.fav;
-    return true;};
+    return true;});
+}
+function startWrongListSession(startUid=null){
+  const pool=listQuestions().map(qkey);
+  if(listFilter!=='wrong'||!pool.length){toast('間違えた問題がありません');return;}
+  let idx=startUid?pool.indexOf(startUid):0;if(idx<0)idx=0;
+  session={mode:'review',uids:pool,idx,records:[],sessionCorrect:0,single:true,returnTo:'list'};
+  el('footer').classList.remove('hidden');renderQuestion();
+}
+function renderList(){
+  document.querySelectorAll('#filterBar .fbtn').forEach(b=>b.classList.toggle('on',b.dataset.f===listFilter));
   const body=el('listBody'); body.innerHTML='';
-  const filtered=QUESTIONS.filter(pass);
+  const filtered=listQuestions();
   const groups=groupBySection(filtered);
   const total=filtered.length;
+  const practice=el('listPracticeBtn');
+  practice.classList.toggle('hidden',listFilter!=='wrong'||!total);
+  practice.textContent=`間違えた問題をまとめて解く（${total}問）`;
   el('listCount').textContent=`${total} 問`+(listFilter!=='all'?'（絞り込み中）':'');
   if(!total){ body.innerHTML='<div class="empty">該当する問題がありません。</div>'; return; }
   Object.keys(groups).forEach(sec=>{
@@ -3280,7 +3294,7 @@ function renderList(){
       const it=document.createElement('div');it.className='litem';
       it.innerHTML=`<span class="lno">${qno(q)}</span><span class="lst ${st}">${mark}</span>
         <span class="lq">${escapeHtml(q.question.split('\n')[0])}</span><span class="lic">${ic}</span>`;
-      it.addEventListener('click',()=>startSectionSession(qkey(q),'list'));
+      it.addEventListener('click',()=>listFilter==='wrong'?startWrongListSession(qkey(q)):startSectionSession(qkey(q),'list'));
       body.appendChild(it);
     });
   });
@@ -3485,6 +3499,7 @@ document.querySelectorAll('[data-section-mode]').forEach(button=>button.addEvent
 }));
 el('sectionStartBack').addEventListener('click',openSectionList);
 document.querySelectorAll('#filterBar .fbtn').forEach(b=>b.addEventListener('click',()=>{listFilter=b.dataset.f;renderList();}));
+el('listPracticeBtn').addEventListener('click',()=>startWrongListSession());
 el('resumeCard').addEventListener('click',resumeSession);
 el('nextBtn').addEventListener('click',next);
 el('prevBtn').addEventListener('click',prev);

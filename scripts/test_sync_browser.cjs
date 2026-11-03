@@ -247,6 +247,23 @@ const server=http.createServer((req,res)=>{
    assert.ok(await page.locator('#storageWarning').isHidden());
   }
   for(const page of pages){
+   const expected=await page.evaluate(async()=>{
+    await switchBook('book1');stats=emptyStats();statsByBook.book1=stats;
+    const first=QUESTIONS[0],otherSection=QUESTIONS.find(q=>q.section!==first.section),correct=QUESTIONS.find(q=>q!==first&&q!==otherSection);
+    const wrongUids=[qkey(first),qkey(otherSection)];
+    stats.perQ[wrongUids[0]]={correct:0,wrong:1,last:'wrong',times:[],history:[]};
+    stats.perQ[qkey(correct)]={correct:1,wrong:0,last:'correct',times:[],history:[]};
+    stats.perQ[wrongUids[1]]={correct:0,wrong:1,last:'wrong',times:[],history:[]};
+    stats.answered=3;stats.correct=1;openList();return wrongUids;
+   });
+   await page.locator('#filterBar [data-f="wrong"]').click();
+   assert.equal(await page.locator('#listBody .litem').count(),2);
+   assert.match(await page.locator('#listPracticeBtn').textContent(),/まとめて解く（2問）/);
+   await page.locator('#listPracticeBtn').click();
+   assert.deepEqual(await page.evaluate(()=>({mode:session.mode,uids:session.uids,single:session.single,returnTo:session.returnTo})),{mode:'review',uids:expected,single:true,returnTo:'list'});
+   await page.evaluate(()=>{session=null;renderHome();});
+  }
+  for(const page of pages){
    await page.evaluate(()=>switchBook('book1'));
    await page.evaluate(()=>{
     window.cbtUser={uid:'owner',email:'itaigo921@gmail.com',emailVerified:true};

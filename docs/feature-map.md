@@ -48,10 +48,10 @@
 
 ## 問題一覧・セクション演習
 
-- 機能: 状態で絞り込む一覧、セクション選択、モード選択、掲載順の再開位置。
+- 機能: 状態で絞り込む一覧、一覧で「間違えた問題」に絞った全問の連続演習、セクション選択、モード選択、掲載順の再開位置。
 - Route / 画面: `#list`、`#sectionList`、`#sectionStart`、出題は `#quiz`。
 - 主なUI: `#filterBar`、`#listBody`、`#sectionListBody`、`[data-section-mode]`、`#sectionStartBody`。
-- state / hooks相当: `listFilter`、`pickedSection`、`settings.sectionMode`、`renderList()`、`renderSectionList()`、`openSectionStart()`、`startSectionModeSession()`。
+- state / hooks相当: `listFilter`、`pickedSection`、`settings.sectionMode`、`renderList()`、`startWrongListSession()`、`renderSectionList()`、`openSectionStart()`、`startSectionModeSession()`。
 - API / service: 共通Practice session、`saveSectionUid()`。
 - DB: LocalStorage `cbt_section_progress_v1`、`cbt_settings_v2`、本別成績。クラウドへは成績とsessionが同期されるが、セクション再開位置自体は端末保存。
 - 関連ファイル: `index.html` のbrowse/section grouping。
