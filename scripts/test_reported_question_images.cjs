@@ -23,4 +23,17 @@ assert.equal(sha(articulator),'b03ee3d2386b7a1f084398c8abc1f309b4e2deda4c4030ad0
 assert.deepEqual(articulator.choices,{A:'（ア）',B:'（イ）',C:'（ウ）',D:'（エ）',E:'（オ）'});
 assert.equal(articulator.answer,'A');
 
-console.log('PASS reported question images: C4-087 allergy and E3-4-2-106 articulator figures are restored and aligned');
+const pulpitis=e3ByUid('E3-3-2-049');
+assert.equal(sha(pulpitis),'2b714a7025c84034cb3fd7e40ed50087bd8b637448ca40de3d4449602cccb2bb','E3-3-2-049 keeps the source-matched radiograph');
+assert.equal(pulpitis.answer,'C');
+
+const curette=e3ByUid('E3-3-3-097');
+assert.equal(sha(curette),'327d965f72febcbf6e65700db343352d6a54014d73d0eb9e0a9032884bb0cbef','E3-3-3-097 keeps the complete figure containing labels （ア）〜（オ）');
+assert.deepEqual(curette.choices,{A:'（ア）',B:'（イ）',C:'（ウ）',D:'（エ）',E:'（オ）'});
+assert.equal(curette.answer,'C');
+
+const restPosition=e3ByUid('E3-4-2-098');
+assert.equal(sha(restPosition),'a9c906a9d69f67b1ca4477024745e44c5752ffc0f7dd7b446ad5a751caccc720','E3-4-2-098 keeps both rest-position and denture-wearing photographs');
+assert.equal(restPosition.answer,'E');
+
+console.log('PASS reported question images: allergy, pulpitis, curette, rest-position, and articulator figures are aligned');
