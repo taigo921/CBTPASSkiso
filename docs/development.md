@@ -63,7 +63,7 @@ Firestore権限を変えた場合は、実プロジェクトではなくロー�
 |通常演習・進捗|sync、progress preservation、browser two-device|
 |学習ルート|paper progress、route review、study plan load、question progress、sync|
 |模試|mock exam、mock subjects|
-|辞典manifest・画像・演習|dictionary practice、dictionary browser、dental materials Forms。原本を再生成する場合、辞典②・③は未解決0件、学校Formsはmanifest記録の未確定12件から増えていないこと|
+|辞典manifest・画像・演習|dictionary practice、dictionary browser、dental materials Forms。原本を再生成する場合、辞典②・③は未解決0件、学校Formsはmanifest記録の未確定3件から増えていないこと|
 |XP・ランク|rank progression、sync|
 |認証・停止・授業|access control、school hours、blocked login browser、rules emulator|
 |ランキング|admin ranking、leaderboard rules、sync|

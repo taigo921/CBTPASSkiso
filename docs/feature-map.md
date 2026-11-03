@@ -81,7 +81,7 @@
 
 ## CBT辞典演習
 
-- 機能: 辞典② 956問、辞典③の誌上模試1（320問）・模試2（304問）、学校配布の歯科理工Formsで正答確認済みの38問を選び、原本ID順または領域／ブロック別に解く。正誤確定後に公式解説またはForms正答画面を表示し、教材別・端末別に再開する。
+- 機能: 辞典② 956問、辞典③の誌上模試1（320問）・模試2（304問）、学校配布の歯科理工Formsで正答確認済みの47問を選び、原本ID順または領域／ブロック別に解く。歯科理工では単一選択と複数選択を採点する。正誤確定後に公式解説またはForms正答参照画像を表示し、教材別・端末別に再開する。
 - Route / 画面: `#dictionaryHome`、`#dictionaryPractice`。
 - 主なUI: `[data-dictionary-source]`、`#dictionaryStart`、`[data-dictionary-group]`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
 - state / hooks相当: `features/dictionary-practice/dictionary-practice.js` 内の `SOURCES`、`sourceKey`、`manifest`、`progress`、`currentIndex`、`renderHome()`、`open()`、`renderQuestion()`、`submit()`。

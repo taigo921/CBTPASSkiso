@@ -5,7 +5,7 @@
     dictionary2:{title:'CBTの辞典② 基礎臨床',shortTitle:'CBTの辞典②',url:'dictionary-assets/exercises/manifest.json',count:956,schema:2,prefix:'togo_dictionary2_progress_v1_'},
     mock1:{title:'CBTの辞典③ 誌上模試1',shortTitle:'辞典③ 模試1',url:'dictionary-assets/mock-exams/manifest.json',count:320,schema:1,mock:1,prefix:'togo_dictionary3_mock1_progress_v1_'},
     mock2:{title:'CBTの辞典③ 誌上模試2',shortTitle:'辞典③ 模試2',url:'dictionary-assets/mock-exams/manifest.json',count:304,schema:1,mock:2,prefix:'togo_dictionary3_mock2_progress_v1_'},
-    dentalMaterials:{title:'学校配布 歯科理工 Forms',shortTitle:'歯科理工 Forms',url:'dictionary-assets/dental-materials/manifest.json',count:38,schema:1,prefix:'togo_dental_materials_forms_progress_v1_',allowUnresolved:true,groups:['2024 Forms'],explanationTitle:'学校Formsの正答画面'}
+    dentalMaterials:{title:'学校配布 歯科理工 Forms',shortTitle:'歯科理工 Forms',url:'dictionary-assets/dental-materials/manifest.json',count:47,schema:1,prefix:'togo_dental_materials_forms_progress_v1_',allowUnresolved:true,groups:['2024 Forms'],explanationTitle:'学校Formsの正答参照画像'}
   };
   let sourceKey='dictionary2';
   let manifest=null;
@@ -147,13 +147,23 @@
     $('dictionaryPrev').disabled=currentIndex===0;
     $('dictionaryNext').disabled=currentIndex===manifest.items.length-1;
     const choices=$('dictionaryChoices');choices.innerHTML='';choices.classList.toggle('with-labels',Boolean(item.choiceLabels));
+    const requiredChoices=item.answer.length;
     for(const key of item.choices){
       const button=document.createElement('button');button.type='button';button.className='dictionary-choice';button.dataset.choice=key;
       const label=item.choiceLabels?.[key];button.textContent=label?`${key}　${label}`:key;
       button.addEventListener('click',()=>{
-        if(answered)return;picked=key;
-        choices.querySelectorAll('button').forEach(node=>node.classList.toggle('selected',node===button));
-        $('dictionarySubmit').disabled=false;
+        if(answered)return;
+        if(requiredChoices===1){
+          picked=key;
+          choices.querySelectorAll('button').forEach(node=>node.classList.toggle('selected',node===button));
+        }else{
+          const selected=new Set(picked);
+          if(selected.has(key))selected.delete(key);
+          else if(selected.size<requiredChoices)selected.add(key);
+          picked=[...item.choices].filter(choice=>selected.has(choice)).join('');
+          choices.querySelectorAll('button').forEach(node=>node.classList.toggle('selected',picked.includes(node.dataset.choice)));
+        }
+        $('dictionarySubmit').disabled=picked.length!==requiredChoices;
       });
       choices.appendChild(button);
     }
@@ -175,8 +185,8 @@
     const correct=picked===item.answer;
     $('dictionaryChoices').querySelectorAll('button').forEach(button=>{
       button.disabled=true;button.classList.remove('selected');
-      if(button.dataset.choice===item.answer)button.classList.add('correct');
-      else if(button.dataset.choice===picked)button.classList.add('wrong');
+      if(item.answer.includes(button.dataset.choice))button.classList.add('correct');
+      else if(picked.includes(button.dataset.choice))button.classList.add('wrong');
     });
     const result=$('dictionaryResult');result.classList.remove('hidden');result.classList.toggle('bad',!correct);
     result.textContent=`${correct?'○ 正解':'× 不正解'}　あなたの回答：${picked} ／ 正解：${item.answer}`;

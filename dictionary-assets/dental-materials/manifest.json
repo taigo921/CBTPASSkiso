@@ -3,7 +3,7 @@
   "source": "学校配布 歯科理工 Forms 50問（2024版）",
   "sourceFileSha256": "c72730f7648a1d41b737ad5919615c2683c04b7a83297b1788048036b0688c37",
   "sourceQuestionCount": 50,
-  "count": 38,
+  "count": 47,
   "items": [
     {
       "uid": "DENTAL-MATERIALS-003",
@@ -156,9 +156,31 @@
       }
     },
     {
+      "uid": "DENTAL-MATERIALS-013",
+      "sourceId": "FORM-013",
+      "number": 11,
+      "formQuestionNumber": 13,
+      "group": "2024 Forms",
+      "answer": "D",
+      "choices": "ABCDE",
+      "questionImage": "dictionary-assets/dental-materials/questions/form-013.webp",
+      "explanationImage": "dictionary-assets/dental-materials/answers/form-013.webp",
+      "sourcePages": {
+        "question": 125,
+        "answer": 123
+      },
+      "choiceLabels": {
+        "A": "H",
+        "B": "N",
+        "C": "K",
+        "D": "Ca",
+        "E": "Mg"
+      }
+    },
+    {
       "uid": "DENTAL-MATERIALS-014",
       "sourceId": "FORM-014",
-      "number": 11,
+      "number": 12,
       "formQuestionNumber": 14,
       "group": "2024 Forms",
       "answer": "A",
@@ -173,7 +195,7 @@
     {
       "uid": "DENTAL-MATERIALS-015",
       "sourceId": "FORM-015",
-      "number": 12,
+      "number": 13,
       "formQuestionNumber": 15,
       "group": "2024 Forms",
       "answer": "B",
@@ -188,7 +210,7 @@
     {
       "uid": "DENTAL-MATERIALS-016",
       "sourceId": "FORM-016",
-      "number": 13,
+      "number": 14,
       "formQuestionNumber": 16,
       "group": "2024 Forms",
       "answer": "E",
@@ -203,7 +225,7 @@
     {
       "uid": "DENTAL-MATERIALS-017",
       "sourceId": "FORM-017",
-      "number": 14,
+      "number": 15,
       "formQuestionNumber": 17,
       "group": "2024 Forms",
       "answer": "A",
@@ -216,9 +238,53 @@
       }
     },
     {
+      "uid": "DENTAL-MATERIALS-018",
+      "sourceId": "FORM-018",
+      "number": 16,
+      "formQuestionNumber": 18,
+      "group": "2024 Forms",
+      "answer": "C",
+      "choices": "ABCDE",
+      "questionImage": "dictionary-assets/dental-materials/questions/form-018.webp",
+      "explanationImage": "dictionary-assets/dental-materials/answers/form-018.webp",
+      "sourcePages": {
+        "question": 109,
+        "answer": 107
+      },
+      "choiceLabels": {
+        "A": "石膏",
+        "B": "ケイソウ土",
+        "C": "酸化亜鉛",
+        "D": "ジルコニア",
+        "E": "カーボランダム"
+      }
+    },
+    {
+      "uid": "DENTAL-MATERIALS-019",
+      "sourceId": "FORM-019",
+      "number": 17,
+      "formQuestionNumber": 19,
+      "group": "2024 Forms",
+      "answer": "BD",
+      "choices": "ABCDE",
+      "questionImage": "dictionary-assets/dental-materials/questions/form-019.webp",
+      "explanationImage": "dictionary-assets/dental-materials/answers/form-019.webp",
+      "sourcePages": {
+        "question": 106,
+        "answer": 104
+      },
+      "choiceLabels": {
+        "A": "シリカ",
+        "B": "酸化鉄",
+        "C": "アルミナ",
+        "D": "酸化クロム",
+        "E": "酸化亜鉛"
+      }
+    },
+    {
       "uid": "DENTAL-MATERIALS-020",
       "sourceId": "FORM-020",
-      "number": 15,
+      "number": 18,
       "formQuestionNumber": 20,
       "group": "2024 Forms",
       "answer": "C",
@@ -233,7 +299,7 @@
     {
       "uid": "DENTAL-MATERIALS-021",
       "sourceId": "FORM-021",
-      "number": 16,
+      "number": 19,
       "formQuestionNumber": 21,
       "group": "2024 Forms",
       "answer": "D",
@@ -255,7 +321,7 @@
     {
       "uid": "DENTAL-MATERIALS-022",
       "sourceId": "FORM-022",
-      "number": 17,
+      "number": 20,
       "formQuestionNumber": 22,
       "group": "2024 Forms",
       "answer": "D",
@@ -270,7 +336,7 @@
     {
       "uid": "DENTAL-MATERIALS-023",
       "sourceId": "FORM-023",
-      "number": 18,
+      "number": 21,
       "formQuestionNumber": 23,
       "group": "2024 Forms",
       "answer": "A",
@@ -283,9 +349,83 @@
       }
     },
     {
+      "uid": "DENTAL-MATERIALS-024",
+      "sourceId": "FORM-024",
+      "number": 22,
+      "formQuestionNumber": 24,
+      "group": "2024 Forms",
+      "answer": "D",
+      "choices": "ABCDE",
+      "questionImage": "dictionary-assets/dental-materials/questions/form-024.webp",
+      "explanationImage": "dictionary-assets/dental-materials/answers/form-024.webp",
+      "sourcePages": {
+        "question": 92,
+        "answer": 90
+      }
+    },
+    {
+      "uid": "DENTAL-MATERIALS-025",
+      "sourceId": "FORM-025",
+      "number": 23,
+      "formQuestionNumber": 25,
+      "group": "2024 Forms",
+      "answer": "A",
+      "choices": "ABCDE",
+      "questionImage": "dictionary-assets/dental-materials/questions/form-025.webp",
+      "explanationImage": "dictionary-assets/dental-materials/answers/form-025.webp",
+      "sourcePages": {
+        "question": 89,
+        "answer": 87
+      }
+    },
+    {
+      "uid": "DENTAL-MATERIALS-026",
+      "sourceId": "FORM-026",
+      "number": 24,
+      "formQuestionNumber": 26,
+      "group": "2024 Forms",
+      "answer": "E",
+      "choices": "ABCDE",
+      "questionImage": "dictionary-assets/dental-materials/questions/form-026.webp",
+      "explanationImage": "dictionary-assets/dental-materials/answers/form-026.webp",
+      "sourcePages": {
+        "question": 86,
+        "answer": 83
+      },
+      "choiceLabels": {
+        "A": "白金加金",
+        "B": "タイプ1金合金",
+        "C": "タイプ3金合金",
+        "D": "金銀パラジウム合金",
+        "E": "陶材焼付用金合金"
+      }
+    },
+    {
+      "uid": "DENTAL-MATERIALS-027",
+      "sourceId": "FORM-027",
+      "number": 25,
+      "formQuestionNumber": 27,
+      "group": "2024 Forms",
+      "answer": "DE",
+      "choices": "ABCDE",
+      "questionImage": "dictionary-assets/dental-materials/questions/form-027.webp",
+      "explanationImage": "dictionary-assets/dental-materials/answers/form-027.webp",
+      "sourcePages": {
+        "question": 82,
+        "answer": 80
+      },
+      "choiceLabels": {
+        "A": "タイプ1金合金",
+        "B": "タイプ2金合金",
+        "C": "タイプ3金合金",
+        "D": "タイプ4金合金",
+        "E": "コバルトクロム合金"
+      }
+    },
+    {
       "uid": "DENTAL-MATERIALS-028",
       "sourceId": "FORM-028",
-      "number": 19,
+      "number": 26,
       "formQuestionNumber": 28,
       "group": "2024 Forms",
       "answer": "C",
@@ -300,7 +440,7 @@
     {
       "uid": "DENTAL-MATERIALS-029",
       "sourceId": "FORM-029",
-      "number": 20,
+      "number": 27,
       "formQuestionNumber": 29,
       "group": "2024 Forms",
       "answer": "E",
@@ -315,7 +455,7 @@
     {
       "uid": "DENTAL-MATERIALS-030",
       "sourceId": "FORM-030",
-      "number": 21,
+      "number": 28,
       "formQuestionNumber": 30,
       "group": "2024 Forms",
       "answer": "C",
@@ -330,7 +470,7 @@
     {
       "uid": "DENTAL-MATERIALS-031",
       "sourceId": "FORM-031",
-      "number": 22,
+      "number": 29,
       "formQuestionNumber": 31,
       "group": "2024 Forms",
       "answer": "A",
@@ -343,9 +483,31 @@
       }
     },
     {
+      "uid": "DENTAL-MATERIALS-032",
+      "sourceId": "FORM-032",
+      "number": 30,
+      "formQuestionNumber": 32,
+      "group": "2024 Forms",
+      "answer": "A",
+      "choices": "ABCDE",
+      "questionImage": "dictionary-assets/dental-materials/questions/form-032.webp",
+      "explanationImage": "dictionary-assets/dental-materials/answers/form-032.webp",
+      "sourcePages": {
+        "question": 66,
+        "answer": 64
+      },
+      "choiceLabels": {
+        "A": "強度が高い",
+        "B": "加圧釜を使用する",
+        "C": "残留モノマーが多い",
+        "D": "第三級アミンを含有する",
+        "E": "成型時の収縮が小さい"
+      }
+    },
+    {
       "uid": "DENTAL-MATERIALS-033",
       "sourceId": "FORM-033",
-      "number": 23,
+      "number": 31,
       "formQuestionNumber": 33,
       "group": "2024 Forms",
       "answer": "C",
@@ -360,7 +522,7 @@
     {
       "uid": "DENTAL-MATERIALS-034",
       "sourceId": "FORM-034",
-      "number": 24,
+      "number": 32,
       "formQuestionNumber": 34,
       "group": "2024 Forms",
       "answer": "B",
@@ -375,7 +537,7 @@
     {
       "uid": "DENTAL-MATERIALS-035",
       "sourceId": "FORM-035",
-      "number": 25,
+      "number": 33,
       "formQuestionNumber": 35,
       "group": "2024 Forms",
       "answer": "E",
@@ -390,7 +552,7 @@
     {
       "uid": "DENTAL-MATERIALS-036",
       "sourceId": "FORM-036",
-      "number": 26,
+      "number": 34,
       "formQuestionNumber": 36,
       "group": "2024 Forms",
       "answer": "A",
@@ -405,7 +567,7 @@
     {
       "uid": "DENTAL-MATERIALS-037",
       "sourceId": "FORM-037",
-      "number": 27,
+      "number": 35,
       "formQuestionNumber": 37,
       "group": "2024 Forms",
       "answer": "A",
@@ -420,7 +582,7 @@
     {
       "uid": "DENTAL-MATERIALS-038",
       "sourceId": "FORM-038",
-      "number": 28,
+      "number": 36,
       "formQuestionNumber": 38,
       "group": "2024 Forms",
       "answer": "E",
@@ -435,7 +597,7 @@
     {
       "uid": "DENTAL-MATERIALS-039",
       "sourceId": "FORM-039",
-      "number": 29,
+      "number": 37,
       "formQuestionNumber": 39,
       "group": "2024 Forms",
       "answer": "A",
@@ -450,7 +612,7 @@
     {
       "uid": "DENTAL-MATERIALS-040",
       "sourceId": "FORM-040",
-      "number": 30,
+      "number": 38,
       "formQuestionNumber": 40,
       "group": "2024 Forms",
       "answer": "B",
@@ -465,7 +627,7 @@
     {
       "uid": "DENTAL-MATERIALS-041",
       "sourceId": "FORM-041",
-      "number": 31,
+      "number": 39,
       "formQuestionNumber": 41,
       "group": "2024 Forms",
       "answer": "E",
@@ -480,7 +642,7 @@
     {
       "uid": "DENTAL-MATERIALS-042",
       "sourceId": "FORM-042",
-      "number": 32,
+      "number": 40,
       "formQuestionNumber": 42,
       "group": "2024 Forms",
       "answer": "C",
@@ -493,24 +655,39 @@
       }
     },
     {
-      "uid": "DENTAL-MATERIALS-045",
-      "sourceId": "FORM-045",
-      "number": 33,
-      "formQuestionNumber": 45,
+      "uid": "DENTAL-MATERIALS-043",
+      "sourceId": "FORM-043",
+      "number": 41,
+      "formQuestionNumber": 43,
+      "group": "2024 Forms",
+      "answer": "A",
+      "choices": "ABCDE",
+      "questionImage": "dictionary-assets/dental-materials/questions/form-043.webp",
+      "explanationImage": "dictionary-assets/dental-materials/answers/form-043.webp",
+      "sourcePages": {
+        "question": 31,
+        "answer": 29
+      }
+    },
+    {
+      "uid": "DENTAL-MATERIALS-044",
+      "sourceId": "FORM-044",
+      "number": 42,
+      "formQuestionNumber": 44,
       "group": "2024 Forms",
       "answer": "E",
       "choices": "ABCDE",
-      "questionImage": "dictionary-assets/dental-materials/questions/form-045.webp",
-      "explanationImage": "dictionary-assets/dental-materials/answers/form-045.webp",
+      "questionImage": "dictionary-assets/dental-materials/questions/form-044.webp",
+      "explanationImage": "dictionary-assets/dental-materials/answers/form-044.webp",
       "sourcePages": {
-        "question": 25,
+        "question": 28,
         "answer": 26
       }
     },
     {
       "uid": "DENTAL-MATERIALS-046",
       "sourceId": "FORM-046",
-      "number": 34,
+      "number": 43,
       "formQuestionNumber": 46,
       "group": "2024 Forms",
       "answer": "C",
@@ -525,7 +702,7 @@
     {
       "uid": "DENTAL-MATERIALS-047",
       "sourceId": "FORM-047",
-      "number": 35,
+      "number": 44,
       "formQuestionNumber": 47,
       "group": "2024 Forms",
       "answer": "B",
@@ -540,7 +717,7 @@
     {
       "uid": "DENTAL-MATERIALS-049",
       "sourceId": "FORM-049",
-      "number": 36,
+      "number": 45,
       "formQuestionNumber": 49,
       "group": "2024 Forms",
       "answer": "E",
@@ -555,7 +732,7 @@
     {
       "uid": "DENTAL-MATERIALS-050",
       "sourceId": "FORM-050",
-      "number": 37,
+      "number": 46,
       "formQuestionNumber": 50,
       "group": "2024 Forms",
       "answer": "B",
@@ -570,7 +747,7 @@
     {
       "uid": "DENTAL-MATERIALS-051",
       "sourceId": "FORM-051",
-      "number": 38,
+      "number": 47,
       "formQuestionNumber": 51,
       "group": "2024 Forms",
       "answer": "B",
@@ -585,52 +762,16 @@
   ],
   "unresolved": [
     {
-      "formQuestionNumber": 13,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
-    },
-    {
-      "formQuestionNumber": 18,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
-    },
-    {
-      "formQuestionNumber": 19,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
-    },
-    {
-      "formQuestionNumber": 24,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
-    },
-    {
-      "formQuestionNumber": 25,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
-    },
-    {
-      "formQuestionNumber": 26,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
-    },
-    {
-      "formQuestionNumber": 27,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
-    },
-    {
-      "formQuestionNumber": 32,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
-    },
-    {
-      "formQuestionNumber": 43,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
-    },
-    {
-      "formQuestionNumber": 44,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
+      "formQuestionNumber": 45,
+      "reason": "correct answer is not verifiable from the supplied PDF or user confirmation"
     },
     {
       "formQuestionNumber": 48,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
+      "reason": "correct answer is not verifiable from the supplied PDF or user confirmation"
     },
     {
       "formQuestionNumber": 52,
-      "reason": "supplied PDF does not show a submitted correct-result screen"
+      "reason": "correct answer is not verifiable from the supplied PDF or user confirmation"
     }
   ]
 }

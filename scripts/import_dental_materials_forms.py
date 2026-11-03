@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Import the answer-verified questions from the school dental-materials Form.
 
-The source is a 157-page PDF made from Microsoft Forms screenshots.  It says
-there are 50 questions, but twelve questions never show a submitted/correct
-answer in the supplied screenshots.  Those entries stay explicitly unresolved
-instead of treating the student's selected radio button as an answer key.
+The source is a 157-page PDF made from Microsoft Forms screenshots. Answers are
+accepted only when the result screen or a later user-provided confirmation makes
+them verifiable. Entries without either stay explicitly unresolved.
 """
 
 from __future__ import annotations
@@ -20,7 +19,7 @@ from PIL import Image, ImageOps
 
 
 SOURCE_SHA256 = "c72730f7648a1d41b737ad5919615c2683c04b7a83297b1788048036b0688c37"
-UNVERIFIED = [13, 18, 19, 24, 25, 26, 27, 32, 43, 44, 48, 52]
+UNVERIFIED = [45, 48, 52]
 
 
 @dataclass(frozen=True)
@@ -46,18 +45,26 @@ VERIFIED = [
     VerifiedQuestion(10, "C", 133, 131, 132),
     VerifiedQuestion(11, "D", 130, 129),
     VerifiedQuestion(12, "C", 128, 126, 127),
+    VerifiedQuestion(13, "D", 125, 123, 124, choice_labels=("H", "N", "K", "Ca", "Mg")),
     VerifiedQuestion(14, "A", 122, 120, 121),
     VerifiedQuestion(15, "B", 119, 117, 118),
     VerifiedQuestion(16, "E", 116, 113, 154),
     VerifiedQuestion(17, "A", 112, 110, 111),
+    VerifiedQuestion(18, "C", 109, 107, 108, choice_labels=("石膏", "ケイソウ土", "酸化亜鉛", "ジルコニア", "カーボランダム")),
+    VerifiedQuestion(19, "BD", 106, 104, 105, choice_labels=("シリカ", "酸化鉄", "アルミナ", "酸化クロム", "酸化亜鉛")),
     VerifiedQuestion(20, "C", 103, 101, 102),
     VerifiedQuestion(21, "D", 100, 99, choice_labels=("シリカ", "酸化鉄", "ジルコニア", "カーボランダム", "タングステンカーバイド")),
     VerifiedQuestion(22, "D", 98, 96, 97),
     VerifiedQuestion(23, "A", 95, 93),
+    VerifiedQuestion(24, "D", 92, 90, 91),
+    VerifiedQuestion(25, "A", 89, 87, 88),
+    VerifiedQuestion(26, "E", 86, 83, 85, choice_labels=("白金加金", "タイプ1金合金", "タイプ3金合金", "金銀パラジウム合金", "陶材焼付用金合金")),
+    VerifiedQuestion(27, "DE", 82, 80, 81, choice_labels=("タイプ1金合金", "タイプ2金合金", "タイプ3金合金", "タイプ4金合金", "コバルトクロム合金")),
     VerifiedQuestion(28, "C", 79, 77, 78),
     VerifiedQuestion(29, "E", 76, 74, 75),
     VerifiedQuestion(30, "C", 73, 70, 72),
     VerifiedQuestion(31, "A", 69, 67, 68),
+    VerifiedQuestion(32, "A", 66, 64, 65, choice_labels=("強度が高い", "加圧釜を使用する", "残留モノマーが多い", "第三級アミンを含有する", "成型時の収縮が小さい")),
     VerifiedQuestion(33, "C", 63, 61, 62),
     VerifiedQuestion(34, "B", 60, 58, 59),
     VerifiedQuestion(35, "E", 57, 55, 56),
@@ -68,7 +75,8 @@ VERIFIED = [
     VerifiedQuestion(40, "B", 40, 41, 42),
     VerifiedQuestion(41, "E", 38, 35, 36),
     VerifiedQuestion(42, "C", 34, 32, 33),
-    VerifiedQuestion(45, "E", 25, 26, 27),
+    VerifiedQuestion(43, "A", 31, 29, 30),
+    VerifiedQuestion(44, "E", 28, 26, 27),
     VerifiedQuestion(46, "C", 24, 15),
     VerifiedQuestion(47, "B", 23, 157),
     VerifiedQuestion(49, "E", 17, 19, 18),
@@ -125,7 +133,7 @@ def import_source(source: Path, output: Path) -> dict:
     if actual_sha != SOURCE_SHA256:
         raise ValueError(f"source SHA-256 changed: {actual_sha}")
     covered = [item.number for item in VERIFIED] + UNVERIFIED
-    if len(VERIFIED) != 38 or sorted(covered) != list(range(3, 53)):
+    if len(VERIFIED) != 47 or sorted(covered) != list(range(3, 53)):
         raise ValueError("verified and unresolved Forms question numbers must partition 3..52")
 
     document = fitz.open(source)
@@ -165,7 +173,7 @@ def import_source(source: Path, output: Path) -> dict:
         "count": len(items),
         "items": items,
         "unresolved": [
-            {"formQuestionNumber": number, "reason": "supplied PDF does not show a submitted correct-result screen"}
+            {"formQuestionNumber": number, "reason": "correct answer is not verifiable from the supplied PDF or user confirmation"}
             for number in UNVERIFIED
         ],
     }
