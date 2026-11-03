@@ -1314,7 +1314,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261103-sync-v2-refresh-1';
+const SERVICE_WORKER_BUILD='20261103-sync-quota-backoff-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -3847,13 +3847,26 @@ function decodeCloudProgressV2(root,chunkDocuments){
 function cloudErrorDetail(error){
   return [...new Set([error?.code,error?.message].filter(Boolean).map(String))].join('：')||'原因不明の通信エラー';
 }
-let _syncT=null,_syncBusy=false,_syncDirty=false,_syncFailures=0;
+const CLOUD_SYNC_DEBOUNCE_MS=30000;
+const CLOUD_SYNC_QUOTA_RETRY_MS=60*60*1000;
+const CLOUD_LEADERBOARD_PUBLISH_MS=10*60*1000;
+let _syncT=null,_syncBusy=false,_syncDirty=false,_syncFailures=0,_syncBlockedUntil=0;
+let _leaderboardPublishedAt=0,_leaderboardPublishedUid='';
+function cloudQuotaExceeded(error){return String(error?.code||'').includes('resource-exhausted');}
+function shouldPublishLeaderboard(uid){
+  const now=Date.now();
+  if(_leaderboardPublishedUid===uid&&now-_leaderboardPublishedAt<CLOUD_LEADERBOARD_PUBLISH_MS)return false;
+  _leaderboardPublishedUid=uid;_leaderboardPublishedAt=now;return true;
+}
 function cloudSyncSoon(immediate=false){
   if(!(window.cbtUser&&window.cbtCloud?.save))return;
   _syncDirty=true;clearTimeout(_syncT);
-  setCloudSyncState('pending');
+  const quotaWaiting=!immediate&&_syncBlockedUntil>Date.now();
+  if(!quotaWaiting)setCloudSyncState('pending');
   if(!navigator.onLine||_syncBusy)return;
-  _syncT=setTimeout(runCloudSync,immediate?0:2000);
+  if(immediate)_syncBlockedUntil=0;
+  const delay=immediate?0:Math.max(CLOUD_SYNC_DEBOUNCE_MS,_syncBlockedUntil-Date.now());
+  _syncT=setTimeout(runCloudSync,delay);
 }
 async function runCloudSync(){
   if(_syncBusy||!navigator.onLine||!window.cbtUser)return;
@@ -3877,18 +3890,24 @@ async function runCloudSync(){
   // Keep the single-flight lock until the operation settles, even after a slow-network warning.
   timeout=setTimeout(()=>setCloudSyncState('unavailable',{error:'通信に時間がかかっています。記録は端末に保持しています'}),45000);
   try{
-    await operation;_syncFailures=0;
+    await operation;_syncFailures=0;_syncBlockedUntil=0;
     // Public summary publication is independent: its failure never invalidates private progress sync.
-    if(window.cbtUser?.uid===uid&&typeof canViewLeaderboard==='function'&&canViewLeaderboard()&&window.cbtCloud?.publishLeaderboard){
+    if(window.cbtUser?.uid===uid&&typeof canViewLeaderboard==='function'&&canViewLeaderboard()&&window.cbtCloud?.publishLeaderboard&&shouldPublishLeaderboard(uid)){
       Promise.resolve().then(()=>{if(window.cbtUser?.uid===uid)return window.cbtCloud.publishLeaderboard();}).catch(error=>console.warn('leaderboard summary publish error',error?.code||'unavailable'));
     }
     setCloudSyncState(_syncDirty?'pending':'ready',{savedAt:Date.now(),error:''});
   }catch(error){
     console.warn('cloud sync error',error);_syncFailures++;
-    setCloudSyncState('unavailable',{error:`${stage}：${cloudErrorDetail(error)}${payloadBytes?`（送信JSON 約${Math.ceil(payloadBytes/1024)}KB）`:''}`});
+    const quota=cloudQuotaExceeded(error);
+    if(quota)_syncBlockedUntil=Date.now()+CLOUD_SYNC_QUOTA_RETRY_MS+Math.floor(Math.random()*5*60*1000);
+    const detail=quota?'クラウドの一時的な利用枠上限です。約1時間後に自動再試行します（resource-exhausted）':cloudErrorDetail(error);
+    setCloudSyncState('unavailable',{error:`${stage}：${detail}${payloadBytes?`（送信JSON 約${Math.ceil(payloadBytes/1024)}KB）`:''}`});
   }finally{
     clearTimeout(timeout);_syncBusy=false;
-    if(_syncDirty||_syncFailures)_syncT=setTimeout(runCloudSync,_syncFailures?Math.min(60000,2000*2**Math.min(_syncFailures,5)):0);
+    if(_syncDirty||_syncFailures){
+      const retryDelay=_syncBlockedUntil>Date.now()?_syncBlockedUntil-Date.now():(_syncFailures?Math.min(60000,2000*2**Math.min(_syncFailures,5)):0);
+      _syncT=setTimeout(runCloudSync,retryDelay);
+    }
   }
 }
 el('syncNowBtn').addEventListener('click',()=>cloudSyncSoon(true));

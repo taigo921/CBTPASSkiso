@@ -25,5 +25,12 @@ configuration and actual device success are not verified by these isolated tests
 The format avoids the 1 MiB document/string limit; each write is also bounded to
 12 chunks so the 10 MiB transaction limit retains headroom.
 
+Automatic writes are debounced for 30 seconds and automatic leaderboard summary
+publication is limited to once per 10 minutes per open app session. A Firestore
+`resource-exhausted` response starts an hour-scale backoff with jitter; subsequent
+local changes remain dirty but do not cancel that backoff. The user can still use
+`今すぐ同期` to retry explicitly. This prevents multiple open devices from retrying
+every minute and prolonging a project-level daily quota exhaustion.
+
 References: https://firebase.google.com/docs/firestore/quotas and
 https://firebase.google.com/docs/firestore/query-data/index-overview

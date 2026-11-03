@@ -66,6 +66,12 @@ const server=http.createServer((req,res)=>{
   await pages[1].evaluate(()=>{window.cbtCloud.save=async()=>{throw {code:'permission-denied'};};});
   await pages[1].locator('#syncNowBtn').click();await pages[1].waitForFunction(()=>document.getElementById('cloudStatus').textContent.includes('permission-denied'));
   assert.equal(await pages[1].evaluate(()=>cbtFullPayload().books.book1.answered),1977);
+  await pages[1].evaluate(()=>{window.cbtCloud.save=async()=>{throw {code:'resource-exhausted',message:'Quota exceeded.'};};});
+  await pages[1].locator('#syncNowBtn').click();await pages[1].waitForFunction(()=>document.getElementById('cloudStatus').textContent.includes('約1時間後に自動再試行'));
+  const quotaDelay=await pages[1].evaluate(()=>_syncBlockedUntil-Date.now());
+  assert.ok(quotaDelay>=55*60*1000&&quotaDelay<=66*60*1000,'quota errors use an hour-scale retry instead of a retry storm');
+  await pages[1].evaluate(()=>cloudSyncSoon());
+  assert.match(await pages[1].locator('#cloudStatus').textContent(),/約1時間後に自動再試行/,'local changes keep the quota warning and backoff');
   await page.evaluate(()=>{window.cbtCloud=null;clearTimeout(_syncT);});
   await page.evaluate(async()=>{
    await switchBook('book1');
