@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..');
 const feature=fs.readFileSync(path.join(root,'features/dictionary-practice/dictionary-practice.js'),'utf8');
 const groups=['A','B','C','D','E1','E2','E3','E4'].map(group=>`<button data-dictionary-group="${group}">${group}<span></span></button>`).join('');
 const fixture=`<!doctype html><html><body>
-<div id="dictionaryHome"><h2 id="dictionaryHomeTitle"></h2><button data-dictionary-source="dictionary2"></button><button data-dictionary-source="mock1"></button><button data-dictionary-source="mock2"></button><button data-dictionary-source="dentalMaterials"></button><span id="dictionaryAnswered"></span><span id="dictionaryCorrect"></span><span id="dictionaryAttempts"></span><button id="dictionaryStart" disabled></button><div id="dictionaryGroups">${groups}</div><p id="dictionaryStatus"></p></div>
+<div id="dictionaryHome"><h2 id="dictionaryHomeTitle"></h2><p id="dictionaryHomeDescription"></p><div class="dictionary-sources"><button data-dictionary-source="dictionary2"></button><button data-dictionary-source="mock1"></button><button data-dictionary-source="mock2"></button></div><span id="dictionaryAnswered"></span><span id="dictionaryCorrect"></span><span id="dictionaryAttempts"></span><button id="dictionaryStart" disabled></button><div id="dictionaryGroups">${groups}</div><p id="dictionaryStatus"></p></div>
 <section id="dictionaryPractice"><h1 id="dictionaryPracticeTitle"></h1><button id="dictionaryHomeBack"></button><span id="dictionaryNumber"></span><span id="dictionaryProgress"></span><img id="dictionaryQuestionImage"><p id="dictionaryHistory" class="hidden"></p><div id="dictionaryChoices"></div><button id="dictionaryPrev"></button><button id="dictionarySubmit"></button><button id="dictionaryNext"></button><div id="dictionaryResult" class="hidden"></div><div id="dictionaryExplanation" class="hidden"><h2><span id="dictionaryExplanationTitle"></span></h2><img id="dictionaryExplanationImage"></div></section>
 <div id="footer"></div><div id="timerChip"></div><div id="routeBackBtn"></div><div id="pbarFill"></div>
 <script>window.cbtUser={uid:'dictionary-test'};window.showOnly=()=>{};window.renderHome=()=>{};window.openImageZoom=()=>{};</script><script>${feature}</script></body></html>`;
@@ -66,12 +66,14 @@ const server=http.createServer((request,response)=>{
     const mock2Stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('togo_dictionary3_mock2_progress_v1_dictionary-test')));
     assert.equal(mock2Stored.answers['001'].lastCorrect,true);
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('togo_dictionary3_mock1_progress_v1_dictionary-test')).answers['001'].lastCorrect),true);
-    await page.locator('[data-dictionary-source="dentalMaterials"]').click();
+    await page.evaluate(()=>window.dictionaryPractice.renderHome('dentalMaterials'));
     await page.waitForFunction(()=>document.getElementById('dictionaryStatus').textContent.includes('47'));
+    assert.equal(await page.locator('.dictionary-sources').evaluate(node=>node.classList.contains('hidden')),true);
     assert.equal(await page.locator('[data-dictionary-group="2024 Forms"] span').textContent(),'47問');
     assert.match(await page.locator('#dictionaryStatus').textContent(),/正答表示のない3問は未収録/);
     await page.locator('#dictionaryStart').click();assert.equal(await page.locator('#dictionaryNumber').textContent(),'FORM-003');
     assert.equal(await page.locator('#dictionaryPracticeTitle').textContent(),'歯科理工 Forms');
+    assert.equal(await page.locator('#dictionaryHomeBack').textContent(),'歯科理工へ');
     assert.equal(await page.locator('#dictionaryExplanationTitle').textContent(),'学校Formsの正答参照画像');
     await page.locator('#dictionaryChoices button').filter({hasText:/^D$/}).click();await page.locator('#dictionarySubmit').click();
     assert.match(await page.locator('#dictionaryResult').textContent(),/○ 正解/);
@@ -88,6 +90,11 @@ const server=http.createServer((request,response)=>{
     assert.equal(materialsStored.answers['FORM-003'].lastCorrect,true);
     assert.equal(materialsStored.answers['FORM-019'].lastCorrect,true);
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('togo_dictionary2_progress_v1_dictionary-test')).answers.A001.lastCorrect),true);
-    console.log('PASS dictionary browser: all four sources, block navigation, single/multiple grading, explanations, source gaps, and isolated resume progress.');
+    await page.evaluate(()=>window.dictionaryPractice.renderHome('dictionary'));
+    await page.waitForFunction(()=>document.getElementById('dictionaryStatus').textContent.includes('956'));
+    assert.equal(await page.locator('.dictionary-sources').evaluate(node=>node.classList.contains('hidden')),false);
+    assert.equal(await page.locator('#dictionaryHomeTitle').textContent(),'📚 CBTの辞典② 基礎臨床');
+    assert.equal(await page.locator('[data-dictionary-source="dentalMaterials"]').count(),0);
+    console.log('PASS dictionary browser: three dictionary sources plus separate dental-materials entry, single/multiple grading, explanations, source gaps, and isolated resume progress.');
   }finally{await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});

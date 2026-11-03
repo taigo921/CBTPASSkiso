@@ -15,10 +15,10 @@
 
 ## ホーム・問題集選択・教材読込
 
-- 機能: 問題集1/2/模試/CBT辞典の切替、概要、再開、オフライン準備状況。
+- 機能: 問題集1/2/模試/CBT辞典/歯科理工Formsの切替、概要、再開、オフライン準備状況。
 - Route / 画面: `#home` 内の `#regularHome`、`#mockHome`、`#dictionaryHome`。URLは `?book=book1|book2` のみ保持。
 - 主なUI: `.book-tab`、`#resumeCard`、`#offlineStatus`、`#cloudStatus`。
-- state / hooks相当: `BOOKS`、`activeBook`、`QUESTIONS`、`mockHomeSelected`、`dictionaryHomeSelected`、`renderHome()`、`switchBook()`、`loadBookQuestions()`。
+- state / hooks相当: `BOOKS`、`activeBook`、`QUESTIONS`、`mockHomeSelected`、`dictionaryHomeSelected`、`dentalMaterialsHomeSelected`、`renderHome()`、`switchBook()`、`loadBookQuestions()`。
 - API / service: `fetch()`、Cache Storage、Service Worker。
 - DB: 問題本文はDB不使用。選択中の本はLocalStorage `cbt_settings_v2`。
 - 関連ファイル: `index.html` の `BOOKS`/question loading/home、`data/*.json`、`sw.js`。
@@ -81,14 +81,25 @@
 
 ## CBT辞典演習
 
-- 機能: 辞典② 956問、辞典③の誌上模試1（320問）・模試2（304問）、学校配布の歯科理工Formsで正答確認済みの47問を選び、原本ID順または領域／ブロック別に解く。歯科理工では単一選択と複数選択を採点する。正誤確定後に公式解説またはForms正答参照画像を表示し、教材別・端末別に再開する。
+- 機能: 辞典② 956問、辞典③の誌上模試1（320問）・模試2（304問）を選び、原本ID順または領域／ブロック別に解く。正誤確定後に公式解説を表示し、教材別・端末別に再開する。
 - Route / 画面: `#dictionaryHome`、`#dictionaryPractice`。
 - 主なUI: `[data-dictionary-source]`、`#dictionaryStart`、`[data-dictionary-group]`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
 - state / hooks相当: `features/dictionary-practice/dictionary-practice.js` 内の `SOURCES`、`sourceKey`、`manifest`、`progress`、`currentIndex`、`renderHome()`、`open()`、`renderQuestion()`、`submit()`。
 - API / service: 各教材manifestの静的fetch、LocalStorage、共通 `openImageZoom()`。
-- DB: Firestore不使用。4教材で異なるLocalStorage keyを使う。歯科理工は `togo_dental_materials_forms_progress_v1_{uid}`。
-- 関連ファイル: `features/dictionary-practice/`、`dictionary-assets/exercises/`、`dictionary-assets/mock-exams/`、`dictionary-assets/dental-materials/`、`scripts/import_cbt_dictionary.py`、`scripts/import_cbt_dictionary3.py`、`scripts/import_dental_materials_forms.py`、各静的テスト、`scripts/test_dictionary_browser.cjs`。
+- DB: Firestore不使用。辞典②、辞典③模試1、模試2で異なるLocalStorage keyを使う。
+- 関連ファイル: `features/dictionary-practice/`、`dictionary-assets/exercises/`、`dictionary-assets/mock-exams/`、`scripts/import_cbt_dictionary.py`、`scripts/import_cbt_dictionary3.py`、各静的テスト、`scripts/test_dictionary_browser.cjs`。
 - 他Featureとの依存: Access後に利用し、画面切替と画像viewerだけを共用する。通常問題集、Study Route、Progress & Sync、Gamification、Leaderboardとは記録を分離する。
+
+## 歯科理工Forms演習
+
+- 機能: 学校配布の歯科理工Formsで正答確認済みの47問を、CBT辞典とは別のホームタブから解く。単一選択と複数選択を採点し、回答後に正答参照画像を表示する。
+- Route / 画面: ホームの `[data-book="dentalMaterials"]`、共用UIの `#dictionaryHome` と `#dictionaryPractice`。
+- 主なUI: 歯科理工tab、`#dictionaryStart`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
+- state / hooks相当: `dentalMaterialsHomeSelected` と、共用viewer内の `SOURCES.dentalMaterials`、manifest、専用progress。
+- API / service: 歯科理工manifestの静的fetch、LocalStorage、共通 `openImageZoom()`。
+- DB: Firestore不使用。`togo_dental_materials_forms_progress_v1_{uid}` を使い、辞典進捗と混ぜない。
+- 関連ファイル: `index.html`、`features/dictionary-practice/`、`dictionary-assets/dental-materials/`、`scripts/import_dental_materials_forms.py`、`scripts/test_dental_materials_forms.cjs`、`scripts/test_dictionary_browser.cjs`。
+- 他Featureとの依存: Dictionary Practiceとは表示基盤だけを共用する。通常問題集、Study Route、Progress & Sync、Gamification、Leaderboardとは記録を分離する。
 
 ## ガイド編・画像viewer
 

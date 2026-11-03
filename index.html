@@ -139,7 +139,7 @@
   .hero p{margin:0;color:var(--muted);font-size:14px;}
 
   .book-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 4px;padding:5px;background:#eaf0fa;border-radius:18px;}
-  @media(min-width:680px){.book-switch{grid-template-columns:repeat(4,minmax(0,1fr));}}
+  @media(min-width:680px){.book-switch{grid-template-columns:repeat(5,minmax(0,1fr));}}
   .book-tab{border:0;background:transparent;color:var(--muted);border-radius:14px;padding:12px 8px;cursor:pointer;text-align:center;}
   .book-tab b{display:block;font-size:15px;font-weight:800;}
   .book-tab span{display:block;font-size:11px;margin-top:1px;}
@@ -639,7 +639,8 @@
       <button class="book-tab on" data-book="book1" role="tab" aria-selected="true"><b>問題集1</b><span>基礎系</span></button>
       <button class="book-tab" data-book="book2" role="tab" aria-selected="false"><b>問題集2</b><span>臨床系</span></button>
       <button class="book-tab" data-book="mock" role="tab" aria-selected="false"><b>2026 9/19</b><span>麻布模試</span></button>
-      <button class="book-tab" data-book="dictionary" role="tab" aria-selected="false"><b>CBT辞典</b><span>辞典②・③・歯科理工</span></button>
+      <button class="book-tab" data-book="dictionary" role="tab" aria-selected="false"><b>CBT辞典</b><span>辞典②・③</span></button>
+      <button class="book-tab" data-book="dentalMaterials" role="tab" aria-selected="false"><b>歯科理工</b><span>学校Forms</span></button>
     </div>
     <div id="mockHome" class="hidden">
       <div class="sec-h">科目ごとに解く</div>
@@ -661,14 +662,13 @@
     <div id="dictionaryHome" class="hidden">
       <div class="dictionary-home-card">
         <h2 id="dictionaryHomeTitle">📚 CBTの辞典② 基礎臨床</h2>
-        <p>問題画像を見てA〜Eから回答し、回答後に公式解説を確認できます。通常問題集・学習ルート・ランキングとは別記録です。</p>
+        <p id="dictionaryHomeDescription">問題画像を見てA〜Eから回答し、回答後に公式解説を確認できます。通常問題集・学習ルート・ランキングとは別記録です。</p>
         <div class="dictionary-sources" role="group" aria-label="辞典を選ぶ">
           <button type="button" class="on" data-dictionary-source="dictionary2">辞典② 基礎臨床</button>
           <button type="button" data-dictionary-source="mock1">辞典③ 模試1</button>
           <button type="button" data-dictionary-source="mock2">辞典③ 模試2</button>
-          <button type="button" data-dictionary-source="dentalMaterials">歯科理工 Forms</button>
         </div>
-        <div class="dictionary-summary" aria-label="辞典演習の進捗">
+        <div class="dictionary-summary" aria-label="画像教材の進捗">
           <div><b id="dictionaryAnswered">0</b>解答済み</div>
           <div><b id="dictionaryCorrect">0</b>前回正解</div>
           <div><b id="dictionaryAttempts">0</b>総回答</div>
@@ -1122,7 +1122,7 @@ const AZABU_MOCK_2026_BLOCK1=[{
   explanationImage:`mock-assets/azabu-2026/block1/pages/page-${page}.jpg`
 }))];
 let mockExamState={index:0,picked:null,answered:false,startedAt:0,clock:null};
-let mockHomeSelected=false,dictionaryHomeSelected=false,mockListFilter='all',mockProgress={index:0,answers:{}};
+let mockHomeSelected=false,dictionaryHomeSelected=false,dentalMaterialsHomeSelected=false,mockListFilter='all',mockProgress={index:0,answers:{}};
 let selectedMockBlock=1;
 function mockQuestions(block=selectedMockBlock){return block===1?AZABU_MOCK_2026_BLOCK1:(window.TOGO_MOCK_BLOCKS?.[block]||[]);}
 function mockPhotoPage(block,no){return window.TOGO_MOCK_PHOTO_PAGES?.[`${block}-${no}`]||'';}
@@ -2780,16 +2780,16 @@ function renderHome(){
   commitExplanationTime();timer.active=false;timer.running=false;
   el('timerChip').classList.remove('show'); clearInterval(timer.iv);
   const book=BOOKS[activeBook];
-  el('regularHome').classList.toggle('hidden',mockHomeSelected||dictionaryHomeSelected);
+  el('regularHome').classList.toggle('hidden',mockHomeSelected||dictionaryHomeSelected||dentalMaterialsHomeSelected);
   el('mockHome').classList.toggle('hidden',!mockHomeSelected);
-  el('dictionaryHome').classList.toggle('hidden',!dictionaryHomeSelected);
-  el('bookTitle').textContent=dictionaryHomeSelected?'CBT辞典':mockHomeSelected?'2026 9/19 麻布模試':book.title;
-  el('qcount').textContent=dictionaryHomeSelected?'原本から検証した専用演習':mockHomeSelected?'6ブロック・320問':`${book.subtitle} ・ 全 ${QUESTIONS.length} 問`;
+  el('dictionaryHome').classList.toggle('hidden',!dictionaryHomeSelected&&!dentalMaterialsHomeSelected);
+  el('bookTitle').textContent=dentalMaterialsHomeSelected?'歯科理工 Forms':dictionaryHomeSelected?'CBT辞典':mockHomeSelected?'2026 9/19 麻布模試':book.title;
+  el('qcount').textContent=dentalMaterialsHomeSelected?'学校配布Forms・正答確認済み47問':dictionaryHomeSelected?'辞典②・③の専用演習':mockHomeSelected?'6ブロック・320問':`${book.subtitle} ・ 全 ${QUESTIONS.length} 問`;
   document.querySelectorAll('.book-tab').forEach(tab=>{
-    const on=tab.dataset.book===(dictionaryHomeSelected?'dictionary':mockHomeSelected?'mock':activeBook);
+    const on=tab.dataset.book===(dentalMaterialsHomeSelected?'dentalMaterials':dictionaryHomeSelected?'dictionary':mockHomeSelected?'mock':activeBook);
     tab.classList.toggle('on',on);tab.setAttribute('aria-selected',on?'true':'false');
   });
-  const logoSmall=document.querySelector('.logo small');if(logoSmall)logoSmall.textContent=dictionaryHomeSelected?'辞典':mockHomeSelected?'模試':book.title;
+  const logoSmall=document.querySelector('.logo small');if(logoSmall)logoSmall.textContent=dentalMaterialsHomeSelected?'理工':dictionaryHomeSelected?'辞典':mockHomeSelected?'模試':book.title;
   console.log(`[${book.title}] 総問題数:`, QUESTIONS.length);
   console.log('[問題集] has_image=true:', QUESTIONS.filter(q=>q.has_image).length);
   console.log('[問題集] imageあり:', QUESTIONS.filter(q=>q.image).length);
@@ -2823,13 +2823,14 @@ function renderHome(){
   } else el('resumeCard').classList.add('hidden');
   showOnly('home'); el('footer').classList.add('hidden'); setProgress(0);
   if(mockHomeSelected)renderMockHome();
-  if(dictionaryHomeSelected)window.dictionaryPractice?.renderHome();
+  if(dictionaryHomeSelected||dentalMaterialsHomeSelected)window.dictionaryPractice?.renderHome(dentalMaterialsHomeSelected?'dentalMaterials':'dictionary');
 }
 
 async function switchBook(book){
-  if(book==='mock'){mockHomeSelected=true;dictionaryHomeSelected=false;renderHome();return;}
-  if(book==='dictionary'){dictionaryHomeSelected=true;mockHomeSelected=false;renderHome();return;}
-  if(mockHomeSelected||dictionaryHomeSelected){mockHomeSelected=false;dictionaryHomeSelected=false;if(book===activeBook){renderHome();return;}}
+  if(book==='mock'){mockHomeSelected=true;dictionaryHomeSelected=false;dentalMaterialsHomeSelected=false;renderHome();return;}
+  if(book==='dictionary'){dictionaryHomeSelected=true;mockHomeSelected=false;dentalMaterialsHomeSelected=false;renderHome();return;}
+  if(book==='dentalMaterials'){dentalMaterialsHomeSelected=true;dictionaryHomeSelected=false;mockHomeSelected=false;renderHome();return;}
+  if(mockHomeSelected||dictionaryHomeSelected||dentalMaterialsHomeSelected){mockHomeSelected=false;dictionaryHomeSelected=false;dentalMaterialsHomeSelected=false;if(book===activeBook){renderHome();return;}}
   if(!BOOKS[book]||book===activeBook)return;
   if(!questionsLoaded(book)){
     toast(`${BOOKS[book].title}を準備中…`);

@@ -7,7 +7,7 @@
 - 同期形式の背景と制限: `scripts/README-sync.md`。
 - 通常問題: `data/*.json`。登録対象は `index.html` の `BOOKS`。
 - 模試: `mock-assets/azabu-2026/blocks.js`、`subjects.js`、`photo-pages.js`。
-- 辞典演習: 辞典②は `dictionary-assets/exercises/manifest.json`、辞典③は `dictionary-assets/mock-exams/manifest.json`、学校Forms歯科理工は `dictionary-assets/dental-materials/manifest.json`。原本PDFからの生成規則は各import script。
+- 画像教材: CBT辞典は `dictionary-assets/exercises/manifest.json` と `dictionary-assets/mock-exams/manifest.json`。別Featureの学校Forms歯科理工は `dictionary-assets/dental-materials/manifest.json`。原本PDFからの生成規則は各import script。
 
 この文書は索引であり、schema全文を複製しない。フィールドを変える場合は上記実装とルールを先に更新する。
 

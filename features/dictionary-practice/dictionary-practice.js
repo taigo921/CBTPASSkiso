@@ -80,11 +80,24 @@
     };
   }
 
-  async function renderHome(){
+  function setSource(next){
+    if(!SOURCES[next]||next===sourceKey)return false;
+    sourceKey=next;manifest=null;loadPromise=null;progress={answers:{},index:0,updatedAt:0};currentIndex=0;
+    return true;
+  }
+
+  async function renderHome(scope='dictionary'){
+    if(scope==='dentalMaterials')setSource('dentalMaterials');
+    else if(sourceKey==='dentalMaterials')setSource('dictionary2');
     const requestedKey=sourceKey,selected=source();
     const status=$('dictionaryStatus');
     if(status)status.textContent=`${selected.shortTitle}を読み込み中…`;
     $('dictionaryHomeTitle').textContent=`📚 ${selected.title}`;
+    const description=$('dictionaryHomeDescription');
+    if(description)description.textContent=scope==='dentalMaterials'
+      ?'学校配布の歯科理工Formsを解きます。通常問題集・CBT辞典・学習ルート・ランキングとは別記録です。'
+      :'辞典②・③の問題画像を解き、回答後に公式解説を確認できます。通常問題集・学習ルート・ランキングとは別記録です。';
+    document.querySelector('.dictionary-sources')?.classList.toggle('hidden',scope==='dentalMaterials');
     document.querySelectorAll('[data-dictionary-source]').forEach(button=>button.classList.toggle('on',button.dataset.dictionarySource===sourceKey));
     renderGroupButtons();
     try{
@@ -113,9 +126,7 @@
   }
 
   function selectSource(next){
-    if(!SOURCES[next]||next===sourceKey)return;
-    sourceKey=next;manifest=null;loadPromise=null;progress={answers:{},index:0,updatedAt:0};currentIndex=0;
-    renderHome();
+    if(setSource(next))renderHome('dictionary');
   }
 
   async function open(index){
@@ -139,6 +150,7 @@
     $('routeBackBtn').classList.add('hidden');
     $('pbarFill').style.width=`${(currentIndex+1)/manifest.items.length*100}%`;
     $('dictionaryPracticeTitle').textContent=source().shortTitle;
+    $('dictionaryHomeBack').textContent=sourceKey==='dentalMaterials'?'歯科理工へ':'辞典一覧へ';
     $('dictionaryNumber').textContent=item.sourceId;
     $('dictionaryProgress').textContent=`${currentIndex+1} / ${manifest.items.length}問`;
     $('dictionaryQuestionImage').src=item.questionImage;

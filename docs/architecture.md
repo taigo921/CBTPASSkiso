@@ -48,7 +48,8 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 |Study Route|忘却曲線、日次課題、追加学習、本の進捗登録|Question Catalog、Practice、Progress|
 |Browse & Analysis|問題一覧、セクション演習、成績・苦手・学習時間|Question Catalog、Progress|
 |Mock Exam|ブロック別模試、連問、科目別演習、解説画像|模試アセット、Progressの一部|
-|Dictionary Practice|辞典②、辞典③誌上模試、学校Forms歯科理工の原本ID別演習、採点、解説／正答画面、教材別専用端末進捗|辞典manifest、画像viewer|
+|Dictionary Practice|辞典②、辞典③誌上模試の原本ID別演習、採点、公式解説、辞典専用端末進捗|辞典manifest、画像viewer|
+|Dental Materials Practice|学校Forms歯科理工の独立入口、単一／複数選択採点、正答参照画像、専用端末進捗|歯科理工manifest、画像viewer|
 |Progress & Sync|LocalStorage、バックアップ、複数端末マージ、Firestore保存|Firestore、各学習Feature|
 |Gamification|XP、レベル、ランク、連続記録|Practice、Progress|
 |Leaderboard & Profile|表示名・写真、公開集計、ランキング表示|Progressの集計、Access|
@@ -63,7 +64,7 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 4. Progress & Syncが各Featureの保存対象を集約してFirestoreへ同期する。同期処理が画面Featureの内部UIを所有しない。
 5. Leaderboardは個人進捗から許可された集計だけを派生させる。公開集計から個人進捗へは書き戻さない。
 6. Access Administrationは権限データを管理するが、個人の学習記録を編集・削除しない。
-7. Dictionary Practiceは通常問題集の成績・Study Route・Gamification・Leaderboardへ書き込まない。共通依存は画面切替と画像viewerだけに限定する。
+7. Dictionary PracticeとDental Materials Practiceは相互の進捗や通常問題集の成績・Study Route・Gamification・Leaderboardへ書き込まない。実装上は画像問題ビューアを共用する。
 
 新規ファイルへ切り出す場合は、まず `features/<feature-name>/` にUI・状態・サービス・型相当を同居させる。共有候補は2つ以上のFeatureが同じ契約で使用することを確認してから、認証・保存・問題カタログなどの基盤へ昇格する。この静的構成で複数JSを追加するときは、`index.html` の読込順と `sw.js` のアプリシェルも同時に扱う。
 
@@ -115,9 +116,13 @@ Firestore側でも許可メール、個別停止、授業時間を再判定す�
 
 問題と正解は模試アセットから読み、ブロック進捗は通常問題集と分離する。ブロック1〜6の進捗は個人進捗へ同期するが、科目別演習の `togo_mock_subject_v1_*` は現状端末のみで、クラウド同期・エクスポート対象外である。
 
-### 辞典演習
+### CBT辞典演習
 
-`dictionary-assets/exercises/manifest.json` の辞典② 956問、`dictionary-assets/mock-exams/manifest.json` の辞典③ 624問、または `dictionary-assets/dental-materials/manifest.json` の学校Forms歯科理工47問を読み、`features/dictionary-practice/` が専用画面を所有する。教材ごとに進捗を分離する。歯科理工の原本はForms画面をまとめたPDFで、正答画面またはユーザー確認のない3問は公開対象から除外し、manifestの `unresolved` をsource of truthとする。単一選択と複数選択を採点し、回答確定後だけ解説／正答参照画像を表示する。通常問題集・学習ルート・XP・ランキング・Firestore同期には混ぜない。
+`dictionary-assets/exercises/manifest.json` の辞典② 956問と `dictionary-assets/mock-exams/manifest.json` の辞典③ 624問を読み、辞典タブ内で教材を切り替える。
+
+### 歯科理工Forms演習
+
+`dictionary-assets/dental-materials/manifest.json` の47問を、ホームの独立した「歯科理工」タブから開く。実装上は `features/dictionary-practice/` の画像問題ビューアを再利用するが、CBT辞典の教材選択には表示せず、進捗keyも分離する。正答画面またはユーザー確認のない3問は公開対象から除外し、manifestの `unresolved` をsource of truthとする。単一選択と複数選択を採点し、回答確定後だけ正答参照画像を表示する。通常問題集・CBT辞典・学習ルート・XP・ランキング・Firestore同期には混ぜない。
 
 ## 認証・権限
 

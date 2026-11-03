@@ -9,7 +9,8 @@
 |`#schoolGate`|授業中の利用停止と自動解除|Access & Identity|`#schoolGateImage`, `#schoolGateMessage`, logout|`schoolAccess/settings`、JST時間割|`schoolRestriction()`, `updateSchoolGate()`, `firestore.rules`|
 |`#home` / `#regularHome`|問題集選択、成績概要、再開、各機能入口|Question Catalog、Progress|book tabs、`#resumeCard`、mode buttons|問題JSON、本別成績、session、settings|`renderHome()`, `switchBook()`|
 |`#home` / `#mockHome`|模試block・科目選択、問題一覧|Mock Exam|block selector、filters、subject picker|模試assets、block別進捗|`renderMockHome()`|
-|`#home` / `#dictionaryHome`|辞典②／辞典③模試1／模試2／学校Forms歯科理工の選択、概要、進捗、領域選択|Dictionary Practice|source selector、start、領域／block buttons、summary|辞典manifest、教材別端末進捗|辞典Featureの `renderHome()`|
+|`#home` / `#dictionaryHome`（CBT辞典tab）|辞典②／辞典③模試1／模試2の選択、概要、進捗、領域選択|Dictionary Practice|source selector、start、領域／block buttons、summary|辞典manifest、教材別端末進捗|辞典Featureの `renderHome('dictionary')`|
+|`#home` / `#dictionaryHome`（歯科理工tab）|学校Forms歯科理工の独立入口、概要、進捗|Dental Materials Practice|start、summary|歯科理工manifest、専用端末進捗|`switchBook('dentalMaterials')`、共用viewerの `renderHome('dentalMaterials')`|
 |`#studyPlan`|日次学習ルート、calendar、追加学習、本の進捗|Study Route|plan buttons/calendar/paper form|両問題集、shared plan、成績|`renderStudyPlan()` とplan関数群|
 |`#quiz`|通常問題・計画・セクションの共通出題|Practice Session|question/choices/figure/answer/footer|問題、`session`、本別成績|`startSession()`, `renderQuestion()`, `pick()`, `next()`|
 |`#finish`|session結果と問題別review|Practice Session|score、review accordion|`session.records`|`finish()`|
@@ -19,7 +20,7 @@
 |`#sectionStart`|掲載順modeの開始位置を選択|Browse & Analysis|`#sectionStartBody`|問題、端末内section再開位置|`openSectionStart()`, `startSectionModeSession()`|
 |`#mockExam`|block別模試、採点、公式解説|Mock Exam|source image、A-E、prev/next、zoom|block問題、写真page、block進捗|`renderMockExam()`, `submitMockExam()`|
 |`#mockSubjectPractice`|科目をblock横断で順番演習|Mock Exam|subject question/choices/review|科目分類、端末内科目session|`startMockSubjectPractice()`, `renderMockSubjectPractice()`|
-|`#dictionaryPractice`|選択した辞典／学校Forms教材の出題、採点、回答後の公式解説または正答画面|Dictionary Practice|問題画像、A〜J、結果、解説画像|教材manifest／画像、教材別ユーザー端末進捗|`features/dictionary-practice/`、`dictionary-assets/exercises/`、`dictionary-assets/mock-exams/`、`dictionary-assets/dental-materials/`|
+|`#dictionaryPractice`|CBT辞典または独立した歯科理工Formsの共用出題画面。入口ごとの教材以外は混在させない|Dictionary Practice / Dental Materials Practice|問題画像、A〜J、結果、解説画像|選択Featureのmanifest／画像、分離した端末進捗|`features/dictionary-practice/` と各教材assets|
 |`#leaderboard`|公開集計の順位、名前・写真編集|Leaderboard & Profile|tabs、list、rename、avatar|`leaderboard/{uid}`、本人profile|`openLeaderboard()`, `renderLeaderboard()`|
 |`#accessAdmin`|停止／解除、授業制限・休校日管理|Access Administration|user list、school controls|`users`, `accessControl`, `schoolAccess`|`openAccessAdmin()`, `renderAccessAdmin()`, `renderSchoolSettings()`|
 |`#guideViewer` overlay|ガイド編の参照と拡大|Guide Viewer|page images、zoom controls|`guide/*.webp`、`guide_ref`|`openGuide()`, `buildGuidePages()`|
@@ -33,6 +34,7 @@
 - `#home` → 通常mode／学習計画／一覧／セクション → 共通 `#quiz` → `#finish` または元画面。
 - `#home` の模試tab → `#mockExam` または `#mockSubjectPractice` → 模試home。
 - `#home` のCBT辞典tab → `#dictionaryPractice` → 辞典home。通常問題のfooter・timerは使わない。
+- `#home` の歯科理工tab → `#dictionaryPractice` → 歯科理工home。CBT辞典の教材選択には表示しない。
 - `#home` → `#stats`、`#leaderboard`、管理者のみ `#accessAdmin`。
 - どの学習画面からでもガイド／画像viewerをoverlay表示でき、閉じると元のscreenを維持する。
 - 個別停止または授業制限の通知は現在screenをoverlayし、許可が戻った後に認証・同期を再確認する。
