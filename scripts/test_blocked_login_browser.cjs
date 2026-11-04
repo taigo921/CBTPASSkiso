@@ -1,6 +1,7 @@
 const fs=require('node:fs'),http=require('node:http'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),root=path.resolve(__dirname,'..');
 const fixture=`<script>
+const nativeFetch=window.fetch.bind(window);window.fetch=(input,options)=>{const url=new URL(String(input),location.href);if(url.searchParams.has('school-clock'))return Promise.resolve(new Response(null,{status:200,headers:{Date:window.testServerDate||new Date(Date.now()).toUTCString()}}));return nativeFetch(input,options);};
 window.testProfileReads=0;window.testSchoolPolicy={enabled:false,exemptDates:[]};window.testBlocked=true; // Intentionally no Google SDK: standalone login must work independently.
 let authCallback;const fakeAuth={currentUser:null,onAuthStateChanged(fn){authCallback=fn;queueMicrotask(()=>fn(null));},async signInWithEmailAndPassword(email){const user={uid:email.includes('different')?'allowed-fixture':'blocked-fixture',email,emailVerified:true};this.currentUser=user;queueMicrotask(()=>authCallback(user));},async signOut(){this.currentUser=null;queueMicrotask(()=>authCallback(null));}};
 const fakeDb={collection(name){return {doc(){return {async get(){if(name==='accessControl'&&window.testAccessDelay)await window.testAccessDelay;if(name==='users')window.testProfileReads++;return {exists:true,data:()=>name==='accessControl'?{blocked:window.testBlocked}:name==='schoolAccess'?window.testSchoolPolicy:{username:'Test',email:fakeAuth.currentUser?.email||'',books:{},game:{xp:0}},metadata:{fromCache:false,hasPendingWrites:false}};},async set(data){if(name==='schoolAccess'){window.testSchoolPolicy=data;if(window.testSchoolListener)window.testSchoolListener({exists:true,data:()=>data,metadata:{fromCache:false,hasPendingWrites:false}});}},onSnapshot(fn){if(name==='schoolAccess')window.testSchoolListener=fn;return ()=>{if(name==='schoolAccess'&&window.testSchoolListener===fn)window.testSchoolListener=null;};}};}};},async runTransaction(fn){return await fn({get:async ref=>ref.get(),set(ref,data){ref.set(data);},delete(){}});}};
@@ -14,6 +15,19 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
  const browser=await chromium.launch(process.env.PLAYWRIGHT_EXECUTABLE_PATH?{executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH}:{});
  try{
   const errors=[],url='http://127.0.0.1:'+server.address().port;
+  // Normal Safari/Chrome must use the same class gate as the installed home-screen app.
+  const webContext=await browser.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});
+  const webPage=await webContext.newPage();await webPage.clock.install({time:new Date('2026-10-19T00:00:00Z')});webPage.on('pageerror',e=>errors.push(e.message));
+  await webPage.goto(url);await webPage.waitForFunction(()=>window.cbtAppReady);
+  await webPage.locator('#authEmailToggle').click();
+  await webPage.evaluate(()=>{window.testBlocked=false;window.testSchoolPolicy={enabled:true,exemptDates:[]};window.cbtSyncNow=()=>{};});
+  await webPage.locator('#authEmail').fill('i.taigo921+different@gmail.com');await webPage.locator('#authPassword').fill('synthetic-password');await webPage.locator('#emailLoginBtn').click();
+  await webPage.locator('#schoolGate').waitFor({state:'visible'});
+  assert.equal(await webPage.evaluate(()=>window.cbtUser),null,'ordinary web login waits behind the class gate');
+  await webPage.evaluate(()=>window.testServerDate='Mon, 19 Oct 2026 00:00:00 GMT');
+  await webPage.clock.setSystemTime(new Date('2026-10-19T01:10:00Z'));await webPage.clock.runFor(1100);
+  assert.ok(await webPage.locator('#schoolGate').isVisible(),'changing the browser device clock cannot bypass the server-anchored class gate');
+  await webContext.close();
   for(const width of [390,1024]){
    const context=await browser.newContext({viewport:{width,height:844},serviceWorkers:'block'});
    await context.addInitScript(()=>Object.defineProperty(navigator,'standalone',{value:true}));
@@ -127,6 +141,6 @@ if(file.endsWith('index.html')){let html=fs.readFileSync(file,'utf8').replace(/<
    await reopened.close();
   }
   assert.deepEqual(errors,[]);
-  console.log('PASS standalone actual login flow: block -> signout -> reload/reopen GIF; temporary back; authorized account clears marker; no Google SDK dependency; class login/private-read deferral, automatic break/start, owner bypass, school settings controls; phone/tablet');
+  console.log('PASS web and standalone login flow: server-anchored class lock, device-clock tamper resistance, block -> signout -> reload/reopen GIF, automatic break/start, owner bypass, school settings controls; phone/tablet');
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});

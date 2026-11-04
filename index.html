@@ -1262,12 +1262,37 @@ const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // School timetable uses JST independently of the device's timezone.
 const SCHOOL_HOLIDAYS=[20260101, 20260112, 20260211, 20260223, 20260320, 20260429, 20260503, 20260504, 20260505, 20260506, 20260720, 20260811, 20260921, 20260922, 20260923, 20261012, 20261103, 20261123, 20270101, 20270111, 20270211, 20270223, 20270321, 20270322, 20270429, 20270503, 20270504, 20270505, 20270719, 20270811, 20270920, 20270923, 20271011, 20271103, 20271123];
 const SCHOOL_PERIODS=[[520,610],[625,715],[775,865],[880,970]];
+const SCHOOL_CLOCK_REFRESH_MS=5*60*1000;
 let schoolPolicy={enabled:true,exemptDates:[]};
-function schoolDateParts(now=new Date()){
- const d=new Date(now.getTime()+9*3600000);
+let schoolClockEpoch=0,schoolClockMonotonic=0,schoolClockCheckedAt=0,schoolClockPending=null;
+function schoolNow(now){
+ if(now instanceof Date)return now;
+ if(schoolClockEpoch&&typeof performance!=='undefined')return new Date(schoolClockEpoch+Math.max(0,performance.now()-schoolClockMonotonic));
+ return new Date();
+}
+async function refreshSchoolClock(force=false){
+ const monotonic=typeof performance!=='undefined'?performance.now():0;
+ if(!force&&schoolClockEpoch&&monotonic-schoolClockCheckedAt<SCHOOL_CLOCK_REFRESH_MS)return schoolNow();
+ if(schoolClockPending)return schoolClockPending;
+ schoolClockPending=(async()=>{
+  const sent=typeof performance!=='undefined'?performance.now():0;
+  const target=new URL('./index.html',location.href);target.searchParams.set('school-clock',String(Date.now()));
+  const response=await fetch(target,{method:'HEAD',cache:'no-store',credentials:'omit'});
+  if(!response.ok)throw Error('server clock request failed');
+  const serverEpoch=Date.parse(response.headers.get('Date')||'');
+  if(!Number.isFinite(serverEpoch))throw Error('server clock missing');
+  const received=typeof performance!=='undefined'?performance.now():sent;
+  schoolClockEpoch=serverEpoch+Math.max(0,(received-sent)/2);
+  schoolClockMonotonic=received;schoolClockCheckedAt=received;
+  return schoolNow();
+ })().finally(()=>{schoolClockPending=null;});
+ return schoolClockPending;
+}
+function schoolDateParts(now){
+ const source=schoolNow(now),d=new Date(source.getTime()+9*3600000);
  return {key:d.getUTCFullYear()*10000+(d.getUTCMonth()+1)*100+d.getUTCDate(),weekday:d.getUTCDay(),minute:d.getUTCHours()*60+d.getUTCMinutes()};
 }
-function currentSchoolPeriodKey(now=new Date()){
+function currentSchoolPeriodKey(now){
  const d=schoolDateParts(now),index=SCHOOL_PERIODS.findIndex(([start,end])=>d.minute>=start&&d.minute<end);
  return index<0?0:d.key*10+index+1;
 }
@@ -1280,7 +1305,7 @@ function renderSchoolReleaseButton(){
  button.disabled=!schoolRestriction({email:'learner'},schoolPolicy)||button.dataset.saving==='1';
  button.textContent=key&&schoolPolicy.releasedPeriod===key?'この授業は解除済み':'この授業の制限を解除';
 }
-function schoolRestriction(user,policy=schoolPolicy,now=new Date()){
+function schoolRestriction(user,policy=schoolPolicy,now){
  if(!user||canManageUsers(user)||policy.enabled===false)return null;
  const d=schoolDateParts(now);
  if(currentSchoolPeriodKey(now)!==0&&policy.releasedPeriod===currentSchoolPeriodKey(now))return null;
@@ -1316,7 +1341,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261103-e3-reported-images-1';
+const SERVICE_WORKER_BUILD='20261104-server-school-clock-1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -4691,6 +4716,9 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   }
   function schoolTick(){
     if(!auth.currentUser)return;
+    if(typeof performance!=='undefined'&&(!schoolClockEpoch||performance.now()-schoolClockCheckedAt>=SCHOOL_CLOCK_REFRESH_MS)){
+      refreshSchoolClock().then(()=>{if(auth.currentUser)updateSchoolGate(auth.currentUser);}).catch(()=>{});
+    }
     if(canManageUsers(auth.currentUser))renderSchoolReleaseButton();
     if(!updateSchoolGate(auth.currentUser)&&schoolLoginWaiting){schoolLoginWaiting=false;handleAuthState(auth.currentUser);}
   }
@@ -4710,7 +4738,10 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     if(typeof stopTimer==='function')stopTimer();
   }
   async function requireAccess(user){
-    const snap=await db.collection('accessControl').doc(user.uid).get({source:'server'});
+    const [snap]=await Promise.all([
+      db.collection('accessControl').doc(user.uid).get({source:'server'}),
+      refreshSchoolClock(true)
+    ]);
     if(snap.exists&&snap.data().blocked===true)throw Object.assign(Error('blocked'),{code:'access-blocked'});
     schoolPolicy=await window.cbtCloud.fetchSchoolPolicy();
   }

@@ -7,11 +7,11 @@
 - 機能: Google／メールログイン、許可ユーザー判定、個別アクセス停止、授業時間制限。
 - Route / 画面: `#authGate`、`#blockedLoginOverlay`、`#schoolGate`。通常画面にoverlayする。
 - 主なUI: `#gbtn`、`#authEmailBox`、`#schoolGateImage`、`#schoolLogout`。
-- state / hooks相当: `window.cbtUser`、`schoolPolicy`、`handleAuthState()`、`requireAccess()`、`watchAccess()`、`watchSchoolPolicy()`、`schoolRestriction()`。
-- API / service: Firebase Auth、`window.cbtCloud.fetchSchoolPolicy()`。
+- state / hooks相当: `window.cbtUser`、`schoolPolicy`、`handleAuthState()`、`requireAccess()`、`watchAccess()`、`watchSchoolPolicy()`、`refreshSchoolClock()`、`schoolRestriction()`。
+- API / service: Firebase Auth、`window.cbtCloud.fetchSchoolPolicy()`、GitHub PagesのHTTP `Date` header（授業判定用サーバー時刻）。
 - DB: `accessControl/{uid}`、`schoolAccess/settings`、初回プロフィール用 `users/{uid}`。
 - 関連ファイル: `index.html` のaccess/auth/Firebase bootstrap、`assets/blocked-login.gif`、`firestore.rules`、`ACCESS_CONTROL_SETUP.md`、`CLASS_HOURS_ACCESS.md`、`SETUP-LOGIN.md`。
-- 他Featureとの依存: すべての認証後Featureの前提。Firestoreルール側でも同じ制限を再評価する。
+- 他Featureとの依存: すべての認証後Featureの前提。Web／ホーム画面アプリともログイン時に配信サーバー時刻へ固定し、Firestoreルール側でも `request.time` で同じ制限を再評価する。
 
 ## ホーム・問題集選択・教材読込
 

@@ -98,7 +98,7 @@ FeatureからFirestoreを増やす場合は、この境界と `firestore.rules`�
 
 1. Firebase Authがユーザーを復元する。
 2. クライアントの許可メールhashと `accessControl/{uid}` を確認する。
-3. `schoolAccess/settings` と現在時刻から授業制限を確認する。
+3. GitHub PagesのHTTP `Date` headerで時刻を校正し、`schoolAccess/settings` と校正済み日本時間から授業制限を確認する。
 4. `users/{uid}` をサーバー優先で読み、ローカル進捗へマージする。
 5. 問題JSONを選択中の本から読み、画面を表示し購読を開始する。
 
@@ -129,7 +129,7 @@ Firestore側でも許可メール、個別停止、授業時間を再判定す�
 - 許可ユーザー: `index.html` の `ALLOW` hashと `firestore.rules` の `approvedHashes()` の一致が必要。
 - 管理者: メール確認済みの固定管理者メール。画面、`window.cbtCloud`、Firestoreルールの3層で制限する。
 - 個別停止: `accessControl/{uid}`。停止しても学習記録は削除しない。
-- 授業制限: `schoolAccess/settings` とFirestoreの `request.time`（JST換算）。管理者、休校日、休日、授業単位解除は例外。
+- 授業制限: クライアントはGitHub PagesのHTTP `Date` headerを基準にし、Firestoreは `schoolAccess/settings` と `request.time`（JST換算）で再判定する。管理者、休校日、休日、授業単位解除は例外。
 - ランキング: メール確認済みの許可・非停止ユーザーだけが公開集計を閲覧する。
 
 ## 外部サービスと共通基盤

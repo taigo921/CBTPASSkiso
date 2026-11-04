@@ -6,7 +6,7 @@
 |---|---|---|---|---|---|
 |`#authGate`|Google／メールログイン、未許可案内|Access & Identity|`#gbtn`, `#authEmailBox`, `#authErr`|Firebase Auth、許可メールhash|`index.html` auth/Firebase bootstrap、`SETUP-LOGIN.md`|
 |`#blockedLoginOverlay`|個別停止ユーザーへ停止表示|Access & Identity|`#blockedLoginBack`|`accessControl/{uid}`、端末notice key|`setBlockedLoginImage()`, `requireAccess()`, `watchAccess()`|
-|`#schoolGate`|授業中の利用停止と自動解除|Access & Identity|`#schoolGateImage`, `#schoolGateMessage`, logout|`schoolAccess/settings`、JST時間割|`schoolRestriction()`, `updateSchoolGate()`, `firestore.rules`|
+|`#schoolGate`|授業中の利用停止と自動解除|Access & Identity|`#schoolGateImage`, `#schoolGateMessage`, logout|`schoolAccess/settings`、配信サーバー基準のJST時間割|`refreshSchoolClock()`, `schoolRestriction()`, `updateSchoolGate()`, `firestore.rules`|
 |`#home` / `#regularHome`|問題集選択、成績概要、再開、各機能入口|Question Catalog、Progress|book tabs、`#resumeCard`、mode buttons|問題JSON、本別成績、session、settings|`renderHome()`, `switchBook()`|
 |`#home` / `#mockHome`|模試block・科目選択、問題一覧|Mock Exam|block selector、filters、subject picker|模試assets、block別進捗|`renderMockHome()`|
 |`#home` / `#dictionaryHome`（CBT辞典tab）|辞典②／辞典③模試1／模試2の選択、概要、進捗、領域選択|Dictionary Practice|source selector、start、領域／block buttons、summary|辞典manifest、教材別端末進捗|辞典Featureの `renderHome('dictionary')`|
