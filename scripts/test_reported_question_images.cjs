@@ -2,8 +2,10 @@ const fs=require('node:fs'),crypto=require('node:crypto'),assert=require('node:a
 
 const path=require('node:path');
 const questions=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/C4-001-094.json'),'utf8'));
+const e2Questions=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/E2.json'),'utf8'));
 const e3Questions=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/E3.json'),'utf8'));
 const byUid=uid=>questions.find(question=>question.uid===uid);
+const e2ByUid=uid=>e2Questions.find(question=>question.uid===uid);
 const e3ByUid=uid=>e3Questions.find(question=>question.uid===uid);
 const imageBytes=question=>Buffer.from(String(question.image_base64).replace(/^data:[^;]+;base64,/,''),'base64');
 const sha=question=>crypto.createHash('sha256').update(imageBytes(question)).digest('hex');
@@ -36,4 +38,9 @@ const restPosition=e3ByUid('E3-4-2-098');
 assert.equal(sha(restPosition),'a9c906a9d69f67b1ca4477024745e44c5752ffc0f7dd7b446ad5a751caccc720','E3-4-2-098 keeps both rest-position and denture-wearing photographs');
 assert.equal(restPosition.answer,'E');
 
-console.log('PASS reported question images: allergy, pulpitis, curette, rest-position, and articulator figures are aligned');
+const salivaryStone=e2ByUid('E2-4-8-157');
+assert.equal(sha(salivaryStone),'83c9d80c8344c0acaa4bd1f3c8f1f755a9c76f5e7b5c87444b73dab815159dfc','E2-4-8-157 keeps the complete panoramic radiograph');
+assert.equal(salivaryStone.choices.A,'唾石症');
+assert.equal(salivaryStone.answer,'A');
+
+console.log('PASS reported question images: allergy, salivary stone, pulpitis, curette, rest-position, and articulator figures are aligned');
