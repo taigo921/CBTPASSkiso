@@ -50,9 +50,14 @@ assert.equal(sha(condylarFracture),'d96938f36dc61891d3bee248ed80ed632968c497fdcc
 assert.equal(condylarFracture.choices.E,'外側翼突筋');
 assert.equal(condylarFracture.answer,'E');
 
+const luxatedTeeth=e2ByUid('E2-4-2-041');
+assert.equal(sha(luxatedTeeth),'e4fc356e1f6a6415fd8fc333de6aa307f2f50ca03fd697c7208a5e743ae2a15f','E2-4-2-041 keeps the initial, reduced, and wire-splint photographs');
+assert.equal(luxatedTeeth.choices.A,'歯の脱臼');
+assert.equal(luxatedTeeth.answer,'A');
+
 const missingPremolar=e4ByUid('E4-2-021');
 assert.equal(sha(missingPremolar),'9584221deb13ed9bdf11d64b8c5ba2826d5872a0946e4c70dcd3f525d273093f','E4-2-021 keeps the complete panoramic radiograph');
 assert.equal(missingPremolar.choices.D,'下顎左側第二小臼歯');
 assert.equal(missingPremolar.answer,'D');
 
-console.log('PASS reported question images: allergy, full panoramic radiographs, salivary stone, pulpitis, curette, rest-position, and articulator figures are aligned');
+console.log('PASS reported question images: allergy, trauma, full panoramic radiographs, salivary stone, pulpitis, curette, rest-position, and articulator figures are aligned');
