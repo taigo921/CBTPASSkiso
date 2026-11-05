@@ -55,6 +55,21 @@ assert.equal(sha(luxatedTeeth),'e4fc356e1f6a6415fd8fc333de6aa307f2f50ca03fd697c7
 assert.equal(luxatedTeeth.choices.A,'歯の脱臼');
 assert.equal(luxatedTeeth.answer,'A');
 
+const chronicOsteomyelitis=e2ByUid('E2-4-3-059');
+assert.equal(sha(chronicOsteomyelitis),'403cf1bf002a60dcb41a7e5da4cc08dbeb90ff0e3f0e64afc0fd8f88ccc96f97','E2-4-3-059 keeps the panoramic, frontal, and complete histology panels');
+assert.equal(chronicOsteomyelitis.choices.C,'慢性骨髄炎');
+assert.equal(chronicOsteomyelitis.answer,'C');
+
+const odontogenicSinusitis=e2ByUid('E2-4-3-064');
+assert.equal(sha(odontogenicSinusitis),'041f43205258fa1eb2205aeaac429e70bf25e839cc27cbd8bff203b5eb6e4905','E2-4-3-064 keeps all three radiographs without clipping the lower row');
+assert.equal(odontogenicSinusitis.choices.E,'β-ラクタム系抗菌薬の投与');
+assert.equal(odontogenicSinusitis.answer,'E');
+
+const actinomycosis=e2ByUid('E2-4-3-068');
+assert.equal(sha(actinomycosis),'2bbf096118c1a39360ea09df8adaf3700c2feac3ff30f0296837f846ef86046a','E2-4-3-068 keeps the complete facial and histology panels');
+assert.equal(actinomycosis.choices.B,'Actinomyces israelii');
+assert.equal(actinomycosis.answer,'B');
+
 const missingPremolar=e4ByUid('E4-2-021');
 assert.equal(sha(missingPremolar),'9584221deb13ed9bdf11d64b8c5ba2826d5872a0946e4c70dcd3f525d273093f','E4-2-021 keeps the complete panoramic radiograph');
 assert.equal(missingPremolar.choices.D,'下顎左側第二小臼歯');
