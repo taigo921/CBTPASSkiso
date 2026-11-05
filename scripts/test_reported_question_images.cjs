@@ -12,6 +12,14 @@ const e4ByUid=uid=>e4Questions.find(question=>question.uid===uid);
 const imageBytes=question=>Buffer.from(String(question.image_base64).replace(/^data:[^;]+;base64,/,''),'base64');
 const sha=question=>crypto.createHash('sha256').update(imageBytes(question)).digest('hex');
 
+const capsid=byUid('C4-025'),envelope=byUid('C4-026');
+assert.equal(sha(capsid),'26cc802412cc017bd3dc983109933b327c145cffc6f0b0fa03889d437afe58d5','C4-025 keeps the four-label virus figure containing the capsid label （エ）');
+assert.equal(capsid.answer,'D');
+assert.equal(capsid.choices.D,'（エ）');
+assert.equal(sha(envelope),'4c0a585862bcdf4c25dedea250e3caad251218a42a757be7774744fce7894546','C4-026 keeps the three-label virus figure containing the envelope label （イ）');
+assert.equal(envelope.answer,'B');
+assert.equal(envelope.choices.B,'（イ）');
+
 const typeThree=byUid('C4-083'),typeFour=byUid('C4-085'),typeTwo=byUid('C4-087');
 assert.ok(typeThree?.image_base64&&typeFour?.image_base64&&typeTwo?.image_base64,'reported allergy questions keep their figures');
 assert.notEqual(sha(typeTwo),sha(typeThree),'C4-087 type II figure must not reuse C4-083 type III figure');
@@ -75,4 +83,4 @@ assert.equal(sha(missingPremolar),'9584221deb13ed9bdf11d64b8c5ba2826d5872a0946e4
 assert.equal(missingPremolar.choices.D,'下顎左側第二小臼歯');
 assert.equal(missingPremolar.answer,'D');
 
-console.log('PASS reported question images: allergy, trauma, full panoramic radiographs, salivary stone, pulpitis, curette, rest-position, and articulator figures are aligned');
+console.log('PASS reported question images: virus, allergy, trauma, full panoramic radiographs, salivary stone, pulpitis, curette, rest-position, and articulator figures are aligned');
