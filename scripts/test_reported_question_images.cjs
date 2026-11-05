@@ -4,9 +4,11 @@ const path=require('node:path');
 const questions=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/C4-001-094.json'),'utf8'));
 const e2Questions=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/E2.json'),'utf8'));
 const e3Questions=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/E3.json'),'utf8'));
+const e4Questions=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/E4.json'),'utf8'));
 const byUid=uid=>questions.find(question=>question.uid===uid);
 const e2ByUid=uid=>e2Questions.find(question=>question.uid===uid);
 const e3ByUid=uid=>e3Questions.find(question=>question.uid===uid);
+const e4ByUid=uid=>e4Questions.find(question=>question.uid===uid);
 const imageBytes=question=>Buffer.from(String(question.image_base64).replace(/^data:[^;]+;base64,/,''),'base64');
 const sha=question=>crypto.createHash('sha256').update(imageBytes(question)).digest('hex');
 
@@ -43,4 +45,14 @@ assert.equal(sha(salivaryStone),'83c9d80c8344c0acaa4bd1f3c8f1f755a9c76f5e7b5c874
 assert.equal(salivaryStone.choices.A,'唾石症');
 assert.equal(salivaryStone.answer,'A');
 
-console.log('PASS reported question images: allergy, salivary stone, pulpitis, curette, rest-position, and articulator figures are aligned');
+const condylarFracture=e2ByUid('E2-4-2-036');
+assert.equal(sha(condylarFracture),'d96938f36dc61891d3bee248ed80ed632968c497fdcc909d0e597bda65925608','E2-4-2-036 keeps the complete panoramic radiograph');
+assert.equal(condylarFracture.choices.E,'外側翼突筋');
+assert.equal(condylarFracture.answer,'E');
+
+const missingPremolar=e4ByUid('E4-2-021');
+assert.equal(sha(missingPremolar),'9584221deb13ed9bdf11d64b8c5ba2826d5872a0946e4c70dcd3f525d273093f','E4-2-021 keeps the complete panoramic radiograph');
+assert.equal(missingPremolar.choices.D,'下顎左側第二小臼歯');
+assert.equal(missingPremolar.answer,'D');
+
+console.log('PASS reported question images: allergy, full panoramic radiographs, salivary stone, pulpitis, curette, rest-position, and articulator figures are aligned');

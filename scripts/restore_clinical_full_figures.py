@@ -24,6 +24,12 @@ GAP = 16
 
 # PDF pages are zero based. Boxes use the 180 dpi reference render above.
 FIGURES = {
+    "E2-4-2-036": {
+        "file": "data/E2.json",
+        "page": 140,
+        "layout": "rows",
+        "panels": [[(459, 252, 1134, 595)]],
+    },
     "E2-4-8-157": {
         "file": "data/E2.json",
         "page": 208,
@@ -56,6 +62,12 @@ FIGURES = {
         "page": 320,
         "layout": "rows",
         "panels": [[(743, 198, 1135, 501)], [(459, 510, 1135, 823)]],
+    },
+    "E4-2-021": {
+        "file": "data/E4.json",
+        "page": 467,
+        "layout": "rows",
+        "panels": [[(644, 1007, 1151, 1266)]],
     },
     "E4-1-035": {
         "file": "data/E4.json",
