@@ -24,6 +24,12 @@ GAP = 16
 
 # PDF pages are zero based. Boxes use the 180 dpi reference render above.
 FIGURES = {
+    "E2-2-017": {
+        "file": "data/E2.json",
+        "page": 112,
+        "layout": "rows",
+        "panels": [[(715, 980, 1135, 1340)]],
+    },
     "E2-4-2-036": {
         "file": "data/E2.json",
         "page": 140,
@@ -165,6 +171,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("source", type=Path, help="clinical source PDF")
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--uid", action="append", choices=sorted(FIGURES), help="only regenerate this question (repeatable)")
     parser.add_argument("--preview-dir", type=Path, default=Path("/tmp/clinical-full-figure-previews"))
     args = parser.parse_args()
 
@@ -173,6 +180,8 @@ def main() -> None:
     files: dict[Path, list[dict]] = {}
 
     for uid, spec in FIGURES.items():
+        if args.uid and uid not in args.uid:
+            continue
         page = document[spec["page"]]
         pixmap = page.get_pixmap(matrix=fitz.Matrix(3, 3), alpha=False)
         rendered = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)

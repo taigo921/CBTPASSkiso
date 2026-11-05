@@ -12,6 +12,11 @@ const e4ByUid=uid=>e4Questions.find(question=>question.uid===uid);
 const imageBytes=question=>Buffer.from(String(question.image_base64).replace(/^data:[^;]+;base64,/,''),'base64');
 const sha=question=>crypto.createHash('sha256').update(imageBytes(question)).digest('hex');
 
+const groupFunction=e2ByUid('E2-2-017');
+assert.equal(sha(groupFunction),'3a084c7a8facad4c7d9e12057f1fd844dd973a1d9a4832b99db438d4d3ad56cb','E2-2-017 keeps the complete right-lateral group-function diagram');
+assert.equal(groupFunction.answer,'E');
+assert.equal(groupFunction.choices.E,'グループファンクションドオクルージョン');
+
 const capsid=byUid('C4-025'),envelope=byUid('C4-026');
 assert.equal(sha(capsid),'26cc802412cc017bd3dc983109933b327c145cffc6f0b0fa03889d437afe58d5','C4-025 keeps the four-label virus figure containing the capsid label （エ）');
 assert.equal(capsid.answer,'D');
@@ -83,4 +88,4 @@ assert.equal(sha(missingPremolar),'9584221deb13ed9bdf11d64b8c5ba2826d5872a0946e4
 assert.equal(missingPremolar.choices.D,'下顎左側第二小臼歯');
 assert.equal(missingPremolar.answer,'D');
 
-console.log('PASS reported question images: virus, allergy, trauma, full panoramic radiographs, salivary stone, pulpitis, curette, rest-position, and articulator figures are aligned');
+console.log('PASS reported question images: occlusion, virus, allergy, trauma, full panoramic radiographs, salivary stone, pulpitis, curette, rest-position, and articulator figures are aligned');
