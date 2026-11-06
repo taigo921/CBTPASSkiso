@@ -83,6 +83,11 @@ assert.equal(sha(actinomycosis),'2bbf096118c1a39360ea09df8adaf3700c2feac3ff30f02
 assert.equal(actinomycosis.choices.B,'Actinomyces israelii');
 assert.equal(actinomycosis.answer,'B');
 
+const partschIncision=e2ByUid('E2-4-5-110');
+assert.equal(sha(partschIncision),'57059523f664c7cc3473a9f7e9adcf0a8e680ac6f76cd4c75656c39a57de7b5b','E2-4-5-110 keeps all five incision diagrams including the correct （エ）');
+assert.equal(partschIncision.choices.D,'（エ）');
+assert.equal(partschIncision.answer,'D');
+
 const missingPremolar=e4ByUid('E4-2-021');
 assert.equal(sha(missingPremolar),'9584221deb13ed9bdf11d64b8c5ba2826d5872a0946e4c70dcd3f525d273093f','E4-2-021 keeps the complete panoramic radiograph');
 assert.equal(missingPremolar.choices.D,'下顎左側第二小臼歯');

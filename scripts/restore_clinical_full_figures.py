@@ -75,6 +75,12 @@ FIGURES = {
         "layout": "rows",
         "panels": [[(503, 1133, 757, 1424), (765, 1133, 1134, 1424)]],
     },
+    "E2-4-5-110": {
+        "file": "data/E2.json",
+        "page": 180,
+        "layout": "rows",
+        "panels": [[(445, 244, 1134, 690)]],
+    },
     "E2-4-3-062": {
         "file": "data/E2.json",
         "page": 154,
