@@ -88,6 +88,11 @@ assert.equal(sha(partschIncision),'57059523f664c7cc3473a9f7e9adcf0a8e680ac6f76cd
 assert.equal(partschIncision.choices.D,'（エ）');
 assert.equal(partschIncision.answer,'D');
 
+const aplasticAnemia=e2ByUid('E2-4-10-192');
+assert.equal(sha(aplasticAnemia),'e9aa544f87f72ac148ea7e2cd56cc8053b91cc2c53eac056cd64b50374062313','E2-4-10-192 keeps the oral photograph and all laboratory test labels and values');
+assert.equal(aplasticAnemia.choices.D,'再生不良性貧血');
+assert.equal(aplasticAnemia.answer,'D');
+
 const missingPremolar=e4ByUid('E4-2-021');
 assert.equal(sha(missingPremolar),'9584221deb13ed9bdf11d64b8c5ba2826d5872a0946e4c70dcd3f525d273093f','E4-2-021 keeps the complete panoramic radiograph');
 assert.equal(missingPremolar.choices.D,'下顎左側第二小臼歯');
