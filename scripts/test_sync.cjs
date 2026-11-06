@@ -13,17 +13,18 @@ ${slice('function mockKeyFor(', 'function progressBackupData(')}
 ${slice('function mergeCloudPayloads(', "el('syncNowBtn').addEventListener")}
 `,context);
 vm.runInContext(`
-function payload(n,xp){return {activeBook:'book1',books:{book1:{perQ:{q:{c:n,w:0}}},book2:{perQ:{b:{c:3,w:2}}}},game:{xp},studyTime:{days:{'2026-09-23':{seconds:n,questions:5,book1:n,book2:0}}},studyPlans:{shared:{updatedAt:n,items:{q:{updatedAt:n,round:n}},assignments:{day:{uids:['q'],completedUids:{q:true},updatedAt:n}}}}};}
+function payload(n,xp){return {activeBook:'book1',books:{book1:{perQ:{q:{c:n,w:0}}},book2:{perQ:{b:{c:3,w:2}}}},game:{xp},studyTime:{days:{'2026-09-23':{seconds:n,questions:5,book1:n,book2:0}}},studyPlans:{shared:{updatedAt:n,items:{q:{updatedAt:n,round:n}},assignments:{day:{uids:['q'],completedUids:{q:true},updatedAt:n}}}},practiceSets:{dictionary2:{index:1,updatedAt:n,answers:{A001:{attempts:[{picked:'B',correct:true,at:n}],lastCorrect:true,lastPicked:'B'}}}}};}
 const phone=payload(1977,13179),ipad=payload(1692,11294);
 for(const [a,b] of [[phone,ipad],[ipad,phone]]){
  const merged=mergeCloudPayloads(a,b);
  const encoded=encodeCloudProgress(merged),decoded=decodeCloudProgress(encoded);
- for(const key of ['books','studyPlans','mockExams','sessions'])assert(JSON.stringify(merged[key])===JSON.stringify(decoded[key]),'packed roundtrip '+key);
+ for(const key of ['books','studyPlans','mockExams','practiceSets','sessions'])assert(JSON.stringify(merged[key])===JSON.stringify(decoded[key]),'packed roundtrip '+key);
  assert(merged.books.book1.answered===1977&&merged.books.book1.correct===1977,'cumulative book1 totals survive both directions');
  assert(merged.books.book2.answered===5&&merged.books.book2.correct===3,'cumulative book2 totals remain separate');
  assert(merged.game.xp===13179,'XP never rolled back');
  assert(merged.studyTime.days['2026-09-23'].seconds===1977,'study time retained');
  assert(merged.studyPlans.shared.items.q.round===1977,'latest plan item retained');
+ assert(merged.practiceSets.dictionary2.answers.A001.attempts.length===2,'dictionary attempts from both devices are retained');
  assert(mergeCloudPayloads(merged,merged).books.book1.answered===1977,'idempotent cumulative totals');
 }
 const old={5:{index:0,answers:{1:{picked:'B',answered:false,updatedAt:50}}}},fresh={5:{index:2,answers:{1:{picked:'A',answered:true,updatedAt:10},2:{picked:'C',answered:true,updatedAt:20}}}};
@@ -34,7 +35,7 @@ const packed=encodeCloudProgress(mergeCloudPayloads({},phone));
 const mixed=decodeCloudProgress({...packed,books:payload(2200,14000).books});
 assert(mixed.books.book1.answered===2200&&mixed.books.book1.perQ.q.c===2200,'legacy cumulative attempt history survives while accuracy counts the latest result only');
 let rejected=false;try{decodeCloudProgress({progressDataV1:'broken'});}catch(_){rejected=true;}assert(rejected,'invalid packed data blocks overwrite');
-const oversized={books:{book1:{perQ:{q:{note:'あ'.repeat(400000)}}},book2:{perQ:{b:{note:'x'.repeat(300000)}}}},studyPlans:{shared:{}},mockExams:{},sessions:{book1:{uids:['q']}}};
+const oversized={books:{book1:{perQ:{q:{note:'あ'.repeat(400000)}}},book2:{perQ:{b:{note:'x'.repeat(300000)}}}},studyPlans:{shared:{}},mockExams:{},practiceSets:{},sessions:{book1:{uids:['q']}}};
 const chunked=encodeCloudProgressV2(oversized);
 assert(chunked.chunks.length>1,'progress beyond the Firestore field limit is split');
 assert(chunked.chunks.every(chunk=>new Blob([chunk]).size<=CLOUD_PROGRESS_CHUNK_BYTES),'each progress chunk stays below its byte limit');

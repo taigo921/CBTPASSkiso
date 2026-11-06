@@ -75,9 +75,9 @@
 - 主なUI: `#mockBlockSelector`、`#mockQuestionList`、`#mockExamChoices`、`#mockExamResult`、`#mockSubjectSelect`。
 - state / hooks相当: `selectedMockBlock`、`mockProgress`、`mockSubjectSession`、`renderMockHome()`、`renderMockExam()`、`startMockSubjectPractice()`。
 - API / service: `saveMockProgress()`、`saveMockSubjectPractice()`、画像拡大viewer。
-- DB: ブロック別 `togo_mock_azabu2026_block*_v1_{uid}` は圧縮進捗の `mockExams` として同期。科目別 `togo_mock_subject_v1_{uid}_{subject}` は端末のみ。
+- DB: ブロック別 `togo_mock_azabu2026_block*_v1_{uid}` は圧縮進捗の `mockExams` として同期し、回答成績をランキング集計へ渡す。科目別 `togo_mock_subject_v1_{uid}_{subject}` は端末のみ。
 - 関連ファイル: `index.html` のmock部分、`mock-assets/azabu-2026/blocks.js`、`subjects.js`、`photo-pages.js` と画像、`scripts/test_mock_exam.cjs`、`scripts/test_mock_subjects.cjs`。
-- 他Featureとの依存: 通常問題集・通常成績・XPとは分離。Progressはブロック別進捗だけを扱う。
+- 他Featureとの依存: 通常問題集・通常成績・XPとは分離。Progressはブロック別進捗を同期し、Leaderboardはその公開集計だけを使う。
 
 ## CBT辞典演習
 
@@ -85,10 +85,10 @@
 - Route / 画面: `#dictionaryHome`、`#dictionaryPractice`。
 - 主なUI: `[data-dictionary-source]`、`#dictionaryStart`、`[data-dictionary-group]`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
 - state / hooks相当: `features/dictionary-practice/dictionary-practice.js` 内の `SOURCES`、`sourceKey`、`manifest`、`progress`、`currentIndex`、`renderHome()`、`open()`、`renderQuestion()`、`submit()`。
-- API / service: 各教材manifestの静的fetch、LocalStorage、共通 `openImageZoom()`。
-- DB: Firestore不使用。辞典②、辞典③模試1、模試2で異なるLocalStorage keyを使う。
+- API / service: 各教材manifestの静的fetch、LocalStorage、共通 `openImageZoom()`、`cloudSyncSoon()`。
+- DB: 辞典②、辞典③模試1、模試2で異なるLocalStorage keyを使い、圧縮進捗の `practiceSets` として本人のFirestoreへ同期する。
 - 関連ファイル: `features/dictionary-practice/`、`dictionary-assets/exercises/`、`dictionary-assets/mock-exams/`、`scripts/import_cbt_dictionary.py`、`scripts/import_cbt_dictionary3.py`、各静的テスト、`scripts/test_dictionary_browser.cjs`。
-- 他Featureとの依存: Access後に利用し、画面切替と画像viewerだけを共用する。通常問題集、Study Route、Progress & Sync、Gamification、Leaderboardとは記録を分離する。
+- 他Featureとの依存: Access後に利用し、画面切替と画像viewerを共用する。通常問題集、Study Route、Gamificationとは分離し、Progress & Syncへ専用履歴、Leaderboardへ公開集計だけを渡す。
 
 ## 歯科理工Forms演習
 
@@ -96,10 +96,10 @@
 - Route / 画面: ホームの `[data-book="dentalMaterials"]`、共用UIの `#dictionaryHome` と `#dictionaryPractice`。
 - 主なUI: 歯科理工tab、`#dictionaryStart`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
 - state / hooks相当: `dentalMaterialsHomeSelected` と、共用viewer内の `SOURCES.dentalMaterials`、manifest、専用progress。
-- API / service: 歯科理工manifestの静的fetch、LocalStorage、共通 `openImageZoom()`。
-- DB: Firestore不使用。`togo_dental_materials_forms_progress_v1_{uid}` を使い、辞典進捗と混ぜない。
+- API / service: 歯科理工manifestの静的fetch、LocalStorage、共通 `openImageZoom()`、`cloudSyncSoon()`。
+- DB: `togo_dental_materials_forms_progress_v1_{uid}` を使い、辞典進捗と分けたまま圧縮進捗の `practiceSets` として本人のFirestoreへ同期する。
 - 関連ファイル: `index.html`、`features/dictionary-practice/`、`dictionary-assets/dental-materials/`、`scripts/import_dental_materials_forms.py`、`scripts/test_dental_materials_forms.cjs`、`scripts/test_dictionary_browser.cjs`。
-- 他Featureとの依存: Dictionary Practiceとは表示基盤だけを共用する。通常問題集、Study Route、Progress & Sync、Gamification、Leaderboardとは記録を分離する。
+- 他Featureとの依存: Dictionary Practiceとは表示基盤だけを共用する。通常問題集、Study Route、Gamificationとは分離し、Progress & Syncへ専用履歴、Leaderboardへ公開集計だけを渡す。
 
 ## ガイド編・画像viewer
 
@@ -120,11 +120,11 @@
 - API / service: `window.cbtCloud.save/readLatest/subscribe`。
 - DB: `users/{uid}`。詳細は `database.md`。
 - 関連ファイル: `index.html` のstorage/sync/Firebase gateway、`scripts/README-sync.md`、sync/progress browser tests。
-- 他Featureとの依存: 学習Featureの保存先となる横断基盤。Feature固有の解釈を増やす場合は、そのFeature側のmerge関数を明示する。
+- 他Featureとの依存: 学習Featureの保存先となる横断基盤。模試は `mockExams`、辞典・歯科理工は `practiceSets` の専用merge規則で統合する。
 
 ## プロフィール・ランキング
 
-- 機能: 表示名、アバター、許可ユーザー全員の集計ランキング、管理者による既存ユーザー集計更新。回答数・正解数・正答率は問題集1・2の各回答済み問題の最新回答だけを合算し、過去の解き直し回数は含めない。
+- 機能: 表示名、アバター、許可ユーザー全員の集計ランキング、管理者による既存ユーザー集計更新。問題集1・2、麻布模試、CBT辞典、歯科理工について、回答数・正解数は全回答の累計、正答率は各問題の最新回答だけを合算する。
 - Route / 画面: `#leaderboard`、`#unameModal`、`#avatarCropModal`。
 - 主なUI: `#rankBtn`、`#lbBody`、`#lbRename`、`#lbAvatarInput`、ランキングtab。
 - state / hooks相当: `lbMetric`、`leaderboardUsersCache`、`openLeaderboard()`、`renderLeaderboard()`、`leaderboardPublicSummary()`。

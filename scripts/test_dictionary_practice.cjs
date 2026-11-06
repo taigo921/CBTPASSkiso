@@ -43,7 +43,9 @@ assert.match(html,/features\/dictionary-practice\/dictionary-practice\.js/);
 assert.match(feature,/prefix:'togo_dictionary2_progress_v1_'/);
 assert.match(feature,/prefix:'togo_dictionary3_mock1_progress_v1_'/);
 assert.match(feature,/prefix:'togo_dictionary3_mock2_progress_v1_'/);
-assert.match(html,/通常問題集・学習ルート・ランキング/);
+assert.match(html,/回答成績は端末に保存・同期し、ランキングに加算/);
+assert.match(feature,/window\.cloudSyncSoon/);
+assert.match(feature,/reloadProgress:loadProgress/);
 new Function(feature);
 
 console.log('PASS dictionary practice: 956 canonical IDs, answers, question/explanation WebPs, group counts, isolated progress, and UI wiring.');

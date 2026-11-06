@@ -64,7 +64,7 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 4. Progress & Syncが各Featureの保存対象を集約してFirestoreへ同期する。同期処理が画面Featureの内部UIを所有しない。
 5. Leaderboardは個人進捗から許可された集計だけを派生させる。公開集計から個人進捗へは書き戻さない。
 6. Access Administrationは権限データを管理するが、個人の学習記録を編集・削除しない。
-7. Dictionary PracticeとDental Materials Practiceは相互の進捗や通常問題集の成績・Study Route・Gamification・Leaderboardへ書き込まない。実装上は画像問題ビューアを共用する。
+7. Dictionary PracticeとDental Materials Practiceは相互の進捗や通常問題集の成績・Study Route・Gamificationへ書き込まない。専用履歴はProgress & Syncへ渡し、Leaderboardはそこから公開集計だけを派生する。実装上は画像問題ビューアを共用する。
 
 新規ファイルへ切り出す場合は、まず `features/<feature-name>/` にUI・状態・サービス・型相当を同居させる。共有候補は2つ以上のFeatureが同じ契約で使用することを確認してから、認証・保存・問題カタログなどの基盤へ昇格する。この静的構成で複数JSを追加するときは、`index.html` の読込順と `sw.js` のアプリシェルも同時に扱う。
 
@@ -118,11 +118,11 @@ Firestore側でも許可メール、個別停止、授業時間を再判定す�
 
 ### CBT辞典演習
 
-`dictionary-assets/exercises/manifest.json` の辞典② 956問と `dictionary-assets/mock-exams/manifest.json` の辞典③ 624問を読み、辞典タブ内で教材を切り替える。
+`dictionary-assets/exercises/manifest.json` の辞典② 956問と `dictionary-assets/mock-exams/manifest.json` の辞典③ 624問を読み、辞典タブ内で教材を切り替える。教材別の回答履歴はLocalStorageへ即時保存し、`practiceSets` として本人の分割進捗へ同期する。通常問題集・学習ルート・XPとは分離し、ランキングには回答成績の集計だけを含める。
 
 ### 歯科理工Forms演習
 
-`dictionary-assets/dental-materials/manifest.json` の47問を、ホームの独立した「歯科理工」タブから開く。実装上は `features/dictionary-practice/` の画像問題ビューアを再利用するが、CBT辞典の教材選択には表示せず、進捗keyも分離する。正答画面またはユーザー確認のない3問は公開対象から除外し、manifestの `unresolved` をsource of truthとする。単一選択と複数選択を採点し、回答確定後だけ正答参照画像を表示する。通常問題集・CBT辞典・学習ルート・XP・ランキング・Firestore同期には混ぜない。
+`dictionary-assets/dental-materials/manifest.json` の47問を、ホームの独立した「歯科理工」タブから開く。実装上は `features/dictionary-practice/` の画像問題ビューアを再利用するが、CBT辞典の教材選択には表示せず、進捗keyも分離する。正答画面またはユーザー確認のない3問は公開対象から除外し、manifestの `unresolved` をsource of truthとする。単一選択と複数選択を採点し、回答確定後だけ正答参照画像を表示する。専用履歴は `practiceSets` として本人へ同期し、通常問題集・CBT辞典・学習ルート・XPとは混ぜず、ランキングには回答成績の集計だけを含める。
 
 ## 認証・権限
 

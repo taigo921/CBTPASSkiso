@@ -663,7 +663,7 @@
     <div id="dictionaryHome" class="hidden">
       <div class="dictionary-home-card">
         <h2 id="dictionaryHomeTitle">📚 CBTの辞典② 基礎臨床</h2>
-        <p id="dictionaryHomeDescription">問題画像を見てA〜Eから回答し、回答後に公式解説を確認できます。通常問題集・学習ルート・ランキングとは別記録です。</p>
+        <p id="dictionaryHomeDescription">問題画像を見てA〜Eから回答し、回答後に公式解説を確認できます。学習ルート・XPとは別記録ですが、回答成績はランキングに含まれます。</p>
         <div class="dictionary-sources" role="group" aria-label="辞典を選ぶ">
           <button type="button" class="on" data-dictionary-source="dictionary2">辞典② 基礎臨床</button>
           <button type="button" data-dictionary-source="mock1">辞典③ 模試1</button>
@@ -742,7 +742,7 @@
       <button class="mode" id="listBtn"><div class="ic">📋</div><div class="t"><b>問題一覧から選ぶ</b><span>状態を見ながら1問ずつ解く</span></div><div class="arr">›</div></button>
       <button class="mode" id="statsBtn"><div class="ic">📊</div><div class="t"><b>学習分析・勉強時間</b><span id="studyTimeHome">今日の勉強時間 0分</span></div><div class="arr">›</div></button>
       <button class="mode hidden" id="accessAdminBtn"><div class="ic">🔒</div><div class="t"><b>ユーザーのアクセス管理</b><span>管理者専用・アクセス停止／解除</span></div><div class="arr">›</div></button>
-      <button class="mode hidden" id="rankBtn"><div class="ic">🏆</div><div class="t"><b>みんなのランキング</b><span>問題集1・2の合計成績・レベルを比較</span></div><div class="arr">›</div></button>
+      <button class="mode hidden" id="rankBtn"><div class="ic">🏆</div><div class="t"><b>みんなのランキング</b><span>全教材の合計成績・レベルを比較</span></div><div class="arr">›</div></button>
     </div>
     <div class="offline-status pending" id="offlineStatus" aria-live="polite">📥 オフライン準備を確認中…</div>
     <div class="cloud-status pending" id="cloudStatus" aria-live="polite">☁️ 学習記録の同期を確認中…</div>
@@ -926,7 +926,7 @@
         <img id="dictionaryExplanationImage" class="dictionary-image" alt="辞典②の公式解説">
       </div>
     </div>
-    <p class="dictionary-note">辞典演習の記録はこの端末に保存します。問題集1・2の成績、3連続正解、指定課題、XP、ランキングには加算しません。</p>
+    <p class="dictionary-note">辞典・歯科理工の回答成績は端末に保存・同期し、ランキングに加算します。3連続正解、指定課題、XPには加算しません。</p>
   </section>
 
   <!-- FINISH / REVIEW -->
@@ -1020,7 +1020,7 @@
   </section>
   <!-- LEADERBOARD -->
   <section id="leaderboard" class="hidden">
-    <div class="hero"><h1 style="font-size:24px;">🏆 みんなでランキング</h1><p id="lbMe"></p><p class="mock-note">問題集1・2の合計（模試は対象外）。連続正解は両問題集の最高記録、連続使用は最新利用日の問題集の記録です。</p></div>
+    <div class="hero"><h1 style="font-size:24px;">🏆 みんなでランキング</h1><p id="lbMe"></p><p class="mock-note">問題集1・2、麻布模試、CBT辞典、歯科理工の合計。回答数・正解数は累計、正答率は各問題の最新回答で計算します。</p></div>
     <div class="lb-tabs">
       <button class="lb-tab on" data-metric="accuracy">正答率</button>
       <button class="lb-tab" data-metric="correct">正解数</button>
@@ -1029,7 +1029,7 @@
       <button class="lb-tab" data-metric="usage">連続使用</button>
       <button class="lb-tab" data-metric="level">レベル</button>
     </div>
-    <p class="mock-note">許可ユーザー全員の表示名・写真・問題集1・2の合計成績・XPを共有します。</p>
+    <p class="mock-note">許可ユーザー全員の表示名・写真・全教材の合計成績・XPを共有します。</p>
     <div id="lbBody"></div>
     <input class="hidden" id="lbAvatarInput" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif">
     <div class="row-btns"><button class="ghost-btn" id="lbRefresh">↻ 更新</button> <button class="ghost-btn" id="lbRename">✎ 名前</button> <button class="ghost-btn" id="lbAvatarBtn">📷 写真アイコン</button></div>
@@ -1341,7 +1341,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261105-occlusion-figure';
+const SERVICE_WORKER_BUILD='20261106-all-materials-ranking';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -3621,6 +3621,7 @@ function fullStatsPayload(){
     studyTime:compactStudyTimePayload(),
     studyPlans,
     mockExams:localMockPayload(),
+    practiceSets:localPracticePayload(),
     sessions:localSessionPayload(),
     books:{book1:compactStatsPayload(statsByBook.book1),book2:compactStatsPayload(statsByBook.book2)}
   },statsSummary());
@@ -3713,6 +3714,9 @@ function cbtMergeCloud(cd){
   // Keep in-memory answers aligned too; otherwise an open mock screen can write stale answers back.
   mockProgress=mergedMocks[selectedMockBlock];
   if(!el('mockExam').classList.contains('hidden')&&!el('mockExamChoices').classList.contains('hidden')&&(oldMockAnswer!==JSON.stringify(mockProgress.answers?.[mockExamState.index+1]||null)||(mockForwardOnly()&&oldMockFrontier!==mockFrontier())))renderMockExam();
+  const mergedPractice=mergePracticePayload(localPracticePayload(),cd.practiceSets||{});
+  for(const [source,value] of Object.entries(mergedPractice))safeSet(practiceProgressKey(source),value);
+  window.dictionaryPractice?.reloadProgress?.();
   const mergedSessions=mergeSessionPayload(localSessionPayload(),cd.sessions||{});
   for(const [book,value] of Object.entries(mergedSessions)){
     const key=STORE_SES_PREFIX+book;
@@ -3764,6 +3768,38 @@ function mergeMockPayload(local,remote){
   }
   return result;
 }
+const PRACTICE_PROGRESS_PREFIXES={
+  dictionary2:'togo_dictionary2_progress_v1_',
+  dictionary3Mock1:'togo_dictionary3_mock1_progress_v1_',
+  dictionary3Mock2:'togo_dictionary3_mock2_progress_v1_',
+  dentalMaterials:'togo_dental_materials_forms_progress_v1_'
+};
+function practiceProgressKey(source,uid=window.cbtUser?.uid||'local'){return (PRACTICE_PROGRESS_PREFIXES[source]||'')+uid;}
+function localPracticePayload(){
+  return Object.fromEntries(Object.keys(PRACTICE_PROGRESS_PREFIXES).map(source=>[source,safeGet(practiceProgressKey(source))||{index:0,answers:{},updatedAt:0}]));
+}
+function mergePracticePayload(local,remote){
+  const result={};
+  for(const source of Object.keys(PRACTICE_PROGRESS_PREFIXES)){
+    const a=local?.[source]||{},b=remote?.[source]||{},answers={};
+    for(const id of new Set([...Object.keys(a.answers||{}),...Object.keys(b.answers||{})])){
+      const left=a.answers?.[id]||{},right=b.answers?.[id]||{},attempts=[],seen=new Set();
+      for(const attempt of [...(Array.isArray(left.attempts)?left.attempts:[]),...(Array.isArray(right.attempts)?right.attempts:[])]){
+        if(!attempt||typeof attempt.correct!=='boolean')continue;
+        const clean={picked:String(attempt.picked||''),correct:attempt.correct,at:Number.isFinite(+attempt.at)?+attempt.at:0};
+        const signature=`${clean.at}|${clean.picked}|${clean.correct?1:0}`;
+        if(!seen.has(signature)){seen.add(signature);attempts.push(clean);}
+      }
+      attempts.sort((x,y)=>x.at-y.at);
+      const latest=attempts.at(-1),newer=(b.updatedAt||0)>(a.updatedAt||0)?right:left;
+      answers[id]={...newer,attempts};
+      if(latest){answers[id].lastCorrect=latest.correct;answers[id].lastPicked=latest.picked;}
+    }
+    const newer=(b.updatedAt||0)>(a.updatedAt||0)?b:a;
+    result[source]={...newer,index:Number.isInteger(newer.index)?newer.index:0,answers,updatedAt:Math.max(a.updatedAt||0,b.updatedAt||0)};
+  }
+  return result;
+}
 function localSessionPayload(){
   const result={};
   for(const book of ['book1','book2','shared-plan','route-review']){
@@ -3782,7 +3818,7 @@ function progressBackupData(){
   const values={};
   for(let i=0;i<localStorage.length;i++){
     const key=localStorage.key(i);
-    if(/^(cbt_(stats|settings|session|section_progress|study_plan|game|study_time)|togo_mock_)/.test(key))values[key]=localStorage.getItem(key);
+    if(/^(cbt_(stats|settings|session|section_progress|study_plan|game|study_time)|togo_(mock_|dictionary2_progress_|dictionary3_mock[12]_progress_|dental_materials_forms_progress_))/.test(key))values[key]=localStorage.getItem(key);
   }
   return {version:1,createdAt:new Date().toISOString(),uid:window.cbtUser?.uid||null,values};
 }
@@ -3814,6 +3850,7 @@ function mergeCloudPayloads(remote,local){
     for(const key of new Set([...Object.keys(a),...Object.keys(b)]))if(typeof a[key]==='number'||typeof b[key]==='number')result.studyTime.days[day][key]=Math.max(a[key]||0,b[key]||0);
   }
   result.mockExams=mergeMockPayload(local.mockExams||{},remote.mockExams||{});
+  result.practiceSets=mergePracticePayload(local.practiceSets||{},remote.practiceSets||{});
   result.sessions=mergeSessionPayload(local.sessions||{},remote.sessions||{});
   Object.assign(result,Object.fromEntries(Object.entries(result.books[local.activeBook]||{}).filter(([key])=>!['perQ','rankAttempts','lastDay'].includes(key))));
   return JSON.parse(JSON.stringify(result));
@@ -3822,7 +3859,7 @@ function mergeCloudPayloads(remote,local){
 // Keep it losslessly in JSON to avoid tens of thousands of automatic index entries.
 function encodeCloudProgress(payload){
   const result={...payload},data={};
-  for(const key of ['books','studyPlans','mockExams','sessions']){
+  for(const key of ['books','studyPlans','mockExams','practiceSets','sessions']){
     if(payload[key]!==undefined)data[key]=payload[key];
     delete result[key];
   }
@@ -4090,20 +4127,51 @@ function leaderboardDateKey(value){
   if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month-1||date.getUTCDate()!==day)return null;
   return `${match[1]}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 }
+function supplementalLeaderboardStats(data){
+  const events=[],latest=new Map();
+  const add=(key,correct,at)=>{
+    if(typeof correct!=='boolean')return;
+    const event={key,correct,at:Number.isFinite(+at)?+at:0};events.push(event);
+    const old=latest.get(key);if(!old||event.at>=old.at)latest.set(key,event);
+  };
+  for(const [block,value] of Object.entries(data.mockExams||{})){
+    const questions=typeof mockQuestions==='function'?mockQuestions(+block):[];
+    const answers=new Map(questions.map(question=>[String(question.no),question.answer]));
+    for(const [no,answer] of Object.entries(value?.answers||{}))if(answer?.answered===true&&answers.has(String(no)))add(`azabu:${block}:${no}`,answer.picked===answers.get(String(no)),answer.updatedAt||value.updatedAt);
+  }
+  for(const [source,value] of Object.entries(data.practiceSets||{}))for(const [id,record] of Object.entries(value?.answers||{})){
+    const attempts=Array.isArray(record?.attempts)?record.attempts:[];
+    if(attempts.length)attempts.forEach(attempt=>add(`${source}:${id}`,attempt?.correct,attempt?.at));
+    else if(typeof record?.lastCorrect==='boolean')add(`${source}:${id}`,record.lastCorrect,value.updatedAt);
+  }
+  events.sort((a,b)=>a.at-b.at);
+  let streak=0,bestStreak=0;
+  for(const event of events){streak=event.correct?streak+1:0;bestStreak=Math.max(bestStreak,streak);}
+  const days=[...new Set(events.filter(event=>event.at>0).map(event=>new Date(event.at+9*60*60*1000).toISOString().slice(0,10)))].sort();
+  let dayStreak=days.length?1:0;
+  for(let i=days.length-1;i>0;i--){
+    const newer=Date.parse(days[i]+'T00:00:00Z'),older=Date.parse(days[i-1]+'T00:00:00Z');
+    if(newer-older!==86400000)break;dayStreak++;
+  }
+  return {answered:events.length,correct:events.filter(event=>event.correct).length,
+    accuracyAnswered:latest.size,accuracyCorrect:[...latest.values()].filter(event=>event.correct).length,
+    bestStreak,dayStreak,lastDay:days.at(-1)||null};
+}
 function combinedLeaderboardStats(user){
   const books=['book1','book2'].map(book=>user.books?.[book]).filter(Boolean).map(book=>{
     const current=book.perQ?statsSummaryFor(book):book;
     return {...book,...current,lastDay:leaderboardDateKey(book.lastDay)};
   });
-  if(!books.length)return {...user,lastDay:leaderboardDateKey(user.lastDay)}; // Preserve legacy root summaries.
-  const answered=books.reduce((sum,book)=>sum+(book.answered||0),0);
-  const correct=books.reduce((sum,book)=>sum+(book.correct||0),0);
-  const accuracyAnswered=books.reduce((sum,book)=>sum+(Number.isFinite(+book.accuracyAnswered)?+book.accuracyAnswered:(book.answered||0)),0);
-  const accuracyCorrect=books.reduce((sum,book)=>sum+(Number.isFinite(+book.accuracyCorrect)?+book.accuracyCorrect:(book.correct||0)),0);
-  const lastDay=books.reduce((latest,book)=>String(book.lastDay||'')>latest?String(book.lastDay):latest,'');
+  const extra=supplementalLeaderboardStats(user),hasExtra=extra.answered>0;
+  if(!books.length&&!hasExtra)return {...user,lastDay:leaderboardDateKey(user.lastDay)}; // Preserve legacy/public summaries.
+  const answered=books.reduce((sum,book)=>sum+(book.answered||0),0)+extra.answered;
+  const correct=books.reduce((sum,book)=>sum+(book.correct||0),0)+extra.correct;
+  const accuracyAnswered=books.reduce((sum,book)=>sum+(Number.isFinite(+book.accuracyAnswered)?+book.accuracyAnswered:(book.answered||0)),0)+extra.accuracyAnswered;
+  const accuracyCorrect=books.reduce((sum,book)=>sum+(Number.isFinite(+book.accuracyCorrect)?+book.accuracyCorrect:(book.correct||0)),0)+extra.accuracyCorrect;
+  const lastDay=[...books.map(book=>book.lastDay),extra.lastDay].reduce((latest,day)=>String(day||'')>latest?String(day):latest,'');
+  const latestDayStreak=Math.max(extra.lastDay===lastDay?extra.dayStreak:0,...books.filter(book=>book.lastDay===lastDay).map(book=>book.dayStreak||0));
   return {...user,answered,correct,accuracy:accuracyAnswered?Math.round(accuracyCorrect/accuracyAnswered*1000)/10:0,
-    bestStreak:Math.max(...books.map(book=>book.bestStreak||0)),lastDay:lastDay||null,
-    dayStreak:Math.max(0,...books.filter(book=>book.lastDay===lastDay).map(book=>book.dayStreak||0))};
+    bestStreak:Math.max(extra.bestStreak,0,...books.map(book=>book.bestStreak||0)),lastDay:lastDay||null,dayStreak:latestDayStreak};
 }
 function leaderboardPublicSummary(data){
   const stats=combinedLeaderboardStats(data),count=value=>Number.isFinite(+value)?Math.max(0,Math.floor(+value)):0;
@@ -4544,7 +4612,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
         // Retired visibility preferences are ignored and never copied into new progress writes.
         delete body.leaderboardVisible;
         // Atomically replace legacy detailed fields only after all their data is in progressDataV2 chunks.
-        for(const key of ['progressDataV1','studyPlans','mockExams','sessions','perQ','rankAttempts'])body[key]=firebase.firestore.FieldValue.delete();
+        for(const key of ['progressDataV1','studyPlans','mockExams','practiceSets','sessions','perQ','rankAttempts'])body[key]=firebase.firestore.FieldValue.delete();
         // Replace merged top-level maps so old session tombstones/fields cannot linger recursively.
         transaction.set(ref,body,{mergeFields:Object.keys(body)});
         encoded.chunks.forEach((data,index)=>transaction.set(progressChunkRef(ref,index),{version:2,generation:encoded.generation,index,data}));

@@ -7,7 +7,7 @@ const fixture=`<!doctype html><html><body>
 <div id="dictionaryHome"><h2 id="dictionaryHomeTitle"></h2><p id="dictionaryHomeDescription"></p><div class="dictionary-sources"><button data-dictionary-source="dictionary2"></button><button data-dictionary-source="mock1"></button><button data-dictionary-source="mock2"></button></div><span id="dictionaryAnswered"></span><span id="dictionaryCorrect"></span><span id="dictionaryAttempts"></span><button id="dictionaryStart" disabled></button><div id="dictionaryGroups">${groups}</div><p id="dictionaryStatus"></p></div>
 <section id="dictionaryPractice"><h1 id="dictionaryPracticeTitle"></h1><button id="dictionaryHomeBack"></button><span id="dictionaryNumber"></span><span id="dictionaryProgress"></span><img id="dictionaryQuestionImage"><p id="dictionaryHistory" class="hidden"></p><div id="dictionaryChoices"></div><button id="dictionaryPrev"></button><button id="dictionarySubmit"></button><button id="dictionaryNext"></button><div id="dictionaryResult" class="hidden"></div><div id="dictionaryExplanation" class="hidden"><h2><span id="dictionaryExplanationTitle"></span></h2><img id="dictionaryExplanationImage"></div></section>
 <div id="footer"></div><div id="timerChip"></div><div id="routeBackBtn"></div><div id="pbarFill"></div>
-<script>window.cbtUser={uid:'dictionary-test'};window.showOnly=()=>{};window.renderHome=()=>{};window.openImageZoom=()=>{};</script><script>${feature}</script></body></html>`;
+<script>window.cbtUser={uid:'dictionary-test'};window.showOnly=()=>{};window.renderHome=()=>{};window.openImageZoom=()=>{};window.syncCalls=0;window.cloudSyncSoon=()=>window.syncCalls++;</script><script>${feature}</script></body></html>`;
 const server=http.createServer((request,response)=>{
   const pathname=decodeURIComponent(new URL(request.url,'http://local').pathname);
   if(pathname==='/'){response.setHeader('Content-Type','text/html; charset=utf-8');response.end(fixture);return;}
@@ -38,6 +38,7 @@ const server=http.createServer((request,response)=>{
     await page.waitForFunction(()=>document.getElementById('dictionaryExplanationImage').naturalWidth>0);
     assert.equal(await page.locator('#dictionaryExplanation').evaluate(node=>node.classList.contains('hidden')),false);
     const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('togo_dictionary2_progress_v1_dictionary-test')));
+    assert.ok(await page.evaluate(()=>window.syncCalls)>0);
     assert.equal(stored.answers.A001.lastCorrect,true);assert.equal(stored.answers.A001.attempts.length,1);
     await page.locator('[data-dictionary-group="E4"]').click();assert.equal(await page.locator('#dictionaryNumber').textContent(),'E4001');
     await page.reload();await page.evaluate(()=>window.dictionaryPractice.renderHome());await page.waitForFunction(()=>document.getElementById('dictionaryStatus').textContent.includes('956'));

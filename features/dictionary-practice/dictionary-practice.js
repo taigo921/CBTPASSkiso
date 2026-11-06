@@ -34,6 +34,7 @@
     progress.updatedAt=Date.now();
     try{localStorage.setItem(storeKey(),JSON.stringify(progress));}
     catch(error){console.warn('dictionary progress save failed',error);}
+    if(typeof window.cloudSyncSoon==='function')window.cloudSyncSoon();
   }
 
   async function loadManifest(){
@@ -95,8 +96,8 @@
     $('dictionaryHomeTitle').textContent=`📚 ${selected.title}`;
     const description=$('dictionaryHomeDescription');
     if(description)description.textContent=scope==='dentalMaterials'
-      ?'学校配布の歯科理工Formsを解きます。通常問題集・CBT辞典・学習ルート・ランキングとは別記録です。'
-      :'辞典②・③の問題画像を解き、回答後に公式解説を確認できます。通常問題集・学習ルート・ランキングとは別記録です。';
+      ?'学校配布の歯科理工Formsを解きます。回答成績はランキングに含まれますが、通常問題集・CBT辞典・学習ルート・XPとは別記録です。'
+      :'辞典②・③の問題画像を解き、回答後に公式解説を確認できます。回答成績はランキングに含まれますが、通常問題集・学習ルート・XPとは別記録です。';
     document.querySelector('.dictionary-sources')?.classList.toggle('hidden',scope==='dentalMaterials');
     document.querySelectorAll('[data-dictionary-source]').forEach(button=>button.classList.toggle('on',button.dataset.dictionarySource===sourceKey));
     renderGroupButtons();
@@ -237,6 +238,6 @@
     for(const id of ['dictionaryQuestionImage','dictionaryExplanationImage'])$(id)?.addEventListener('click',event=>window.openImageZoom(event.currentTarget.currentSrc||event.currentTarget.src,event.currentTarget.alt));
   }
 
-  window.dictionaryPractice={renderHome,open};
+  window.dictionaryPractice={renderHome,open,reloadProgress:loadProgress};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
 })();

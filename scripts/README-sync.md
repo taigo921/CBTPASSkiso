@@ -7,7 +7,8 @@ With Playwright available, run `node scripts/test_sync_browser.cjs`.
 To check a private exported backup without uploading it, set `PROGRESS_BACKUP` to
 its absolute path when running `test_sync.cjs`. Never commit the backup.
 The test prints only counts/size, estimates default Firestore index entries, and
-checks that encoding/decoding preserves books, plans, mock answers and resumes.
+checks that encoding/decoding preserves books, plans, mock answers, dictionary /
+dental-material attempts and resumes.
 
 Cloud wire format 10/21-1 stores detailed maps as JSON text split into 600 KB or
 smaller documents under `users/{uid}/progressChunks`. The user document keeps a
@@ -17,6 +18,9 @@ one transaction. Missing, mixed-generation or malformed chunks throw and block
 writes rather than resetting progress. The reader also merges legacy
 `progressDataV1` and top-level detailed maps before removing them in the next
 successful v2 transaction, so an old device cannot silently erase newer answers.
+The packed detail also contains `practiceSets`: CBT辞典②、辞典③模試1・2、
+学校Forms歯科理工のattempt logsを教材別にマージし、ランキングでは累計回答数・
+累計正解数と各問題の最新回答による正答率だけを公開する。
 
 The September 23 user backup measured 51,249 default index entries before and 310
 after, with 483,097 bytes of packed wire JSON. This exceeds the 40,000-entry limit

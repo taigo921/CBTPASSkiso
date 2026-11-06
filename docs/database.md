@@ -33,7 +33,7 @@
 ### `users/{uid}/progressChunks/chunk{index}`
 
 - 役割: 問題別記録・rank attempts・学習計画・模試・中断sessionを含む詳細JSONを、Firestoreの1MiB制限を超えない600KB以下の文字列へ分割保存する。
-- 主なフィールド: `version: 2`、`generation`、`index`、`data`。ルートの `progressDataV2` とgeneration・chunk数が一致するものだけ採用する。
+- 主なフィールド: `version: 2`、`generation`、`index`、`data`。詳細JSONには本別記録、学習計画、`mockExams`、辞典・歯科理工の `practiceSets`、中断sessionを含む。ルートの `progressDataV2` とgeneration・chunk数が一致するものだけ採用する。
 - リレーション: `users/{uid}` に従属。ルートmanifestと全チャンクを同じtransactionで更新する。
 - 使用Feature: Progress & Sync、通常演習、学習ルート、模試。
 - DBアクセス: `encodeCloudProgressV2()`、`decodeCloudProgressV2()`、`transactionCloudProgress()`、`readCloudProgress()`、`window.cbtCloud.save/readLatest/subscribe`。
@@ -42,7 +42,7 @@
 ### `leaderboard/{uid}`
 
 - 役割: 許可ユーザーへ公開できるランキング用summaryだけを保持。
-- 主なフィールド: `username`、`avatar`、`answered`、`correct`、`accuracy`、`bestStreak`、`dayStreak`、`lastDay`、`game: {xp}`、`updatedAt`。`answered`／`correct`／`accuracy` は問題集1・2の各問題の最新回答だけから派生する（解き直し履歴は保持するが公開集計へ重複加算しない）。
+- 主なフィールド: `username`、`avatar`、`answered`、`correct`、`accuracy`、`bestStreak`、`dayStreak`、`lastDay`、`game: {xp}`、`updatedAt`。問題集1・2、麻布模試、CBT辞典、歯科理工について、`answered`／`correct` は全回答の累計、`accuracy` は各問題の最新回答だけから派生する。個別問題や教材別詳細は公開しない。
 - リレーション: `users/{uid}` と同じUID。コピー元はprivate user documentだが、詳細進捗・メール・学習計画は含めない。
 - 使用Feature: Leaderboard & Profile。
 - DBアクセス: `leaderboardPublicSummary()`、`publishLeaderboard()`、`refreshLeaderboardMembers()`、`fetchLeaderboard()`。
@@ -80,10 +80,10 @@
 |`cbt_study_time_v1`|日別秒数・問題数・本別時間|はい|
 |`togo_mock_azabu2026_block{1..6}_v1_{uid}`|ブロック別模試の位置・回答|はい|
 |`togo_mock_subject_v1_{uid}_{subject}`|科目別模試session|いいえ。export対象外|
-|`togo_dictionary2_progress_v1_{uid}`|辞典②の現在位置、問題別回答履歴、最終正誤|いいえ。通常成績・export・Firestore対象外|
-|`togo_dictionary3_mock1_progress_v1_{uid}`|辞典③模試1の現在位置、問題別回答履歴、最終正誤|いいえ。通常成績・export・Firestore対象外|
-|`togo_dictionary3_mock2_progress_v1_{uid}`|辞典③模試2の現在位置、問題別回答履歴、最終正誤|いいえ。通常成績・export・Firestore対象外|
-|`togo_dental_materials_forms_progress_v1_{uid}`|学校Forms歯科理工の現在位置、問題別回答履歴、最終正誤|いいえ。通常成績・export・Firestore対象外|
+|`togo_dictionary2_progress_v1_{uid}`|辞典②の現在位置、問題別回答履歴、最終正誤|はい。`practiceSets.dictionary2`。通常成績・学習ルート・XPとは分離|
+|`togo_dictionary3_mock1_progress_v1_{uid}`|辞典③模試1の現在位置、問題別回答履歴、最終正誤|はい。`practiceSets.dictionary3Mock1`。通常成績・学習ルート・XPとは分離|
+|`togo_dictionary3_mock2_progress_v1_{uid}`|辞典③模試2の現在位置、問題別回答履歴、最終正誤|はい。`practiceSets.dictionary3Mock2`。通常成績・学習ルート・XPとは分離|
+|`togo_dental_materials_forms_progress_v1_{uid}`|学校Forms歯科理工の現在位置、問題別回答履歴、最終正誤|はい。`practiceSets.dentalMaterials`。通常成績・学習ルート・XPとは分離|
 |`togo_sync_backup_20260923_{uid}`|同期形式移行前の端末backup|いいえ|
 |`togo_blocked_login_notice_v1`|停止画面mediaの再表示状態|いいえ|
 
