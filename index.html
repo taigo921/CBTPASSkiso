@@ -1341,7 +1341,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261106-aplastic-anemia-figure';
+const SERVICE_WORKER_BUILD='20261107-route-history-streak';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1901,6 +1901,7 @@ const PLAN_INTERVALS=[1,3,7];
 const PLAN_EFFORTS=[100,80,70];
 const PLAN_CORRECT_STREAK_TARGET=3;
 const PLAN_STREAK_ONLY_VERSION=1;
+const PLAN_HISTORY_STREAK_VERSION=1;
 const PLAN_ADAPTIVE_LOAD_VERSION=1;
 const PLAN_FULL_EFFORT=PLAN_EFFORTS.reduce((sum,value)=>sum+value,0);
 const JP_HOLIDAYS=new Set([
@@ -2024,8 +2025,26 @@ function advancePlanCorrectStreak(item,correct,today){
   if(!correct)return {correctStreak:0,correctStreakDate:null};
   return {correctStreak:Math.min(PLAN_CORRECT_STREAK_TARGET,streak+1),correctStreakDate:today};
 }
+// ルート開始前・連続正解導入前の回答も含め、問題ごとの実回答履歴の末尾の連続正解数を返す。
+function planHistoryStreak(uid){
+  let best=0;
+  Object.values(statsByBook||{}).forEach(bookStats=>{
+    const attempts=recentQuestionAttempts(uid,bookStats?.perQ?.[uid],20,bookStats);
+    if(attempts.length)best=Math.max(best,recentCorrectStreak(attempts));
+  });
+  return Math.min(PLAN_CORRECT_STREAK_TARGET,best);
+}
+function planCompleteMasteredAssignments(p){
+  Object.values(p.assignments||{}).forEach(assignment=>{
+    if(!assignment||assignment.done||!Array.isArray(assignment.uids))return;
+    assignment.completedUids=assignment.completedUids||{};
+    assignment.uids.forEach(uid=>{if(planIsMastered(p.items[uid]))assignment.completedUids[uid]=true;});
+    assignment.completed=assignment.uids.filter(uid=>assignment.completedUids[uid]).length;
+    assignment.done=assignment.completed>=assignment.uids.length;assignment.updatedAt=Date.now();
+  });
+}
 function planFor(){
-  if(!studyPlans.shared)studyPlans.shared={active:false,examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},lightDays:{},augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,streakOnlyV:PLAN_STREAK_ONLY_VERSION,items:{},assignments:{},daily:{date:dateKey(),count:0},updatedAt:0};
+  if(!studyPlans.shared)studyPlans.shared={active:false,examDate:'2027-01-26',finishLeadDays:30,unavailable:{},schoolOff:{},lightDays:{},augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,streakOnlyV:PLAN_STREAK_ONLY_VERSION,historyStreakV:PLAN_HISTORY_STREAK_VERSION,items:{},assignments:{},daily:{date:dateKey(),count:0},updatedAt:0};
   const p=studyPlans.shared;
   p.items=p.items||{};p.assignments=p.assignments||{};p.unavailable=p.unavailable||{};p.schoolOff=Object.assign(Object.fromEntries([...CAMPUS_SCHOOL_OFF].map(key=>[key,true])),p.schoolOff||{});p.lightDays=Object.assign({},CAMPUS_LIGHT_DAYS,p.lightDays||{});p.examDate=p.examDate||'2027-01-26';
   if(!p.augustPrepV){p.augustPrepV=1;p.updatedAt=Date.now();}
@@ -2056,6 +2075,21 @@ function planFor(){
       assignment.done=assignment.completed>=assignment.uids.length;assignment.updatedAt=Date.now();
     });
     p.streakOnlyV=PLAN_STREAK_ONLY_VERSION;p.updatedAt=Date.now();safeSet(STORE_PLAN,studyPlans);
+  }
+  // 旧版はルート開始前の正解を連続正解に数えず、表示上の「○連続」とずれていた。履歴から引き上げる（下げない）。
+  if((+p.historyStreakV||0)<PLAN_HISTORY_STREAK_VERSION){
+    Object.entries(p.items).forEach(([uid,item])=>{
+      if(!item||planIsMastered(item))return;
+      const streak=planHistoryStreak(uid);
+      if(streak<=planItemStreak(item))return;
+      item.correctStreak=streak;item.correctStreakDate=item.correctStreakDate||item.last||today;
+      item.stage=Math.min(streak,PLAN_INTERVALS.length-1);
+      const mastered=planIsMastered(item);item.mastered=mastered;item.completed=mastered;
+      if(mastered)item.due='9999-12-31';
+      item.updatedAt=Date.now();
+    });
+    planCompleteMasteredAssignments(p);
+    p.historyStreakV=PLAN_HISTORY_STREAK_VERSION;p.updatedAt=Date.now();safeSet(STORE_PLAN,studyPlans);
   }
   Object.values(p.items).forEach(item=>{if(!planIsMastered(item)&&item.due>finish)item.due=finish;});
   if(!p.daily||p.daily.date!==dateKey())p.daily={date:dateKey(),count:0,effort:0};
@@ -2115,12 +2149,12 @@ async function loadPaperChoices(){
 function rebuildStudyPlan(showMessage=true){
   const old=planFor(),today=dateKey(),latest={};
   Object.values(statsByBook).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>{if(a&&a.u&&(!latest[a.u]||(a.a||0)>latest[a.u]))latest[a.u]=a.a||0;}));
-  const p={active:true,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,lightDays:old.lightDays,augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,streakOnlyV:PLAN_STREAK_ONLY_VERSION,items:{},assignments:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
+  const p={active:true,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,lightDays:old.lightDays,augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,streakOnlyV:PLAN_STREAK_ONLY_VERSION,historyStreakV:PLAN_HISTORY_STREAK_VERSION,items:{},assignments:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
   Object.values(statsByBook).forEach(bookStats=>Object.entries(bookStats.perQ||{}).forEach(([uid,r])=>{
     if(((r.correct||0)+(r.wrong||0))<1)return;
     const last=latest[uid]?dateKey(new Date(latest[uid])):today;
-    const round=(r.correct||0)+(r.wrong||0);
-    p.items[uid]={round,stage:Math.max(0,round-1),due:addPlanDays(last,1),last,explained:false,correctStreak:0,correctStreakDate:null,mastered:false,completed:false,updatedAt:Date.now()};
+    const round=(r.correct||0)+(r.wrong||0),streak=planHistoryStreak(uid),mastered=streak>=PLAN_CORRECT_STREAK_TARGET;
+    p.items[uid]={round,stage:Math.max(0,round-1),due:mastered?'9999-12-31':addPlanDays(last,1),last,explained:false,correctStreak:streak,correctStreakDate:streak?last:null,mastered,completed:mastered,updatedAt:Date.now()};
   }));
   p.paperProgress=old.paperProgress||{};applyPaperBaseline(p);
   studyPlans.shared=p;saveStudyPlans();

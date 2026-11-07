@@ -36,6 +36,17 @@ assert.equal(ctx.planIsMastered({correctStreak:0,explained:true}),true,'explanat
 assert.equal(ctx.planRemainingEffort({correctStreak:2}),70,'only one answer remains after a two-correct streak');
 assert.equal(ctx.planNextDue('q1',3,true,'2026-10-27',{}),'9999-12-31','mastered question is no longer scheduled');
 
+// Answers made before the route (or the streak counter) existed still count toward the route streak.
+ctx.statsByBook={book1:{perQ:{q2:{history:[{correct:true,at:1},{correct:true,at:2}]},q3:{history:[{correct:true,at:1},{correct:false,at:2},{correct:true,at:3}]},q4:{history:Array.from({length:5},(_,at)=>({correct:true,at}))}},rankAttempts:[]},book2:{perQ:{},rankAttempts:[]}};
+assert.equal(ctx.planHistoryStreak('q2'),2,'two earlier consecutive correct answers give a 2/3 route streak');
+assert.equal(ctx.planHistoryStreak('q3'),1,'a wrong answer in history resets the route streak');
+assert.equal(ctx.planHistoryStreak('q4'),3,'history streak is capped at the route target');
+assert.equal(ctx.planHistoryStreak('missing'),0,'unanswered questions have no streak');
+const assignmentPlan={items:{q4:{correctStreak:3},q2:{correctStreak:2}},assignments:{day:{uids:['q4','q2'],completedUids:{},done:false}}};
+ctx.planCompleteMasteredAssignments(assignmentPlan);
+assert.equal(assignmentPlan.assignments.day.completed,1,'mastered items count as completed in open assignments');
+assert.equal(assignmentPlan.assignments.day.done,false);
+
 const feedbackStart=source.indexOf('function setPlanExplanation(');
 const feedbackEnd=source.indexOf('function studyPlanSummary(',feedbackStart);
 ctx.testPlan={active:true,items:{q1:{correctStreak:0,due:'2026-10-28',explained:false}},assignments:{day:{uids:['q1'],completedUids:{},assigned:1,completed:0,done:false}}};
@@ -65,4 +76,6 @@ assert.ok(/renderQuestionProgress\(r\.uid,pr\)/.test(source),'understanding feed
 assert.ok(/if\(planFor\(\)\.active\)updateStudyPlan\(qkey\(q\),correct\);/.test(source),'every practice mode advances the active three-correct route');
 assert.ok(!source.includes('renderQuestionProgress(qkey(q));'),'progress is not rendered before answering');
 assert.match(source,/id="resultBlock"[^>]*>[\s\S]*?id="qProgress"/,'progress panel is inside the explanation result block');
-console.log('PASS question progress: correct totals, recent five results, and streak/explanation mastery completion status');
+assert.match(source,/historyStreakV/,'existing plans migrate route streaks from answer history once');
+assert.match(source,/correctStreak:streak,correctStreakDate:streak\?last:null/,'rebuilt plans start from the answer-history streak');
+console.log('PASS question progress: correct totals, recent five results, history-based route streak, and streak/explanation mastery completion status');
