@@ -15,6 +15,7 @@
 - 全体構造・依存方向: [`docs/architecture.md`](docs/architecture.md)
 - Firestore・ローカル保存・権限: [`docs/database.md`](docs/database.md)
 - テスト・公開・docs更新条件: [`docs/development.md`](docs/development.md)
+- CodexクラウドからMacへの移行: [`docs/MAC_MIGRATION.md`](docs/MAC_MIGRATION.md)
 
 ## Project-specific architecture rules
 
