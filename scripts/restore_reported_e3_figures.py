@@ -22,6 +22,8 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 RENDER_DPI = 300
 FIGURES = {
+    # Four ameloblast maturation stages, all arrows, and the （ア） label.
+    "E3-1-005": {"page": 252, "crop": (960, 330, 1925, 850)},
     # Gracey curette with all labels （ア）〜（オ）.
     "E3-3-3-097": {"page": 325, "crop": (890, 1675, 1935, 2140)},
     # Rest-position and denture-wearing measurements shown side by side.

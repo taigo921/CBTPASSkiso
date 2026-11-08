@@ -44,6 +44,11 @@ const pulpitis=e3ByUid('E3-3-2-049');
 assert.equal(sha(pulpitis),'2b714a7025c84034cb3fd7e40ed50087bd8b637448ca40de3d4449602cccb2bb','E3-3-2-049 keeps the source-matched radiograph');
 assert.equal(pulpitis.answer,'C');
 
+const ameloblastMaturation=e3ByUid('E3-1-005');
+assert.equal(sha(ameloblastMaturation),'11c9a1c13b33a8b1507fed90bbc9f8365228c529069e8de38917b7e995809f3d','E3-1-005 keeps all four maturation-stage cells, arrows, and the （ア） label');
+assert.equal(ameloblastMaturation.answer,'D');
+assert.equal(ameloblastMaturation.choices.D,'エナメルタンパクの脱却');
+
 const curette=e3ByUid('E3-3-3-097');
 assert.equal(sha(curette),'327d965f72febcbf6e65700db343352d6a54014d73d0eb9e0a9032884bb0cbef','E3-3-3-097 keeps the complete figure containing labels （ア）〜（オ）');
 assert.deepEqual(curette.choices,{A:'（ア）',B:'（イ）',C:'（ウ）',D:'（エ）',E:'（オ）'});
@@ -97,5 +102,10 @@ const missingPremolar=e4ByUid('E4-2-021');
 assert.equal(sha(missingPremolar),'9584221deb13ed9bdf11d64b8c5ba2826d5872a0946e4c70dcd3f525d273093f','E4-2-021 keeps the complete panoramic radiograph');
 assert.equal(missingPremolar.choices.D,'下顎左側第二小臼歯');
 assert.equal(missingPremolar.answer,'D');
+
+const midlineDiastema=e4ByUid('E4-1-012');
+assert.equal(sha(midlineDiastema),'7928f31871f48686e854eda63fbdde4cb250abc0af8104431cd8312fa5150797','E4-1-012 keeps both complete maxillary anterior radiographs without an adjacent-image strip');
+assert.equal(midlineDiastema.choices.E,'正中埋伏過剰歯の存在');
+assert.equal(midlineDiastema.answer,'E');
 
 console.log('PASS reported question images: occlusion, virus, allergy, trauma, full panoramic radiographs, salivary stone, pulpitis, curette, rest-position, and articulator figures are aligned');

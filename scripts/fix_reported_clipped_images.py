@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuild the three clipped images reported on 2026-09-01."""
+"""Rebuild reported clipped question images."""
 
 from __future__ import annotations
 
@@ -9,12 +9,22 @@ import io
 import json
 from pathlib import Path
 
+import pypdfium2 as pdfium
 from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[2]
 REPO = ROOT / "github-current"
 PREVIEW = ROOT / "tmp/pdfs/reported-clipped-preview"
+CURRENT_REPO = Path(__file__).resolve().parents[1]
+RENDER_DPI = 300
+E4_1_012 = {
+    # Zero-based PDF page index. The source figure is two radiographs side by
+    # side, so preserve both complete rounded frames rather than retaining a
+    # strip from one beside a clipped version of the other.
+    "page_index": 428,
+    "crop": (944, 1427, 1910, 2073),
+}
 
 
 def decode(payload: str) -> Image.Image:
@@ -27,6 +37,37 @@ def encode(image: Image.Image) -> str:
     output = io.BytesIO()
     image.save(output, "JPEG", quality=95, subsampling=0, optimize=True, progressive=True)
     return "data:image/jpeg;base64," + base64.b64encode(output.getvalue()).decode("ascii")
+
+
+def encode_webp(image: Image.Image) -> str:
+    output = io.BytesIO()
+    image.save(output, "WEBP", quality=92, method=6)
+    return "data:image/webp;base64," + base64.b64encode(output.getvalue()).decode("ascii")
+
+
+def restore_e4_1_012(source: Path, preview_dir: Path, apply: bool) -> None:
+    document = pdfium.PdfDocument(source)
+    page = document[E4_1_012["page_index"]]
+    rendered = page.render(scale=RENDER_DPI / 72).to_pil().convert("RGB")
+    image = rendered.crop(E4_1_012["crop"])
+
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    preview = preview_dir / "E4-1-012.webp"
+    image.save(preview, "WEBP", quality=92, method=6)
+    print(
+        f"E4-1-012: page index {E4_1_012['page_index']}, "
+        f"crop {E4_1_012['crop']}, {image.size} -> {preview}"
+    )
+    if not apply:
+        return
+
+    path = CURRENT_REPO / "data/E4.json"
+    questions = json.loads(path.read_text(encoding="utf-8"))
+    question = next(item for item in questions if item.get("uid") == "E4-1-012")
+    question["image_base64"] = encode_webp(image)
+    question.pop("image", None)
+    question["has_image"] = True
+    path.write_text(json.dumps(questions, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def compose(source: Image.Image, rows: list[list[tuple[int, int, int, int]]]) -> Image.Image:
@@ -61,9 +102,17 @@ def update_question(path: Path, uid: str, image: Image.Image, apply: bool) -> No
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("source", type=Path, nargs="?", help="path to the clinical problem-book PDF")
     parser.add_argument("--apply", action="store_true")
-    parser.add_argument("--uid", choices=["E4-1-027", "E4-1-036", "E4-2-006", "D1-018"])
+    parser.add_argument("--uid", choices=["E4-1-012", "E4-1-027", "E4-1-036", "E4-2-006", "D1-018"])
+    parser.add_argument("--preview-dir", type=Path, default=Path("/tmp/reported-clipped-preview"))
     args = parser.parse_args()
+
+    if args.uid == "E4-1-012":
+        if args.source is None:
+            parser.error("source PDF is required for E4-1-012")
+        restore_e4_1_012(args.source, args.preview_dir, args.apply)
+        return
 
     enriched = json.loads((ROOT / "tmp/pdfs/enriched/臨床_E-4.json").read_text(encoding="utf-8"))
     target_uids = {"E4-1-027", "E4-1-036", "E4-2-006"}
