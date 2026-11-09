@@ -27,6 +27,7 @@ GAP = 24
 # so dense photographs and cephalometric charts stay legible on narrow screens.
 FIGURES = {
     "E1-2-023": {"file": "E1.json", "page": 19, "crops": [(840, 1600, 1940, 2340)]},
+    "E1-2-039": {"file": "E1.json", "page": 27, "crops": [(1430, 280, 1935, 788)]},
     "E1-2-043": {"file": "E1.json", "page": 29, "crops": [(940, 260, 2000, 1040)]},
     "E1-5-008": {"file": "E1.json", "page": 74, "crops": [(840, 1640, 1940, 2380)]},
     "E2-1-021": {"file": "E2.json", "page": 95, "crops": [(1160, 370, 2020, 1060)]},

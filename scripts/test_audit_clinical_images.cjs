@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 
 const expected = {
   'E1-2-023': ['E1.json', 'D', '76570dabfdb39463c0632888ffb8f3caca93e50519600f2082ef4899893c34f7'],
+  'E1-2-039': ['E1.json', 'D', '7d449a6996e08b92a726de9b389fcc04fc9f7175218e64fbc9da802d608dba2b'],
   'E1-2-043': ['E1.json', 'C', '88104330c9bf32299dff3d41262d2e5f7eb074a44101b4ba905c5f6c88c598ca'],
   'E1-5-008': ['E1.json', 'C', 'be74703d6c36aed0dd743f7c97c3473d0917d95cdaef12cd357184150618f7ae'],
   'E2-1-021': ['E2.json', 'B', '45468123d54a4db4dff946d33d97c11197fed6e43b7c7c47bb0ab1fb1c7d0353'],
@@ -50,5 +51,11 @@ for (const [uid, [filename, answer, expectedSha]] of Object.entries(expected)) {
   assert.equal(question.answer, answer, `${uid} answer must remain unchanged`);
   assert.equal(sha(question), expectedSha, `${uid} must keep the visually reviewed complete figure`);
 }
+
+const e1Questions = questions('E1.json');
+const e1_2_038 = e1Questions.find(question => question.uid === 'E1-2-038');
+const e1_2_039 = e1Questions.find(question => question.uid === 'E1-2-039');
+assert.ok(e1_2_038 && e1_2_039, 'E1-2-038 and E1-2-039 must both exist');
+assert.notEqual(sha(e1_2_039), sha(e1_2_038), 'E1-2-039 must not reuse E1-2-038 image');
 
 console.log(`PASS audit clinical images: ${Object.keys(expected).length} reviewed figures keep fixed SHA-256 and answers`);

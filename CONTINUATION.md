@@ -89,6 +89,7 @@
 
 ## 直近のテスト
 
+- 2026-11-10: `E1-2-039` を右耳下腺へ矢印を示すCT全体へ復旧し、固定SHAと `E1-2-038` との画像差分回帰を追加、CI列挙のNode回帰20件に成功した。
 - 2026-11-10: 追加教材権限のタブ非表示、遷移拒否、管理者／許可ユーザー表示、権限剥奪時のホーム復帰、管理API、購読のcache/pending無視・失敗時denyをNode回帰で確認。同期は永久pendingの120秒放棄→backoff再試行、古い完了の状態非干渉、実行中回答でpending表示へ戻らないこと、30秒超の手動交代を含む60チェックに成功。
 - 2026-11-10: `tests.yml` のNode回帰一式、追加テスト、全21 `data/*.json` parse、`test_current_accuracy.cjs`、`git diff --check` に成功。Playwright 3本はローカルHTTP待受禁止によりテスト開始前に `EPERM`、Firestore Emulatorは依存・待受制約のため未実行。
 
