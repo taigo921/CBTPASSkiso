@@ -1341,7 +1341,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261110-e1-2-039-image';
+const SERVICE_WORKER_BUILD='20261110-question-streak';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1914,7 +1914,7 @@ const PLAN_INTERVALS=[1,3,7];
 const PLAN_EFFORTS=[100,80,70];
 const PLAN_CORRECT_STREAK_TARGET=3;
 const PLAN_STREAK_ONLY_VERSION=1;
-const PLAN_HISTORY_STREAK_VERSION=1;
+const PLAN_HISTORY_STREAK_VERSION=2;
 const PLAN_ADAPTIVE_LOAD_VERSION=1;
 const PLAN_FULL_EFFORT=PLAN_EFFORTS.reduce((sum,value)=>sum+value,0);
 const JP_HOLIDAYS=new Set([
@@ -2042,10 +2042,20 @@ function advancePlanCorrectStreak(item,correct,today){
 function planHistoryStreak(uid){
   let best=0;
   Object.values(statsByBook||{}).forEach(bookStats=>{
-    const attempts=recentQuestionAttempts(uid,bookStats?.perQ?.[uid],20,bookStats);
-    if(attempts.length)best=Math.max(best,recentCorrectStreak(attempts));
+    const r=bookStats?.perQ?.[uid];
+    if(r)best=Math.max(best,questionCorrectStreak(uid,r,bookStats));
   });
   return Math.min(PLAN_CORRECT_STREAK_TARGET,best);
+}
+function raisePlanItemHistoryStreak(p,uid,today=dateKey()){
+  const item=p?.items?.[uid];if(!item)return false;
+  const streak=Math.max(planItemStreak(item),planHistoryStreak(uid));
+  if(streak<=planItemStreak(item))return false;
+  item.correctStreak=streak;item.correctStreakDate=item.correctStreakDate||item.last||today;
+  item.stage=Math.min(streak,PLAN_INTERVALS.length-1);
+  const mastered=planIsMastered(item);item.mastered=mastered;item.completed=mastered;
+  if(mastered)item.due='9999-12-31';
+  item.updatedAt=Date.now();return true;
 }
 function planCompleteMasteredAssignments(p){
   Object.values(p.assignments||{}).forEach(assignment=>{
@@ -2214,6 +2224,7 @@ function updateStudyPlan(uid,correct){
     const stage=correct?Math.min(streak.correctStreak,PLAN_INTERVALS.length-1):0;
     p.items[uid]={...existing,round,stage,due:planNextDue(uid,streak.correctStreak,correct,today,p),last:today,explained,...streak,mastered,completed:mastered,updatedAt:Date.now()};
   }
+  raisePlanItemHistoryStreak(p,uid,today);
   if(planIsMastered(p.items[uid]))Object.values(p.assignments||{}).forEach(assignment=>{
     if(!assignment||assignment.done||!Array.isArray(assignment.uids)||!assignment.uids.includes(uid))return;
     assignment.completedUids=assignment.completedUids||{};assignment.completedUids[uid]=true;
@@ -2667,6 +2678,20 @@ function recentCorrectStreak(attempts){
   for(let index=attempts.length-1;index>=0&&attempts[index].correct;index--)streak++;
   return streak;
 }
+function questionConfirmedCorrectMissing(r,attempts){
+  const correct=+r?.correct||0,wrong=+r?.wrong||0,missing=correct+wrong-attempts.length;
+  if(missing<=0)return 0;
+  const incorrect=attempts.filter(attempt=>!attempt.correct).length;
+  return incorrect>=wrong&&recentCorrectStreak(attempts)===attempts.length?missing:0;
+}
+function questionCorrectStreak(uid,r,source){
+  const attempts=recentQuestionAttempts(uid,r,20,source);
+  let streak=recentCorrectStreak(attempts)+questionConfirmedCorrectMissing(r,attempts);
+  const latest=attempts[attempts.length-1];
+  if(latest&&!latest.correct)streak=0;
+  else if(latest?.correct&&typeof r?.streak==='number'&&Number.isFinite(r.streak))streak=Math.max(streak,r.streak);
+  return Math.max(0,Math.min(+r?.correct||0,streak));
+}
 function questionRouteStatus(uid,p=planFor()){
   if(!p?.active)return null;
   const item=p.items?.[uid],streak=planItemStreak(item);
@@ -2675,10 +2700,12 @@ function questionRouteStatus(uid,p=planFor()){
   return {done:false,title:`連続正解 ${streak}/${PLAN_CORRECT_STREAK_TARGET}回`,detail:`あと${remaining}回連続正解で終了`};
 }
 function renderQuestionProgress(uid,r=stats.perQ[uid]){
-  const box=el('qProgress'),correct=+r?.correct||0,wrong=+r?.wrong||0,total=correct+wrong,available=recentQuestionAttempts(uid,r,20),recent=available.slice(-5),streak=recentCorrectStreak(available),route=questionRouteStatus(uid);
-  const empty=Array.from({length:Math.max(0,5-recent.length)},()=>'<i class="question-result-dot empty" aria-label="記録なし">・</i>').join('');
+  const box=el('qProgress'),correct=+r?.correct||0,wrong=+r?.wrong||0,total=correct+wrong,available=recentQuestionAttempts(uid,r,20),recent=available.slice(-5),streak=questionCorrectStreak(uid,r),route=questionRouteStatus(uid);
+  const confirmed=Math.min(questionConfirmedCorrectMissing(r,available),Math.max(0,5-recent.length));
+  const empty=Array.from({length:Math.max(0,5-recent.length-confirmed)},()=>'<i class="question-result-dot empty" aria-label="記録なし">・</i>').join('');
+  const confirmedDots=Array.from({length:confirmed},()=>'<i class="question-result-dot ok" aria-label="正解">○</i>').join('');
   const dots=recent.map(a=>`<i class="question-result-dot ${a.skip?'skip':(a.correct?'ok':'ng')}" aria-label="${a.skip?'スキップ':(a.correct?'正解':'不正解')}">${a.skip?'−':(a.correct?'○':'×')}</i>`).join('');
-  box.innerHTML=`<div class="question-progress-head"><strong>この問題：正解 ${correct}回</strong><span>回答 ${total}回</span></div><div class="question-recent"><span class="question-recent-label">最近5回</span>${empty}${dots}<span class="question-recent-streak">${streak?`○ ${streak}連続`:'連続○なし'}</span></div>${route?`<div class="question-route-progress${route.done?' done':''}"><b>${escapeHtml(route.title)}</b>${escapeHtml(route.detail)}</div>`:''}`;
+  box.innerHTML=`<div class="question-progress-head"><strong>この問題：正解 ${correct}回</strong><span>回答 ${total}回</span></div><div class="question-recent"><span class="question-recent-label">最近5回</span>${empty}${confirmedDots}${dots}<span class="question-recent-streak">${streak?`○ ${streak}連続`:'連続○なし'}</span></div>${route?`<div class="question-route-progress${route.done?' done':''}"><b>${escapeHtml(route.title)}</b>${escapeHtml(route.detail)}</div>`:''}`;
 }
 function migrateGameData(){
   let changed=false,credit=0,stamp=Date.now()-100000;
@@ -3129,6 +3156,7 @@ function submit(skip){
   // 記録
   const r=rec(qkey(q));
   const previousAttempt=previousQuestionAttempt(qkey(q),r);
+  const previousQuestionStreak=questionCorrectStreak(qkey(q),r);
   const attemptsBefore=(r.correct||0)+(r.wrong||0),hadCorrect=(r.correct||0)>0;
   if(correct){r.correct++;stats.correct++;session.sessionCorrect++;}else{r.wrong++;}
   r.last=correct?'correct':'wrong'; r.times.push(+t.toFixed(1));
@@ -3140,6 +3168,7 @@ function submit(skip){
   r.history=Array.isArray(r.history)?r.history:[];
   r.history.push({picked:skip?null:picked,pickedDisplay:skip?null:pickedDisplay,answer:q.answer,answerDisplay,correct,skip:!!skip,time:+t.toFixed(1),at:Date.now()});
   r.history=r.history.slice(-20);
+  r.streak=correct?previousQuestionStreak+1:0;
   if(planFor().active)updateStudyPlan(qkey(q),correct);
   if(session.mode==='plan'){
     const progress=markPlanAssignment(qkey(q));
@@ -3661,7 +3690,10 @@ function compactStatsPayload(source){
   for(const uid in source.perQ){
     const r=source.perQ[uid];const att=(r.correct||0)+(r.wrong||0);
     const lastAttempt=Array.isArray(r.history)&&r.history.length?r.history[r.history.length-1]:null;
-    if(att>0 || r.fav){ pq[uid]={c:r.correct||0,w:r.wrong||0,f:r.fav?1:0,l:r.last||null,x:r.xpV?1:0,d:r.xpDay||null,r:r.rankV?1:0,h:lastAttempt}; }
+    if(att>0 || r.fav){
+      pq[uid]={c:r.correct||0,w:r.wrong||0,f:r.fav?1:0,l:r.last||null,x:r.xpV?1:0,d:r.xpDay||null,r:r.rankV?1:0,h:lastAttempt};
+      if(typeof r.streak==='number'&&Number.isFinite(r.streak))pq[uid].s=r.streak;
+    }
   }
   return Object.assign(statsSummaryFor(source),{perQ:pq,lastDay:source.lastDay||null,rankAttempts:(source.rankAttempts||[]).slice(-200)});
 }
@@ -3687,17 +3719,22 @@ function mergeStatsTarget(target,cd){
     const l=target.perQ[uid];const lAtt=l?((l.correct||0)+(l.wrong||0)):-1;
     const localLast=Array.isArray(l?.history)&&l.history.length?l.history[l.history.length-1]:null;
     const localFav=!!(l&&l.fav);
+    const cloudStreak=typeof c.s==='number'&&Number.isFinite(c.s)?c.s:null;
     const markers={xpV:!!((l&&l.xpV)||c.x),rankV:!!((l&&l.rankV)||c.r),xpDay:(l&&l.xpDay)||c.d||null};
     if(cAtt>lAtt){
       const cloudIsLatest=c.h&&(!localLast||(+c.h.at||0)>=(+localLast.at||0));
       const history=cloudIsLatest?[c.h]:((l&&l.history)||[]);
       const last=cloudIsLatest?(c.h.correct?'correct':'wrong'):(localLast?(localLast.correct?'correct':'wrong'):(c.l||(c.c>0?'correct':'wrong')));
       target.perQ[uid]={correct:c.c||0,wrong:c.w||0,last,times:(l&&l.times)||[],pre:(l&&l.pre)||[],post:(l&&l.post)||[],history,fav:false,...markers};
+      if(cloudIsLatest&&cloudStreak!==null)target.perQ[uid].streak=cloudStreak;
+      else if(!cloudIsLatest&&typeof l?.streak==='number'&&Number.isFinite(l.streak))target.perQ[uid].streak=l.streak;
     } else if(!l){
       target.perQ[uid]={correct:0,wrong:0,last:null,times:[],pre:[],post:[],history:c.h?[c.h]:[],fav:false,...markers};
+      if(c.h&&cloudStreak!==null)target.perQ[uid].streak=cloudStreak;
     } else {
       Object.assign(target.perQ[uid],markers);
-      if(c.h&&(!localLast||(c.h.at||0)>(localLast.at||0))){l.history=[c.h];l.last=c.h.correct?'correct':'wrong';}
+      if(c.h&&(!localLast||(c.h.at||0)>(localLast.at||0))){l.history=[c.h];l.last=c.h.correct?'correct':'wrong';if(cloudStreak!==null)l.streak=cloudStreak;}
+      else if(c.h&&localLast&&(+c.h.at||0)===(+localLast.at||0)&&cloudStreak!==null)l.streak=Math.max(Number.isFinite(l.streak)?l.streak:0,cloudStreak);
     }
     if(localFav||c.f)target.perQ[uid].fav=true;
   }
@@ -3797,8 +3834,12 @@ function cbtMergeCloud(cd){
   if(cd.studyPlans){
     const cloudShared=cd.studyPlans.shared||mergeStudyPlanBook(cd.studyPlans.book1,cd.studyPlans.book2);
     studyPlans.shared=mergeStudyPlanBook(studyPlans.shared,cloudShared);
-    saveStudyPlans(false);
   }
+  const mergedPlan=studyPlans.shared;
+  let raisedPlanStreak=false;
+  Object.keys(mergedPlan?.items||{}).forEach(uid=>{if(raisePlanItemHistoryStreak(mergedPlan,uid))raisedPlanStreak=true;});
+  if(raisedPlanStreak){planCompleteMasteredAssignments(mergedPlan);mergedPlan.updatedAt=Date.now();}
+  if(cd.studyPlans||raisedPlanStreak)saveStudyPlans(false);
   stats=statsByBook[activeBook];
   migrateGameData();saveStats();
   // Firestore のリアルタイム通知は演習中にも届く。ここでホームへ戻すと解答中の問題が消えるため、

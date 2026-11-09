@@ -21,7 +21,7 @@ const partialB={assignments:{day:{uids:['a','b'],completedUids:{b:true},done:fal
 assert.equal(ctx.mergeStudyPlanBook(partialA,partialB).assignments.day.done,true);
 assert.equal(ctx.mergeStudyPlanBook(partialA,{assignments:{day:{uids:['a','b'],completedUids:{},done:false,completed:0}}}).assignments.day.done,false);
 let day='2026-10-12';
-Object.assign(ctx,{studyPlans:{shared:{active:true,correctStreakTargetV:3,streakOnlyV:1,examDate:'2027-01-26',finishLeadDays:30,items:{},assignments:completed.assignments,daily:{date:day,count:1,effort:1}}},CAMPUS_SCHOOL_OFF:[],CAMPUS_LIGHT_DAYS:{},PLAN_CORRECT_STREAK_TARGET:3,PLAN_STREAK_ONLY_VERSION:1,PLAN_HISTORY_STREAK_VERSION:1,PLAN_INTERVALS:[1,3,7],historyStreaks:{},STORE_PLAN:'plan',safeSet(){},dateKey:()=>day,planFinishDate:()=> '2026-12-27',planIsMastered:item=>(+item?.correctStreak||0)>=3,planItemStreak:item=>Math.min(3,+item?.correctStreak||0),planHistoryStreak:uid=>ctx.historyStreaks[uid]||0});
+Object.assign(ctx,{studyPlans:{shared:{active:true,correctStreakTargetV:3,streakOnlyV:1,examDate:'2027-01-26',finishLeadDays:30,items:{},assignments:completed.assignments,daily:{date:day,count:1,effort:1}}},CAMPUS_SCHOOL_OFF:[],CAMPUS_LIGHT_DAYS:{},PLAN_CORRECT_STREAK_TARGET:3,PLAN_STREAK_ONLY_VERSION:1,PLAN_HISTORY_STREAK_VERSION:2,PLAN_INTERVALS:[1,3,7],historyStreaks:{},STORE_PLAN:'plan',safeSet(){},dateKey:()=>day,planFinishDate:()=> '2026-12-27',planIsMastered:item=>(+item?.correctStreak||0)>=3,planItemStreak:item=>Math.min(3,+item?.correctStreak||0),planHistoryStreak:uid=>ctx.historyStreaks[uid]||0});
 vm.runInContext(source.slice(source.indexOf('function planCompleteMasteredAssignments('),source.indexOf('function planFor(')),ctx);
 vm.runInContext(source.slice(source.indexOf('function planFor('),source.indexOf('function saveStudyPlans(')),ctx);
 ctx.planFor();day='2026-10-13';ctx.planFor();
@@ -42,7 +42,7 @@ assert.equal(ctx.studyPlans.shared.items.ahead.correctStreak,2,'history migratio
 assert.equal(ctx.studyPlans.shared.items.hist3.mastered,true,'three earlier consecutive correct answers finish the question');
 assert.equal(ctx.studyPlans.shared.items.hist3.due,'9999-12-31');
 assert.equal(ctx.studyPlans.shared.assignments.d.completedUids.hist3,true);
-assert.equal(ctx.studyPlans.shared.historyStreakV,1);
+assert.equal(ctx.studyPlans.shared.historyStreakV,2);
 ctx.historyStreaks={one:3};ctx.planFor();
 assert.equal(ctx.studyPlans.shared.items.one.correctStreak,2,'history migration runs only once');
 console.log('PASS preservation: quota fallback keeps latest values, visible warning and recovery, completed day survives stale sync in both directions, partial progress retained');

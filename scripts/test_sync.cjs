@@ -31,6 +31,24 @@ const old={5:{index:0,answers:{1:{picked:'B',answered:false,updatedAt:50}}}},fre
 for(const [a,b] of [[old,fresh],[fresh,old]]){const m=mergeMockPayload(a,b);assert(m[5].index===2,'linked frontier retained');assert(m[5].answers[1].picked==='A','confirmed answer beats newer unconfirmed selection');}
 assert(mergeSessionPayload({book1:{idx:3,updatedAt:1}},{book1:{idx:9,updatedAt:2}}).book1.idx===9,'resume follows newer device');
 assert(mergeSessionPayload({book1:{deleted:true,updatedAt:3}},{book1:{idx:9,updatedAt:2}}).book1.deleted,'deleted resume does not resurrect');
+const streakPayload=compactStatsPayload({perQ:{q:{correct:3,wrong:0,last:'correct',history:[{correct:true,at:20}],streak:3}},rankAttempts:[]});
+assert(streakPayload.perQ.q.s===3,'compact payload keeps the per-question streak');
+const cloudNewer=mergeStatsTarget(emptyStats(),{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3}}});
+assert(cloudNewer.perQ.q.streak===3,'newer cloud answer adopts its streak');
+const newerHistoryLocal={perQ:{q:{correct:2,wrong:0,last:'correct',history:[{correct:true,at:30}],streak:2}},rankAttempts:[]};
+mergeStatsTarget(newerHistoryLocal,{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3}}});
+assert(newerHistoryLocal.perQ.q.streak===2,'newer local answer keeps its local streak');
+const cloudHistoryNewer={perQ:{q:{correct:3,wrong:0,last:'correct',history:[{correct:true,at:10}],streak:1}},rankAttempts:[]};
+mergeStatsTarget(cloudHistoryNewer,{perQ:{q:{c:2,w:0,h:{correct:true,at:20},s:2}}});
+assert(cloudHistoryNewer.perQ.q.streak===2,'newer cloud history adopts its streak even when local counts are larger');
+const sameHistoryNoLocalStreak={perQ:{q:{correct:3,wrong:0,last:'correct',history:[{correct:true,at:20}]}},rankAttempts:[]};
+mergeStatsTarget(sameHistoryNoLocalStreak,{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3}}});
+assert(sameHistoryNoLocalStreak.perQ.q.streak===3,'same latest answer adopts cloud streak when local streak is absent');
+const sameHistoryLowerLocalStreak={perQ:{q:{correct:3,wrong:0,last:'correct',history:[{correct:true,at:20}],streak:1}},rankAttempts:[]};
+mergeStatsTarget(sameHistoryLowerLocalStreak,{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3}}});
+assert(sameHistoryLowerLocalStreak.perQ.q.streak===3,'same latest answer keeps the higher cloud streak');
+const oldPayload=mergeStatsTarget(emptyStats(),{perQ:{q:{c:1,w:0,h:{correct:true,at:10}}}});
+assert(oldPayload.perQ.q.correct===1&&oldPayload.perQ.q.streak===undefined,'old payload without a streak still merges');
 const packed=encodeCloudProgress(mergeCloudPayloads({},phone));
 const mixed=decodeCloudProgress({...packed,books:payload(2200,14000).books});
 assert(mixed.books.book1.answered===2200&&mixed.books.book1.perQ.q.c===2200,'legacy cumulative attempt history survives while accuracy counts the latest result only');

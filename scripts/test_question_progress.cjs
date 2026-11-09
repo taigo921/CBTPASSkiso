@@ -22,6 +22,12 @@ recent=ctx.recentQuestionAttempts('q1',{history:[{correct:false,skip:true,at:9}]
 assert.deepEqual(recent.map(a=>a.correct),[true,false,true],'uses the longer synced attempt history for this question');
 assert.equal(ctx.recentCorrectStreak(recent),1);
 
+const twoCorrect=[{correct:true,at:1},{correct:true,at:2}];
+assert.equal(ctx.questionCorrectStreak('filled',{correct:3,wrong:0,history:twoCorrect},{rankAttempts:[]}),3,'confirmed missing older correct answer extends the streak');
+assert.equal(ctx.questionCorrectStreak('unknownWrong',{correct:3,wrong:1,history:twoCorrect},{rankAttempts:[]}),2,'missing answers are not filled while an incorrect answer is unaccounted for');
+assert.equal(ctx.questionCorrectStreak('knownWrong',{correct:3,wrong:1,history:[{correct:false,at:1},{correct:true,at:2}]},{rankAttempts:[]}),1,'a known wrong answer keeps only the trailing correct run');
+assert.equal(ctx.questionCorrectStreak('latestWrong',{correct:3,wrong:1,streak:3,history:[{correct:true,at:1},{correct:false,at:2}]},{rankAttempts:[]}),0,'latest wrong answer resets a synced streak');
+
 const planStart=source.indexOf('function planItemStreak(');
 const planEnd=source.indexOf('function planFor(',planStart);
 Object.assign(ctx,{PLAN_CORRECT_STREAK_TARGET:3,PLAN_EFFORTS:[100,80,70],PLAN_INTERVALS:[1,3,7],planFinishDate:()=> '2027-01-22',planPersonalInterval:(_uid,days)=>days,addPlanDays:(key,days)=>{
@@ -37,7 +43,7 @@ assert.equal(ctx.planRemainingEffort({correctStreak:2}),70,'only one answer rema
 assert.equal(ctx.planNextDue('q1',3,true,'2026-10-27',{}),'9999-12-31','mastered question is no longer scheduled');
 
 // Answers made before the route (or the streak counter) existed still count toward the route streak.
-ctx.statsByBook={book1:{perQ:{q2:{history:[{correct:true,at:1},{correct:true,at:2}]},q3:{history:[{correct:true,at:1},{correct:false,at:2},{correct:true,at:3}]},q4:{history:Array.from({length:5},(_,at)=>({correct:true,at}))}},rankAttempts:[]},book2:{perQ:{},rankAttempts:[]}};
+ctx.statsByBook={book1:{perQ:{q2:{correct:2,wrong:0,history:[{correct:true,at:1},{correct:true,at:2}]},q3:{correct:2,wrong:1,history:[{correct:true,at:1},{correct:false,at:2},{correct:true,at:3}]},q4:{correct:5,wrong:0,history:Array.from({length:5},(_,at)=>({correct:true,at}))}},rankAttempts:[]},book2:{perQ:{},rankAttempts:[]}};
 assert.equal(ctx.planHistoryStreak('q2'),2,'two earlier consecutive correct answers give a 2/3 route streak');
 assert.equal(ctx.planHistoryStreak('q3'),1,'a wrong answer in history resets the route streak');
 assert.equal(ctx.planHistoryStreak('q4'),3,'history streak is capped at the route target');
@@ -46,6 +52,21 @@ const assignmentPlan={items:{q4:{correctStreak:3},q2:{correctStreak:2}},assignme
 ctx.planCompleteMasteredAssignments(assignmentPlan);
 assert.equal(assignmentPlan.assignments.day.completed,1,'mastered items count as completed in open assignments');
 assert.equal(assignmentPlan.assignments.day.done,false);
+ctx.statsByBook.book1.perQ.filled={correct:3,wrong:0,history:twoCorrect};
+const filledPlan={items:{filled:{correctStreak:2,due:'2026-10-28'}},assignments:{day:{uids:['filled'],completedUids:{},done:false}}};
+assert.equal(ctx.raisePlanItemHistoryStreak(filledPlan,'filled','2026-10-27'),true);
+ctx.planCompleteMasteredAssignments(filledPlan);
+assert.equal(filledPlan.items.filled.correctStreak,3,'confirmed history raises the route streak to three');
+assert.equal(filledPlan.items.filled.completed,true,'three confirmed correct answers complete the route item');
+assert.equal(filledPlan.assignments.day.done,true,'three confirmed correct answers complete its assignment');
+
+const renderStart=source.indexOf('function renderQuestionProgress('),renderEnd=source.indexOf('function migrateGameData(',renderStart);
+const progressBox={innerHTML:''};
+Object.assign(ctx,{stats:{perQ:{filled:ctx.statsByBook.book1.perQ.filled}},el:()=>progressBox,questionRouteStatus:()=>null});
+vm.runInContext(source.slice(renderStart,renderEnd),ctx);
+ctx.renderQuestionProgress('filled',ctx.stats.perQ.filled);
+assert.match(progressBox.innerHTML,/記録なし">・<\/i><i class="question-result-dot empty" aria-label="記録なし">・<\/i><i class="question-result-dot ok" aria-label="正解">○<\/i><i class="question-result-dot ok" aria-label="正解">○<\/i><i class="question-result-dot ok" aria-label="正解">○<\/i>/,'confirmed missing correct fills an older empty dot slot');
+assert.match(progressBox.innerHTML,/○ 3連続/);
 
 const feedbackStart=source.indexOf('function setPlanExplanation(');
 const feedbackEnd=source.indexOf('function studyPlanSummary(',feedbackStart);
