@@ -28,6 +28,7 @@ node scripts/test_mock_exam.cjs
 node scripts/test_mock_subjects.cjs
 node scripts/test_app_update.cjs
 node scripts/test_access_control.cjs
+node scripts/test_extra_materials_access.cjs
 node scripts/test_school_hours.cjs
 node scripts/test_admin_ranking.cjs
 node scripts/test_paper_progress.cjs

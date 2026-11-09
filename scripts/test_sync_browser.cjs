@@ -7,7 +7,7 @@ const server=http.createServer((req,res)=>{
  if(!file.startsWith(root+path.sep)||!fs.existsSync(file)){res.writeHead(404);res.end();return;}
  if(file.endsWith('index.html')){
   let html=fs.readFileSync(file,'utf8').replace(/<script src="https:[^>]+><\/script>/g,'');
-  html=html.replace(/<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->[\s\S]*?<\/script>/,'<script>window.cbtUser={uid:"sync-test"};document.getElementById("authGate").classList.add("ok");</script>');
+  html=html.replace(/<!-- ▼ ログイン＆ランキング ロジック（Firebase） -->[\s\S]*?<\/script>/,'<script>window.cbtUser={uid:"sync-test",extraMaterials:true};document.getElementById("authGate").classList.add("ok");</script>');
   res.setHeader('Content-Type','text/html');res.end(html);return;
  }
  res.setHeader('Content-Type',file.endsWith('.json')?'application/json':file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':file.endsWith('.webp')?'image/webp':file.endsWith('.mp4')?'video/mp4':file.endsWith('.gif')?'image/gif':'application/octet-stream');fs.createReadStream(file).pipe(res);
@@ -39,7 +39,7 @@ const server=http.createServer((req,res)=>{
   let remote=null;
   for(const page of pages){
    const regularBefore=await page.evaluate(()=>({answered:statsByBook.book1.answered,xp:game.xp}));
-   await page.evaluate(()=>{window.cbtUser={uid:'dictionary-integration'};switchBook('dictionary');});
+   await page.evaluate(()=>{window.cbtUser={uid:'dictionary-integration',extraMaterials:true};switchBook('dictionary');});
    await page.waitForFunction(()=>document.getElementById('dictionaryStatus').textContent.includes('956'));
    assert.ok(await page.locator('#dictionaryHome').isVisible());
    await page.locator('#dictionaryStart').click();assert.equal(await page.locator('#dictionaryNumber').textContent(),'A001');
@@ -48,7 +48,7 @@ const server=http.createServer((req,res)=>{
    assert.match(await page.locator('#dictionaryResult').textContent(),/○ 正解/);
    await page.waitForFunction(()=>document.getElementById('dictionaryExplanationImage').naturalWidth>0);
    assert.deepEqual(await page.evaluate(()=>({answered:statsByBook.book1.answered,xp:game.xp})),regularBefore,'dictionary result stays outside regular progress and XP');
-   await page.evaluate(()=>{window.cbtUser={uid:'sync-test'};switchBook('book1');});
+   await page.evaluate(()=>{window.cbtUser={uid:'sync-test',extraMaterials:true};switchBook('book1');});
   }
   for(const page of pages){
    await page.exposeFunction('testRead',()=>remote);
@@ -267,11 +267,11 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>switchBook('book1'));
    await page.evaluate(()=>{
     window.cbtUser={uid:'owner',email:'itaigo921@gmail.com',emailVerified:true};
-    window.accessTestCalls=[];window.accessTestBlocked=false;
+    window.accessTestCalls=[];window.materialAccessTestCalls=[];window.accessTestBlocked=false;window.materialAccessTestExtra=false;
     window.cbtCloud={refreshAdminVerification:async()=>{},fetchAccessUsers:async()=>[
-      {uid:'owner',email:'itaigo921@gmail.com',username:'Owner',blocked:false},
-      {uid:'learner',email:'learner@example.test',username:'<img src=x onerror=alert(1)>',blocked:window.accessTestBlocked}
-    ],setUserBlocked:async(uid,blocked)=>{window.accessTestCalls.push([uid,blocked]);window.accessTestBlocked=blocked;}};
+      {uid:'owner',email:'itaigo921@gmail.com',username:'Owner',blocked:false,extra:true},
+      {uid:'learner',email:'learner@example.test',username:'<img src=x onerror=alert(1)>',blocked:window.accessTestBlocked,extra:window.materialAccessTestExtra}
+    ],setUserBlocked:async(uid,blocked)=>{window.accessTestCalls.push([uid,blocked]);window.accessTestBlocked=blocked;},setMaterialAccess:async(uid,allowed)=>{window.materialAccessTestCalls.push([uid,allowed]);window.materialAccessTestExtra=allowed;}};
     updateLeaderboardAccess();renderHome();
    });
    await page.locator('#accessAdminBtn').click();
@@ -280,7 +280,11 @@ const server=http.createServer((req,res)=>{
    await page.getByRole('button',{name:'アクセス解除',exact:true}).click();
    await page.getByRole('button',{name:'アクセス停止',exact:true}).waitFor();
    assert.deepEqual(await page.evaluate(()=>window.accessTestCalls),[['learner',true],['learner',false]]);
+   await page.getByRole('button',{name:'追加教材：許可する',exact:true}).click();
+   await page.getByRole('button',{name:'追加教材：許可を取り消す',exact:true}).click();
+   assert.deepEqual(await page.evaluate(()=>window.materialAccessTestCalls),[['learner',true],['learner',false]]);
    assert.ok(await page.getByRole('button',{name:'管理者（停止できません）'}).isDisabled());
+   assert.ok(await page.getByRole('button',{name:'追加教材：管理者（常に利用可）'}).isDisabled());
    assert.equal(await page.locator('#accessAdminList img').count(),0,'names render as text');
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
    await page.evaluate(()=>{window.cbtCloud.setUserBlocked=async()=>{throw Error('permission-denied');};});

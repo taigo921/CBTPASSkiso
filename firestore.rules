@@ -49,6 +49,18 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/users/$(uid));
       allow delete: if false;
     }
+    match /materialAccess/{uid} {
+      allow get: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasAll(['extra', 'updatedAt', 'updatedBy'])
+        && request.resource.data.keys().hasOnly(['extra', 'updatedAt', 'updatedBy'])
+        && request.resource.data.extra is bool
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time
+        && exists(/databases/$(database)/documents/users/$(uid));
+      allow delete: if false;
+    }
     function approvedHashes() {
       return [
         '5ec7432d9ec2f5ab41386453c80c22f421300deb5f41f372fe5fd82a8ec80fa6',

@@ -14,6 +14,7 @@ const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,runTransaction,s
   const unverified=env.authenticatedContext('owner',{email:'itaigo921@gmail.com',email_verified:false}).firestore();
   const anonymous=env.unauthenticatedContext().firestore();
   const record=b=>({blocked:b,updatedBy:'owner',updatedAt:serverTimestamp()});
+  const material=extra=>({extra,updatedBy:'owner',updatedAt:serverTimestamp()});
   await ok(getDoc(doc(learner,'accessControl','learner')));
   await ok(getDoc(doc(learner,'users','learner')));
   await ok(updateDoc(doc(learner,'users','learner'),{score:10}));
@@ -51,6 +52,17 @@ const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,runTransaction,s
   await ok(deleteDoc(doc(learner,'users','learner','progressChunks','chunk0')));
   await ok(deleteDoc(doc(learner,'users','learner','progressChunks','chunk1')));
   await no(deleteDoc(doc(admin,'accessControl','learner')));
+  await ok(getDoc(doc(learner,'materialAccess','learner')));
+  await no(getDoc(doc(learner,'materialAccess','other')));
+  await no(getDocs(collection(learner,'materialAccess')));
+  await no(setDoc(doc(learner,'materialAccess','learner'),material(true)));
+  await no(setDoc(doc(admin,'materialAccess','missing'),material(true)));
+  for(const invalid of [{extra:'true'},{updatedBy:'learner'},{updatedAt:0},{unexpected:true}])await no(setDoc(doc(admin,'materialAccess','learner'),{...material(true),...invalid}));
+  await ok(setDoc(doc(admin,'materialAccess','learner'),material(true)));
+  await ok(getDoc(doc(learner,'materialAccess','learner')));
+  await ok(getDocs(collection(admin,'materialAccess')));
+  await ok(setDoc(doc(admin,'materialAccess','learner'),material(false)));
+  await no(deleteDoc(doc(admin,'materialAccess','learner')));
   console.log('PASS access rules: verified admin, self/schema protection, block/unblock, private data and progress preserved');
  }finally{await env.cleanup();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

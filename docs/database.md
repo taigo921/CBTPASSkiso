@@ -57,6 +57,15 @@
 - DBアクセス: `requireAccess()`、`watchAccess()`、`fetchAccessUsers()`、`setUserBlocked()`。
 - 権限: 本人は自分のgetのみ、管理者はget/listと他人のcreate/update。deleteは禁止。
 
+### `materialAccess/{uid}`
+
+- 役割: 問題集1・2以外の追加教材（麻布模試、CBT辞典、歯科理工）の利用許可。学習記録とは分離し、取り消しても記録は削除しない。
+- 主なフィールド: `extra` (bool)、`updatedAt`、`updatedBy`。
+- リレーション: 対象 `users/{uid}` が存在するときだけ管理者が作成・更新。管理者本人は文書の有無にかかわらず常に利用できる。
+- 使用Feature: Access & Identity、Access Administration、ホーム・教材選択。
+- DBアクセス: `watchMaterialAccess()`、`fetchAccessUsers()`、`setMaterialAccess()`。
+- 権限: 本人は自分のgetのみ、管理者はget/list/create/update。厳密な3フィールド以外は禁止し、deleteは禁止。
+
 ### `schoolAccess/settings`
 
 - 役割: 授業時間制限の全体設定、休校日、現在授業だけの解除。

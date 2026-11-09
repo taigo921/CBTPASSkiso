@@ -2,21 +2,23 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const source=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
 const slice=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b));
 const admin={uid:'owner',email:'itaigo921@gmail.com',emailVerified:true};
-const data={users:{learner:{username:'Test',email:'test@example.test',progressDataV1:'private'}},accessControl:{},leaderboard:{learner:{answered:4}}};
-let reads=0,listener,errorListener,signouts=0,stops=0;
+const data={users:{learner:{username:'Test',email:'test@example.test',progressDataV1:'private'}},accessControl:{},materialAccess:{},leaderboard:{learner:{answered:4}}};
+let reads=0,listener,errorListener,materialListener,materialErrorListener,signouts=0,stops=0;
 const node=()=>({textContent:'',src:'',getAttribute(name){return name==='src'?this.src:null;},removeAttribute(name){if(name==='src')this.src='';},classList:{remove(k){this[k]=false;},toggle(k,v){this[k]=v;}}});
-const ctx={window:{cbtUser:admin,addEventListener(){}},document:{getElementById:()=>node(),addEventListener(){}},gate:node(),errEl:node(),auth:{currentUser:admin,signOut:async()=>{signouts++;}},firebase:{firestore:{FieldValue:{serverTimestamp:()=>42}}},refreshSchoolClock:async()=>new Date(),clearTimeout(){},updateLeaderboardAccess(){},stopTimer(){stops++;},Map,console};
+const ctx={window:{cbtUser:admin,addEventListener(){}},document:{getElementById:()=>node(),querySelector:()=>null,querySelectorAll:()=>[],addEventListener(){}},el:()=>({classList:{contains:()=>true}}),mockHomeSelected:false,dictionaryHomeSelected:false,dentalMaterialsHomeSelected:false,renderHome(){},gate:node(),errEl:node(),auth:{currentUser:admin,signOut:async()=>{signouts++;}},firebase:{firestore:{FieldValue:{serverTimestamp:()=>42}}},refreshSchoolClock:async()=>new Date(),clearTimeout(){},updateLeaderboardAccess(){},stopTimer(){stops++;},Map,console};
 ctx.window.cbtCloud={fetchSchoolPolicy:async()=>({enabled:false,exemptDates:[]})};
-ctx.db={collection(name){return {get:async o=>{reads++;assert.equal(o.source,'server');return {forEach(fn){for(const [id,v] of Object.entries(data[name]))fn({id,data:()=>v});}};},doc(uid){return {name,uid,get:async o=>{reads++;assert.equal(o.source,'server');return {exists:!!data[name][uid],data:()=>data[name][uid]};},onSnapshot(fn,err){listener=fn;errorListener=err;return ()=>{};}};}};},async runTransaction(fn){await fn({get:async r=>({exists:!!data[r.name][r.uid]}),set(r,v){data[r.name][r.uid]=v;},delete(r){delete data[r.name][r.uid];}});}};
+ctx.db={collection(name){return {get:async o=>{reads++;assert.equal(o.source,'server');return {forEach(fn){for(const [id,v] of Object.entries(data[name]))fn({id,data:()=>v});}};},doc(uid){return {name,uid,get:async o=>{reads++;assert.equal(o.source,'server');return {exists:!!data[name][uid],data:()=>data[name][uid]};},set:async v=>{data[name][uid]=v;},onSnapshot(fn,err){if(name==='materialAccess'){materialListener=fn;materialErrorListener=err;}else{listener=fn;errorListener=err;}return ()=>{};}};}};},async runTransaction(fn){await fn({get:async r=>({exists:!!data[r.name][r.uid]}),set(r,v){data[r.name][r.uid]=v;},delete(r){delete data[r.name][r.uid];}});}};
 vm.createContext(ctx);vm.runInContext(slice('const LEADERBOARD_ENABLED=','function updateLeaderboardAccess()')+'let stopCloudSubscription=null,_syncT=null;'+slice('  let stopAccessSubscription=','  // ログイン状態の監視'),ctx);
 const api=vm.runInContext('({'+slice('    fetchAccessUsers: async function(){','    fetchLeaderboard: async function(){')+'})',ctx);
 (async()=>{
- for(const user of [null,{uid:'other',email:'x@test',emailVerified:true,allowed:true},{...admin,emailVerified:false}]){ctx.auth.currentUser=user;await assert.rejects(api.fetchAccessUsers());await assert.rejects(api.setUserBlocked('learner',true));}
+ for(const user of [null,{uid:'other',email:'x@test',emailVerified:true,allowed:true},{...admin,emailVerified:false}]){ctx.auth.currentUser=user;await assert.rejects(api.fetchAccessUsers());await assert.rejects(api.setUserBlocked('learner',true));await assert.rejects(api.setMaterialAccess('learner',true));}
  assert.equal(reads,0);ctx.auth.currentUser=admin;
  for(const [uid,value] of [['owner',true],['bad/id',true],['learner','true'],['missing',true]])await assert.rejects(api.setUserBlocked(uid,value));
  const before=JSON.stringify(data.users);await api.setUserBlocked('learner',true);
  assert.equal(data.leaderboard.learner,undefined,'blocking removes public ranking');
  const rows=await api.fetchAccessUsers();assert.equal(rows[0].blocked,true);assert.equal(rows[0].progressDataV1,undefined);
+ await api.setMaterialAccess('learner',true);assert.equal((await api.fetchAccessUsers())[0].extra,true);
+ await api.setMaterialAccess('learner',false);assert.equal((await api.fetchAccessUsers())[0].extra,false);
  await assert.rejects(ctx.requireAccess({uid:'learner'}),e=>e.code==='access-blocked');
  await api.setUserBlocked('learner',false);await ctx.requireAccess({uid:'learner'});assert.equal(JSON.stringify(data.users),before);
  ctx.watchAccess(admin,0);
@@ -25,6 +27,13 @@ const api=vm.runInContext('({'+slice('    fetchAccessUsers: async function(){','
  listener({exists:true,data:()=>({blocked:true}),metadata:{}});assert.equal(signouts,1);assert.equal(ctx.window.cbtUser,null);assert.ok(stops>0);
  assert.equal(vm.runInContext('blockedLoginNotice',ctx),true);ctx.lockAccess('stopped');assert.equal(vm.runInContext('blockedLoginNotice',ctx),true,'sign-out retains blocked notice');
  ctx.window.cbtUser=admin;errorListener();assert.equal(ctx.window.cbtUser,null);assert.equal(vm.runInContext('blockedLoginNotice',ctx),false,'network errors hide blocked image');
+ ctx.window.cbtUser={uid:'learner',email:'learner@example.test',extraMaterials:false};ctx.watchMaterialAccess(ctx.window.cbtUser,0);
+ materialListener({exists:true,data:()=>({extra:true}),metadata:{fromCache:true}});assert.equal(ctx.window.cbtUser.extraMaterials,false);
+ materialListener({exists:true,data:()=>({extra:true}),metadata:{hasPendingWrites:true}});assert.equal(ctx.window.cbtUser.extraMaterials,false);
+ materialListener({exists:true,data:()=>({extra:true}),metadata:{}});assert.equal(ctx.window.cbtUser.extraMaterials,true);
+ materialListener({exists:true,data:()=>({extra:false}),metadata:{}});assert.equal(ctx.window.cbtUser.extraMaterials,false);
+ ctx.window.cbtUser.extraMaterials=true;materialErrorListener();assert.equal(ctx.window.cbtUser.extraMaterials,false,'material read errors default to denied');
+ ctx.window.cbtUser=admin;ctx.watchMaterialAccess(admin,0);assert.equal(ctx.window.cbtUser.extraMaterials,true,'owner always has material access without a document');
  ctx.db.collection=()=>({doc:()=>({get:async()=>{throw Error('offline');}})});await assert.rejects(ctx.requireAccess(admin));
  console.log('PASS access API and gate: admin-only, self protection, reversible block, progress retained, server check, active stop, stale cache ignored, errors lock');
 })().catch(e=>{console.error(e);process.exitCode=1;});

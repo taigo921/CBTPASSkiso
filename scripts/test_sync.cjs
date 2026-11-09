@@ -88,5 +88,68 @@ window.cbtCloud={readLatest:async()=>{reads++;return {count:serverCount};},save:
  await vm.runInContext('runCloudSync()',context);await Promise.resolve();
  vm.runInContext("assert(states.at(-1)==='ready','public ranking failure never invalidates private sync');assert(localCount===1977,'ranking failure preserves private progress');",context);
  assert.equal(mirrorAttempts,1);checks++;
+ const timers=new Map();let timerId=0,clock=0;
+ class FakeDate extends Date{static now(){return clock;}}
+ const pendingResolvers=[],readResolvers=[],eventListeners={},documentListeners={};
+ const timeoutContext={
+  console:{warn(){}},Date:FakeDate,JSON,Math,Blob,navigator:{onLine:true},
+  window:{cbtUser:{uid:'test'},cbtCloud:{save:()=>{timeoutContext.saveCount++;return new Promise(resolve=>pendingResolvers.push(resolve));},readLatest:()=>{timeoutContext.readCount++;return new Promise(resolve=>readResolvers.push(resolve));}},addEventListener(type,listener){eventListeners[type]=listener;}},
+  document:{hidden:false,addEventListener(type,listener){documentListeners[type]=listener;}},
+  saveCount:0,readCount:0,states:[],details:[],merges:0,localProgress:1,toasts:[],
+  setCloudSyncState(state,detail){timeoutContext.states.push(state);timeoutContext.details.push(detail);},
+  ensureProgressBackup(){},fullStatsPayload(){return {count:1};},cbtMergeCloud(data){timeoutContext.merges++;timeoutContext.localProgress=data.count;},mergeCloudPayloads(){},canViewLeaderboard(){return false;},
+  toast(message){timeoutContext.toasts.push(message);},renderOfflineStatus(){},renderCloudStatus(){},
+  cloudErrorDetail(error){return String(error?.message||error||'error');},
+  setTimeout(fn,delay=0){const id=++timerId;timers.set(id,{at:clock+delay,fn});return id;},clearTimeout(id){timers.delete(id);},
+  el:()=>({addEventListener(){}})
+ };
+ vm.createContext(timeoutContext);
+ vm.runInContext(slice('const CLOUD_SYNC_DEBOUNCE_MS=',"window.cbtStatsSummary=statsSummary;"),timeoutContext);
+ async function advance(ms){
+  clock+=ms;
+  for(;;){
+   const due=[...timers].filter(([,timer])=>timer.at<=clock).sort((a,b)=>a[1].at-b[1].at||a[0]-b[0]);
+   if(!due.length)break;
+   for(const [id,timer] of due){if(!timers.delete(id))continue;timer.fn();await Promise.resolve();}
+  }
+  await Promise.resolve();
+ }
+ vm.runInContext('runCloudSync()',timeoutContext);await Promise.resolve();
+ assert.equal(timeoutContext.saveCount,1);checks++;
+ timeoutContext.states.length=0;vm.runInContext('cloudSyncSoon()',timeoutContext);
+ assert.equal(timeoutContext.states.length,0,'answering during an active sync does not overwrite the display with pending');checks++;
+ await advance(120000);
+ assert.equal(vm.runInContext('_syncBusy',timeoutContext),false,'a permanently pending save releases the lock after 120 seconds');
+ assert.equal(timeoutContext.states.at(-1),'unavailable');checks+=2;
+ await advance(4000);
+ assert.equal(timeoutContext.saveCount,2,'the abandoned attempt is retried with backoff');checks++;
+ const stateBeforeOld=timeoutContext.states.at(-1),failuresBeforeOld=vm.runInContext('_syncFailures',timeoutContext);
+ pendingResolvers[0]({count:9});await Promise.resolve();await Promise.resolve();
+ assert.equal(timeoutContext.readCount,0,'a stale save result does not read the cloud again');
+ assert.equal(timeoutContext.merges,0,'a stale save result does not merge into local progress');
+ assert.equal(timeoutContext.localProgress,1,'a stale save result leaves local progress unchanged');
+ assert.equal(vm.runInContext('_syncBusy',timeoutContext),true,'a late old result does not unlock the current attempt');
+ assert.equal(vm.runInContext('_syncFailures',timeoutContext),failuresBeforeOld,'a late old result does not reset failure state');
+ assert.equal(timeoutContext.states.at(-1),stateBeforeOld,'a late old result does not overwrite sync status');checks+=6;
+ await advance(30000);vm.runInContext('cloudSyncSoon(true)',timeoutContext);await advance(0);
+ assert.equal(timeoutContext.saveCount,3,'manual sync abandons an attempt older than 30 seconds and starts a new one');
+ assert.equal(vm.runInContext('_syncBusy',timeoutContext),true);checks+=2;
+ vm.runInContext('_syncAttempt++;_syncBusy=false;_syncFailures=1;_syncDirty=true;_syncBlockedUntil=Date.now()+3600000;',timeoutContext);
+ const quotaBlockedUntil=vm.runInContext('_syncBlockedUntil',timeoutContext),quotaSaveCount=timeoutContext.saveCount;
+ eventListeners.online();await advance(0);
+ assert.equal(timeoutContext.saveCount,quotaSaveCount,'online does not bypass quota backoff');
+ assert.equal(vm.runInContext('_syncBlockedUntil',timeoutContext),quotaBlockedUntil,'online preserves the quota deadline');
+ assert.equal(timeoutContext.toasts.length,0,'online toast is hidden when no resend is scheduled');checks+=3;
+ documentListeners.visibilitychange();await advance(0);
+ assert.equal(timeoutContext.saveCount,quotaSaveCount,'visibility change does not bypass quota backoff');
+ assert.equal(vm.runInContext('_syncBlockedUntil',timeoutContext),quotaBlockedUntil,'visibility change preserves the quota deadline');checks+=2;
+ vm.runInContext('_syncBlockedUntil=0;',timeoutContext);eventListeners.online();await advance(0);
+ assert.equal(timeoutContext.saveCount,quotaSaveCount+1,'online immediately retries a non-quota failure');
+ assert.equal(timeoutContext.toasts.length,1,'online toast is shown when resend is scheduled');checks+=2;
+ pendingResolvers[3]();await Promise.resolve();await Promise.resolve();
+ assert.equal(timeoutContext.readCount,1,'a current save without a result starts the compatibility read');checks++;
+ await advance(120000);readResolvers[0]({count:7});await Promise.resolve();await Promise.resolve();
+ assert.equal(timeoutContext.merges,0,'a readLatest result arriving after abandonment is not merged');
+ assert.equal(timeoutContext.localProgress,1,'a stale readLatest result leaves local progress unchanged');checks+=2;
  console.log('PASS sync: '+checks+' checks (stale devices, two books, XP, study time, plans, linked mock, resume deletion, backup, save error, pending changes).');
 })().catch(e=>{console.error(e);process.exitCode=1;});

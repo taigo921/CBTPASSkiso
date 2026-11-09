@@ -4,12 +4,12 @@
 
 ## 認証・利用制限
 
-- 機能: Google／メールログイン、許可ユーザー判定、個別アクセス停止、授業時間制限。
+- 機能: Google／メールログイン、許可ユーザー判定、個別アクセス停止、追加教材の利用許可、授業時間制限。
 - Route / 画面: `#authGate`、`#blockedLoginOverlay`、`#schoolGate`。通常画面にoverlayする。
 - 主なUI: `#gbtn`、`#authEmailBox`、`#schoolGateImage`、`#schoolLogout`。
-- state / hooks相当: `window.cbtUser`、`schoolPolicy`、`handleAuthState()`、`requireAccess()`、`watchAccess()`、`watchSchoolPolicy()`、`refreshSchoolClock()`、`schoolRestriction()`。
+- state / hooks相当: `window.cbtUser`、`canUseExtraMaterials()`、`schoolPolicy`、`handleAuthState()`、`requireAccess()`、`watchAccess()`、`watchMaterialAccess()`、`watchSchoolPolicy()`、`refreshSchoolClock()`、`schoolRestriction()`。
 - API / service: Firebase Auth、`window.cbtCloud.fetchSchoolPolicy()`、GitHub PagesのHTTP `Date` header（授業判定用サーバー時刻）。
-- DB: `accessControl/{uid}`、`schoolAccess/settings`、初回プロフィール用 `users/{uid}`。
+- DB: `accessControl/{uid}`、`materialAccess/{uid}`、`schoolAccess/settings`、初回プロフィール用 `users/{uid}`。
 - 関連ファイル: `index.html` のaccess/auth/Firebase bootstrap、`assets/blocked-login.gif`、`firestore.rules`、`ACCESS_CONTROL_SETUP.md`、`CLASS_HOURS_ACCESS.md`、`SETUP-LOGIN.md`。
 - 他Featureとの依存: すべての認証後Featureの前提。Web／ホーム画面アプリともログイン時に配信サーバー時刻へ固定し、Firestoreルール側でも `request.time` で同じ制限を再評価する。
 
@@ -20,9 +20,9 @@
 - 主なUI: `.book-tab`、`#resumeCard`、`#offlineStatus`、`#cloudStatus`。
 - state / hooks相当: `BOOKS`、`activeBook`、`QUESTIONS`、`mockHomeSelected`、`dictionaryHomeSelected`、`dentalMaterialsHomeSelected`、`renderHome()`、`switchBook()`、`loadBookQuestions()`。
 - API / service: `fetch()`、Cache Storage、Service Worker。
-- DB: 問題本文はDB不使用。選択中の本はLocalStorage `cbt_settings_v2`。
+- DB: 問題本文はDB不使用。選択中の本はLocalStorage `cbt_settings_v2`。麻布模試・CBT辞典・歯科理工の表示許可は `materialAccess/{uid}`。
 - 関連ファイル: `index.html` の `BOOKS`/question loading/home、`data/*.json`、`sw.js`。
-- 他Featureとの依存: Question CatalogとしてPractice、Study Route、Browse & Analysisへ問題を供給する。
+- 他Featureとの依存: Question CatalogとしてPractice、Study Route、Browse & Analysisへ問題を供給する。追加教材は管理者または `extra=true` の本人だけ表示・遷移でき、権限喪失時は問題集ホームへ戻す。
 
 ## 通常問題演習
 
@@ -116,11 +116,11 @@
 
 - 機能: 即時端末保存、保存失敗警告、進捗export、Firestore transaction、古い形式移行、リアルタイム統合。
 - Route / 画面: 全画面共通。ホームの `#cloudStatus`、`#syncNowBtn`、`#exportProgressBtn`、`#storageWarning`。
-- 主なUI / state: `safeGet/Set/Remove()`、`progressBackupData()`、`fullStatsPayload()`、`mergeCloudPayloads()`、`encodeCloudProgress()`、`decodeCloudProgress()`、`runCloudSync()`、`cbtMergeCloud()`。
+- 主なUI / state: `safeGet/Set/Remove()`、`progressBackupData()`、`fullStatsPayload()`、`mergeCloudPayloads()`、`encodeCloudProgress()`、`decodeCloudProgress()`、`runCloudSync()`、`abandonCloudSyncAttempt()`、`cbtMergeCloud()`。
 - API / service: `window.cbtCloud.save/readLatest/subscribe`。
 - DB: `users/{uid}`。詳細は `database.md`。
 - 関連ファイル: `index.html` のstorage/sync/Firebase gateway、`scripts/README-sync.md`、sync/progress browser tests。
-- 他Featureとの依存: 学習Featureの保存先となる横断基盤。模試は `mockExams`、辞典・歯科理工は `practiceSets` の専用merge規則で統合する。
+- 他Featureとの依存: 学習Featureの保存先となる横断基盤。模試は `mockExams`、辞典・歯科理工は `practiceSets` の専用merge規則で統合する。保存Promiseが120秒で終わらない試行は世代を無効化して再試行し、古い完了結果で現在の同期状態を巻き戻さない。
 
 ## プロフィール・ランキング
 
@@ -135,12 +135,12 @@
 
 ## 管理者画面
 
-- 機能: ユーザー停止／解除、授業制限on/off、休校日、現在授業だけの解除。
+- 機能: ユーザー停止／解除、追加教材の許可／取り消し、授業制限on/off、休校日、現在授業だけの解除。
 - Route / 画面: `#accessAdmin`。
 - 主なUI: `#accessAdminList`、`#schoolEnabled`、`#schoolExemptList`、`#schoolReleaseClass`。
 - state / hooks相当: `renderAccessAdmin()`、`renderSchoolSettings()`、`saveSchoolSettings()`、`canManageUsers()`。
-- API / service: `window.cbtCloud.fetchAccessUsers/setUserBlocked/fetchSchoolPolicy/setSchoolPolicy/releaseSchoolClass`。
-- DB: `users` の管理者list読取、`accessControl/{uid}`、`schoolAccess/settings`、停止時の `leaderboard/{uid}` 削除。
+- API / service: `window.cbtCloud.fetchAccessUsers/setUserBlocked/setMaterialAccess/fetchSchoolPolicy/setSchoolPolicy/releaseSchoolClass`。
+- DB: `users` の管理者list読取、`accessControl/{uid}`、`materialAccess/{uid}`、`schoolAccess/settings`、停止時の `leaderboard/{uid}` 削除。
 - 関連ファイル: `index.html` のadmin/school/Firebase gateway、`firestore.rules`、アクセス・授業資料。
 - 他Featureとの依存: Accessを管理する専用Feature。個人進捗の内容は編集しない。
 
