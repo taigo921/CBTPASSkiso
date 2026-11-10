@@ -77,7 +77,7 @@ const server=http.createServer((req,res)=>{
    await switchBook('book1');
    const uid=qkey(DEFAULT_QUESTIONS_BY_BOOK.book1[0]),now=Date.now();
    stats.perQ[uid]={correct:3,wrong:1,last:'correct',times:[],pre:[],post:[],fav:false,xpV:1,rankV:1,history:[
-    {correct:true,at:now-4000},{correct:false,at:now-3000},{correct:true,at:now-2000},{correct:true,at:now-1000}
+    {correct:true,at:now-4*86400000},{correct:false,at:now-3*86400000},{correct:true,at:now-2*86400000},{correct:true,at:now-86400000}
    ]};
    stats.rankAttempts=[];
    const p=planFor();p.active=true;p.items[uid]={round:3,stage:2,due:dateKey(),last:addPlanDays(dateKey(),-1),correctStreak:2,correctStreakDate:addPlanDays(dateKey(),-1),mastered:false,completed:false,explained:false,updatedAt:now};
