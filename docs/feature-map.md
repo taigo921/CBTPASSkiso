@@ -37,14 +37,14 @@
 
 ## 学習ルート・忘却曲線
 
-- 機能: 試験日からの日次割当、1/3/7日間隔の復習、3回連続正解または解説内容を説明できる自己確認による終了判定、追加・無限学習、休み／軽め設定、本で進めた範囲登録。
+- 機能: 試験日からの日次割当、1/3/7日間隔の復習、当日の課題で間違えた問題を正解するまで同日中に再出題、問題ごとに1日1回（その日の最初の回答）だけ更新する3回連続正解または解説内容を説明できる自己確認による終了判定、追加・無限学習、休み／軽め設定、本で進めた範囲登録。
 - Route / 画面: `#studyPlan`。出題は共通の `#quiz`。
 - 主なUI: `#planStartBtn`、`#planReviewBtn`、`#planCalendarDays`、`#planExtraBox`、`#paperApply`、`#planWhitePassOpen`。
 - state / hooks相当: `studyPlans.shared`、`planFor()`、`studyPlanSummary()`、`renderStudyPlan()`、`startStudyPlan()`、`startExtraStudy()`、`startRouteReview()`、`paperProgress`。
 - API / service: `saveStudyPlans()`、共通Practice session、`cloudSyncSoon()`。
-- DB: LocalStorage `cbt_study_plan_v1` とshared-plan/route-review session。Firestoreの圧縮進捗内 `studyPlans`、`sessions`。
-- 関連ファイル: `index.html` のstudy plan/paper progress、`scripts/test_paper_progress.cjs`、`scripts/test_route_review.cjs`、`scripts/test_study_plan_load.cjs`、`scripts/test_question_progress.cjs`。
-- 他Featureとの依存: 両問題集のQuestion Catalog、Practice、Progress。学習ルートが有効な間は共通Practiceの各回答が連続正解数を更新し、3連続に達した問題を既存割当からも完了扱いにする。割当自体は `studyPlans.shared` が所有する。
+- DB: LocalStorage `cbt_study_plan_v1` とshared-plan/route-review session。ルート項目の `streakDay` は連続正解を最後に更新したローカル日付、日次割当の `retry` は問題UIDごとの最終誤答時刻と解消時刻を保持する。Firestoreの圧縮進捗内 `studyPlans`、`sessions`。
+- 関連ファイル: `index.html` のstudy plan/paper progress、`scripts/test_paper_progress.cjs`、`scripts/test_route_review.cjs`、`scripts/test_study_plan_load.cjs`、`scripts/test_plan_wrong_retry.cjs`、`scripts/test_question_progress.cjs`。
+- 他Featureとの依存: 両問題集のQuestion Catalog、Practice、Progress。学習ルートが有効な間は共通Practiceで各問題のその日最初の回答だけが連続正解数を更新し、3連続に達した問題を既存割当からも完了扱いにする。回答数、正解数、XP、ランキング、学習時間、履歴は同日再回答でも従来どおり記録する。割当自体は `studyPlans.shared` が所有する。
 
 ## 問題一覧・セクション演習
 

@@ -7,8 +7,10 @@ const context={console:{warn(){}},Date,JSON,Math,Map,Set,Object,Number,String,wi
 vm.createContext(context);
 context.Blob=Blob;
 vm.runInContext(`const emptyStats=()=>({perQ:{},rankAttempts:[]});
+function dateKey(value){const date=value||new Date();return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}
 ${slice('function latestQuestionOutcome(', 'function fullStatsPayload(')}
 ${slice('function mergeStatsTarget(', 'function cbtMergeCloud(')}
+${slice('function recentQuestionAttempts(', 'function questionRouteStatus(')}
 ${slice('function mockKeyFor(', 'function progressBackupData(')}
 ${slice('function mergeCloudPayloads(', "el('syncNowBtn').addEventListener")}
 `,context);
@@ -31,10 +33,10 @@ const old={5:{index:0,answers:{1:{picked:'B',answered:false,updatedAt:50}}}},fre
 for(const [a,b] of [[old,fresh],[fresh,old]]){const m=mergeMockPayload(a,b);assert(m[5].index===2,'linked frontier retained');assert(m[5].answers[1].picked==='A','confirmed answer beats newer unconfirmed selection');}
 assert(mergeSessionPayload({book1:{idx:3,updatedAt:1}},{book1:{idx:9,updatedAt:2}}).book1.idx===9,'resume follows newer device');
 assert(mergeSessionPayload({book1:{deleted:true,updatedAt:3}},{book1:{idx:9,updatedAt:2}}).book1.deleted,'deleted resume does not resurrect');
-const streakPayload=compactStatsPayload({perQ:{q:{correct:3,wrong:0,last:'correct',history:[{correct:true,at:20}],streak:3}},rankAttempts:[]});
-assert(streakPayload.perQ.q.s===3,'compact payload keeps the per-question streak');
-const cloudNewer=mergeStatsTarget(emptyStats(),{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3}}});
-assert(cloudNewer.perQ.q.streak===3,'newer cloud answer adopts its streak');
+const streakPayload=compactStatsPayload({perQ:{q:{correct:3,wrong:0,last:'correct',history:[{correct:true,at:20}],streak:3,streakDay:'2026-11-10'}},rankAttempts:[]});
+assert(streakPayload.perQ.q.s===3&&streakPayload.perQ.q.sd==='2026-11-10','compact payload keeps the per-question streak and update day');
+const cloudNewer=mergeStatsTarget(emptyStats(),{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3,sd:'2026-11-10'}}});
+assert(cloudNewer.perQ.q.streak===3&&cloudNewer.perQ.q.streakDay==='2026-11-10','newer cloud answer adopts its streak and update day');
 const newerHistoryLocal={perQ:{q:{correct:2,wrong:0,last:'correct',history:[{correct:true,at:30}],streak:2}},rankAttempts:[]};
 mergeStatsTarget(newerHistoryLocal,{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3}}});
 assert(newerHistoryLocal.perQ.q.streak===2,'newer local answer keeps its local streak');
@@ -45,10 +47,18 @@ const sameHistoryNoLocalStreak={perQ:{q:{correct:3,wrong:0,last:'correct',histor
 mergeStatsTarget(sameHistoryNoLocalStreak,{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3}}});
 assert(sameHistoryNoLocalStreak.perQ.q.streak===3,'same latest answer adopts cloud streak when local streak is absent');
 const sameHistoryLowerLocalStreak={perQ:{q:{correct:3,wrong:0,last:'correct',history:[{correct:true,at:20}],streak:1}},rankAttempts:[]};
-mergeStatsTarget(sameHistoryLowerLocalStreak,{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3}}});
-assert(sameHistoryLowerLocalStreak.perQ.q.streak===3,'same latest answer keeps the higher cloud streak');
+mergeStatsTarget(sameHistoryLowerLocalStreak,{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3,sd:'2026-11-11'}}});
+assert(sameHistoryLowerLocalStreak.perQ.q.streak===3&&sameHistoryLowerLocalStreak.perQ.q.streakDay==='2026-11-11','same latest answer keeps the higher cloud streak and newer update day');
+const sameHistoryNewerLocalDay={perQ:{q:{correct:3,wrong:0,last:'correct',history:[{correct:true,at:20}],streak:3,streakDay:'2026-11-12'}},rankAttempts:[]};
+mergeStatsTarget(sameHistoryNewerLocalDay,{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3,sd:'2026-11-11'}}});
+assert(sameHistoryNewerLocalDay.perQ.q.streakDay==='2026-11-12','equal timestamps keep the larger local streak update day');
 const oldPayload=mergeStatsTarget(emptyStats(),{perQ:{q:{c:1,w:0,h:{correct:true,at:10}}}});
-assert(oldPayload.perQ.q.correct===1&&oldPayload.perQ.q.streak===undefined,'old payload without a streak still merges');
+assert(oldPayload.perQ.q.correct===1&&oldPayload.perQ.q.streak===undefined&&oldPayload.perQ.q.streakDay===undefined,'old payload without streak fields still merges');
+const restoredDay=new Date(2026,10,10,12).getTime();
+const restoredWrongThenCorrect=mergeStatsTarget(emptyStats(),{perQ:{q:{c:1,w:1,h:{correct:true,at:restoredDay},s:0,sd:'2026-11-10'}}});
+assert(questionCorrectStreak('q',restoredWrongThenCorrect.perQ.q,restoredWrongThenCorrect)===0,'cloud restore keeps the synced x then o daily streak when h only has the last o');
+const restoredCorrectThenWrong=mergeStatsTarget(emptyStats(),{perQ:{q:{c:1,w:1,h:{correct:false,at:restoredDay},s:1,sd:'2026-11-10'}}});
+assert(questionCorrectStreak('q',restoredCorrectThenWrong.perQ.q,restoredCorrectThenWrong)===1,'cloud restore keeps the synced o then x daily streak when h only has the last x');
 const packed=encodeCloudProgress(mergeCloudPayloads({},phone));
 const mixed=decodeCloudProgress({...packed,books:payload(2200,14000).books});
 assert(mixed.books.book1.answered===2200&&mixed.books.book1.perQ.q.c===2200,'legacy cumulative attempt history survives while accuracy counts the latest result only');

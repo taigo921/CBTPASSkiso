@@ -28,7 +28,9 @@
 
 `perQ`、`rankAttempts`、`studyPlans`、`mockExams`、`sessions`、`progressDataV1` は旧形式として読込・統合できるが、新形式の保存transactionでは削除する。
 
-`studyPlans.shared.items[questionUid]` の学習終了判定は `correctStreak >= 3` または、解説画面の理解確認による `explained === true`。`mastered` / `completed` は互換用の派生値で、旧 `finalReview*` や回答回数は終了条件に使わない。旧「最低5回＋仕上げ確認」の端末データは `streakOnlyV` migrationでこの判定へ揃える。
+`studyPlans.shared.items[questionUid]` の学習終了判定は `correctStreak >= 3` または、解説画面の理解確認による `explained === true`。`correctStreak` は問題ごとにローカル日付の最初の回答だけで更新し、`streakDay` に更新日を保持する。`mastered` / `completed` は互換用の派生値で、旧 `finalReview*` や回答回数は終了条件に使わない。旧「最低5回＋仕上げ確認」の端末データは `streakOnlyV` migrationでこの判定へ揃え、既存の連続数を下げない。
+
+本別compact成績の問題記録は、連続正解数を `s`、その更新日を `sd` として保持する。mergeは採用した最新回答側の `s` / `sd` を使い、回答時刻が同じ場合は `s` の大きい値と `sd` の新しい日付を保持する。`sd` のない旧payloadも有効である。
 
 ### `users/{uid}/progressChunks/chunk{index}`
 
