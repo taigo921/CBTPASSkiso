@@ -165,6 +165,7 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>switchBook('mock'));
    assert.equal(await page.locator('#mockSubjectSelect option').count(),22);
    await page.locator('#mockSubjectSelect').selectOption('冠橋義歯学');
+   await page.locator('[data-mock-subject-mode="exam"]').click();
    const sourceBefore=await page.evaluate(()=>JSON.stringify([1,2,3,4,5,6].map(block=>safeGet(mockKeyFor(block)))));
    await page.locator('#mockSubjectStart').click();
    assert.ok(await page.locator('#mockSubjectPractice').isVisible());
