@@ -70,12 +70,12 @@
 
 ## 麻布模試・科目別演習
 
-- 機能: 6ブロックの問題画像、回答、連問の前進制御、公式解説、別冊写真、科目横断演習。
+- 機能: 6ブロックの問題画像、回答、連問の前進制御、公式解説、別冊写真、科目横断演習。科目別演習は、各問の確定直後に正誤・公式解説を確認する「1問ずつ答え合わせ」（初期値）と、全問終了後にまとめて確認する「本番形式」を選べる。回答開始後は保存済みのモードを固定し、完了後は前後移動・不正解だけの絞り込みで見直す。
 - Route / 画面: `#mockHome`、`#mockExam`、`#mockSubjectPractice`。
-- 主なUI: `#mockBlockSelector`、`#mockQuestionList`、`#mockExamChoices`、`#mockExamResult`、`#mockSubjectSelect`。
-- state / hooks相当: `selectedMockBlock`、`mockProgress`、`mockSubjectSession`、`renderMockHome()`、`renderMockExam()`、`startMockSubjectPractice()`。
+- 主なUI: `#mockBlockSelector`、`#mockQuestionList`、`#mockExamChoices`、`#mockExamResult`、`#mockSubjectSelect`、`[data-mock-subject-mode]`、`#mockSubjectResult`、`#mockSubjectReviewNav`。
+- state / hooks相当: `selectedMockBlock`、`mockProgress`、`mockSubjectSession`（`mode`、画面内だけの `feedbackKey`、`wrongOnly` を含む）、`renderMockHome()`、`renderMockExam()`、`startMockSubjectPractice()`。
 - API / service: `saveMockProgress()`、`saveMockSubjectPractice()`、画像拡大viewer。
-- DB: ブロック別 `togo_mock_azabu2026_block*_v1_{uid}` は圧縮進捗の `mockExams` として同期し、回答成績をランキング集計へ渡す。科目別 `togo_mock_subject_v1_{uid}_{subject}` は端末のみ。
+- DB: ブロック別 `togo_mock_azabu2026_block*_v1_{uid}` は圧縮進捗の `mockExams` として同期し、回答成績をランキング集計へ渡す。科目別 `togo_mock_subject_v1_{uid}_{subject}` は端末のみで、従来の `answers` に `mode` を追加する。`mode` のない回答済み旧データは本番形式として扱う。
 - 関連ファイル: `index.html` のmock部分、`mock-assets/azabu-2026/blocks.js`、`subjects.js`、`photo-pages.js` と画像、`scripts/test_mock_exam.cjs`、`scripts/test_mock_subjects.cjs`。
 - 他Featureとの依存: 通常問題集・通常成績・XPとは分離。Progressはブロック別進捗を同期し、Leaderboardはその公開集計だけを使う。
 
