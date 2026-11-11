@@ -15,14 +15,14 @@
 
 ## ホーム・問題集選択・教材読込
 
-- 機能: 問題集1/2/模試/CBT辞典/歯科理工Formsの切替、概要、再開、オフライン準備状況。
+- 機能: 問題集1/2/CBT ANSWER 4巻/模試/CBT辞典/歯科理工Formsの切替、概要、再開、オフライン準備状況。
 - Route / 画面: `#home` 内の `#regularHome`、`#mockHome`、`#dictionaryHome`。URLは `?book=book1|book2` のみ保持。
-- 主なUI: `.book-tab`、`#resumeCard`、`#offlineStatus`、`#cloudStatus`。
+- 主なUI: `.book-tab`、`#answerVolumeSelector`、`#resumeCard`、`#offlineStatus`、`#cloudStatus`。
 - state / hooks相当: `BOOKS`、`activeBook`、`QUESTIONS`、`mockHomeSelected`、`dictionaryHomeSelected`、`dentalMaterialsHomeSelected`、`renderHome()`、`switchBook()`、`loadBookQuestions()`。
 - API / service: `fetch()`、Cache Storage、Service Worker。
-- DB: 問題本文はDB不使用。選択中の本はLocalStorage `cbt_settings_v2`。麻布模試・CBT辞典・歯科理工の表示許可は `materialAccess/{uid}`。
+- DB: 問題本文はDB不使用。選択中の本と最後に選んだANSWER巻はLocalStorage `cbt_settings_v2`。CBT ANSWER・麻布模試・CBT辞典・歯科理工の表示許可は `materialAccess/{uid}`。
 - 関連ファイル: `index.html` の `BOOKS`/question loading/home、`data/*.json`、`sw.js`。
-- 他Featureとの依存: Question CatalogとしてPractice、Study Route、Browse & Analysisへ問題を供給する。追加教材は管理者または `extra=true` の本人だけ表示・遷移でき、権限喪失時は問題集ホームへ戻す。
+- 他Featureとの依存: Question CatalogとしてPractice、Study Route、Browse & Analysisへ問題を供給する。CBT ANSWERは通常Practice・分析へ供給するがStudy Routeへは供給しない。追加教材は管理者または `extra=true` の本人だけ表示・遷移でき、権限喪失時は問題集1ホームへ戻す。
 
 ## 通常問題演習
 
@@ -44,7 +44,7 @@
 - API / service: `saveStudyPlans()`、共通Practice session、`cloudSyncSoon()`。
 - DB: LocalStorage `cbt_study_plan_v1` とshared-plan/route-review session。ルート項目の `streakDay` は連続正解を最後に更新したローカル日付、日次割当の `retry` は問題UIDごとの最終誤答時刻と解消時刻を保持する。Firestoreの圧縮進捗内 `studyPlans`、`sessions`。
 - 関連ファイル: `index.html` のstudy plan/paper progress、`scripts/test_paper_progress.cjs`、`scripts/test_route_review.cjs`、`scripts/test_study_plan_load.cjs`、`scripts/test_plan_wrong_retry.cjs`、`scripts/test_question_progress.cjs`。
-- 他Featureとの依存: 両問題集のQuestion Catalog、Practice、Progress。学習ルートが有効な間は共通Practiceで各問題のその日最初の回答だけが連続正解数を更新し、3連続に達した問題を既存割当からも完了扱いにする。回答数、正解数、XP、ランキング、学習時間、履歴は同日再回答でも従来どおり記録する。割当自体は `studyPlans.shared` が所有する。
+- 他Featureとの依存: 問題集1・2のQuestion Catalog、Practice、Progress。CBT ANSWER（`ANS1-`〜`ANS4-`）は計画作成、今日の課題、総復習、間違い直し、本の進捗登録へ含めない。学習ルートが有効な間は対象2冊の共通Practiceで各問題のその日最初の回答だけが連続正解数を更新し、3連続に達した問題を既存割当からも完了扱いにする。回答数、正解数、XP、ランキング、学習時間、履歴は同日再回答でも従来どおり記録する。割当自体は `studyPlans.shared` が所有する。
 
 ## 問題一覧・セクション演習
 
@@ -59,7 +59,7 @@
 
 ## 学習分析・学習時間・XP
 
-- 機能: 現在正答率、苦手分野、回答時間、日別学習時間、XP、レベル、ランク、連続正解・連続使用。現在正答率は、回答済みの各問題について最新回答だけを1件ずつ集計する。
+- 機能: 問題集1・2とCBT ANSWER各巻の現在正答率、苦手分野、回答時間、日別・教材別学習時間、XP、レベル、ランク、連続正解・連続使用。現在正答率は、回答済みの各問題について最新回答だけを1件ずつ集計する。
 - Route / 画面: `#stats` とホームのgame card、完了画面。
 - 主なUI: `#studyTimeChart`、`#rankList`、`#slowList`、`#fastList`、`#levelUp`。
 - state / hooks相当: `statsByBook`、`studyTime`、`game`、`openStats()`、`renderStudyTime()`、`awardXp()`、`rankInfo()`、`levelInfo()`。
@@ -120,11 +120,11 @@
 - API / service: `window.cbtCloud.save/readLatest/subscribe`。
 - DB: `users/{uid}`。詳細は `database.md`。
 - 関連ファイル: `index.html` のstorage/sync/Firebase gateway、`scripts/README-sync.md`、sync/progress browser tests。
-- 他Featureとの依存: 学習Featureの保存先となる横断基盤。模試は `mockExams`、辞典・歯科理工は `practiceSets` の専用merge規則で統合する。保存Promiseが120秒で終わらない試行は世代を無効化して再試行し、古い完了結果で現在の同期状態を巻き戻さない。
+- 他Featureとの依存: 学習Featureの保存先となる横断基盤。`books.answer1`〜`answer4` は回答・お気に入り・rank attemptsがある巻だけ送信し、存在しない旧payloadも有効として統合する。模試は `mockExams`、辞典・歯科理工は `practiceSets` の専用merge規則で統合する。保存Promiseが120秒で終わらない試行は世代を無効化して再試行し、古い完了結果で現在の同期状態を巻き戻さない。
 
 ## プロフィール・ランキング
 
-- 機能: 表示名、アバター、許可ユーザー全員の集計ランキング、管理者による既存ユーザー集計更新。問題集1・2、麻布模試、CBT辞典、歯科理工について、回答数・正解数は全回答の累計、正答率は各問題の最新回答だけを合算する。
+- 機能: 表示名、アバター、許可ユーザー全員の集計ランキング、管理者による既存ユーザー集計更新。問題集1・2、CBT ANSWER、麻布模試、CBT辞典、歯科理工について、回答数・正解数は全回答の累計、正答率は各問題の最新回答だけを合算する。
 - Route / 画面: `#leaderboard`、`#unameModal`、`#avatarCropModal`。
 - 主なUI: `#rankBtn`、`#lbBody`、`#lbRename`、`#lbAvatarInput`、ランキングtab。
 - state / hooks相当: `lbMetric`、`leaderboardUsersCache`、`openLeaderboard()`、`renderLeaderboard()`、`leaderboardPublicSummary()`。

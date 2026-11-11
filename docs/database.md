@@ -19,7 +19,7 @@
 - 主なフィールド:
   - profile: `username`、`email`、`avatar`、`updatedAt`
   - root summary: `activeBook`、`answered`、`correct`、`accuracy`、`distinct`、`bestStreak`、`dayStreak`
-  - shared summary/state: `game`、`studyTime`、本別summaryの `books`
+  - shared summary/state: `game`、`studyTime`、本別summaryの `books`（`book1`、`book2`、記録がある `answer1`〜`answer4`）
   - packed detail manifest: `progressDataV2`。version、generation、chunk数、文字数を保持
 - リレーション: Firebase Auth userと1対1。本人の内容から `leaderboard/{uid}` を派生する。`accessControl/{uid}` がblockedなら本人の読書きを拒否する。
 - 使用Feature: Progress & Sync、プロフィール、通常演習、学習ルート、模試、分析、ランキング集計元。
@@ -44,7 +44,7 @@
 ### `leaderboard/{uid}`
 
 - 役割: 許可ユーザーへ公開できるランキング用summaryだけを保持。
-- 主なフィールド: `username`、`avatar`、`answered`、`correct`、`accuracy`、`bestStreak`、`dayStreak`、`lastDay`、`game: {xp}`、`updatedAt`。問題集1・2、麻布模試、CBT辞典、歯科理工について、`answered`／`correct` は全回答の累計、`accuracy` は各問題の最新回答だけから派生する。個別問題や教材別詳細は公開しない。
+- 主なフィールド: `username`、`avatar`、`answered`、`correct`、`accuracy`、`bestStreak`、`dayStreak`、`lastDay`、`game: {xp}`、`updatedAt`。問題集1・2、CBT ANSWER、麻布模試、CBT辞典、歯科理工について、`answered`／`correct` は全回答の累計、`accuracy` は各問題の最新回答だけから派生する。個別問題や教材別詳細は公開しない。
 - リレーション: `users/{uid}` と同じUID。コピー元はprivate user documentだが、詳細進捗・メール・学習計画は含めない。
 - 使用Feature: Leaderboard & Profile。
 - DBアクセス: `leaderboardPublicSummary()`、`publishLeaderboard()`、`refreshLeaderboardMembers()`、`fetchLeaderboard()`。
@@ -61,7 +61,7 @@
 
 ### `materialAccess/{uid}`
 
-- 役割: 問題集1・2以外の追加教材（麻布模試、CBT辞典、歯科理工）の利用許可。学習記録とは分離し、取り消しても記録は削除しない。
+- 役割: 問題集1・2以外の追加教材（CBT ANSWER、麻布模試、CBT辞典、歯科理工）の利用許可。学習記録とは分離し、取り消しても記録は削除しない。
 - 主なフィールド: `extra` (bool)、`updatedAt`、`updatedBy`。
 - リレーション: 対象 `users/{uid}` が存在するときだけ管理者が作成・更新。管理者本人は文書の有無にかかわらず常に利用できる。
 - 使用Feature: Access & Identity、Access Administration、ホーム・教材選択。
@@ -81,9 +81,9 @@
 
 |key / pattern|内容|クラウド同期|
 |---|---|---|
-|`cbt_stats_books_v1`|本別の問題履歴・集計・rank attempts|はい。`users/{uid}/progressChunks` と本別summary|
-|`cbt_settings_v2`|選択中の本、遅い回答の秒数、セクションmode|いいえ|
-|`cbt_session_v3_book1`, `_book2`|通常演習の中断session|はい|
+|`cbt_stats_books_v1`|`book1`、`book2`、`answer1`〜`answer4` の本別問題履歴・集計・rank attempts|はい。`users/{uid}/progressChunks` と本別summary|
+|`cbt_settings_v2`|選択中の本、最後に選んだANSWER巻、遅い回答の秒数、セクションmode|いいえ|
+|`cbt_session_v3_book1`, `_book2`, `_answer1`〜`_answer4`|通常演習の中断session|はい|
 |`cbt_session_v3_shared-plan`, `_route-review`|計画・総復習の中断session|はい|
 |`cbt_section_progress_v1`|セクション掲載順の端末内再開位置|いいえ|
 |`cbt_study_plan_v1`|shared study plan、日次割当、本の自己申告進捗|はい|
@@ -105,6 +105,8 @@ LocalStorageが失敗した場合は最新値を `_memStore` に保持して警�
 ## 問題データ
 
 通常問題の1要素は、`uid`、`display_no`、`section`、`category`、`subject`、`guide_ref`、`has_image`、`question`、`choices`、`answer`、`explanation_intro`、`explanation` を基本とし、図がある問題は `image_base64` または画像参照を持つ。UIDが回答履歴、計画、セクション、同期の結合keyであるため、公開後のUID変更はmigrationなしで行わない。
+
+CBT ANSWERは `answer1`〜`answer4` の通常演習用Question Catalogとして同じ問題形式を使い、UIDを `ANS1-`〜`ANS4-` で始めて既存問題と衝突させない。成績・session・XP・学習時間・ランキングは通常問題と同じ経路へ保存するが、`studyPlans.shared` には入れない。ファイル未登録の巻はpayloadへ空の詳細を送らない。
 
 模試問題はblockと問番号の組で識別し、正解、選択肢key、問題画像、解説画像を持つ。科目分類は `(block, no)` から `subjects.js` で引く。通常問題のUID空間や成績へ混ぜない。
 

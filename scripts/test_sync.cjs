@@ -6,7 +6,10 @@ let checks=0;
 const context={console:{warn(){}},Date,JSON,Math,Map,Set,Object,Number,String,window:{cbtUser:{uid:'test'}},navigator:{onLine:true},setTimeout:()=>1,clearTimeout(){},el:()=>({addEventListener(){}}),assert:(v,m)=>{assert.ok(v,m);checks++;}};
 vm.createContext(context);
 context.Blob=Blob;
-vm.runInContext(`const emptyStats=()=>({perQ:{},rankAttempts:[]});
+vm.runInContext(`const ROUTE_BOOK_KEYS=['book1','book2'];
+const ANSWER_BOOK_KEYS=['answer1','answer2','answer3','answer4'];
+const QUESTION_BOOK_KEYS=[...ROUTE_BOOK_KEYS,...ANSWER_BOOK_KEYS];
+const emptyStats=()=>({perQ:{},rankAttempts:[]});
 function dateKey(value){const date=value||new Date();return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}
 ${slice('function latestQuestionOutcome(', 'function fullStatsPayload(')}
 ${slice('function mergeStatsTarget(', 'function cbtMergeCloud(')}

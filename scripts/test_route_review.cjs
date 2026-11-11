@@ -6,7 +6,7 @@ const storage={},records={a:{correct:1,last:'correct'},b:{wrong:1,last:'wrong'},
 const plan={items:{a:{due:'2026-10-01'},b:{due:'2026-10-01'},c:{due:'2026-11-01'},d:{due:'2026-11-01'},fresh:{due:'2026-09-01'}}};
 const ctx={Date,Object,Math,Number,planFor:()=>plan,dateKey:()=> '2026-10-01',planQuestions:()=>['fresh','a','b','c','d','unseen'].map(uid=>({uid})),qkey:q=>q.uid,planRecord:uid=>records[uid],planBookForUid:uid=>['a','b'].includes(uid)?'book1':'book2',safeGet:k=>storage[k],safeSet:(k,v)=>storage[k]=JSON.parse(JSON.stringify(v)),safeRemove:k=>delete storage[k],cloudSyncSoon(){},el:()=>({classList:{remove(){}}}),toast(){},renderQuestion(){},savedExtraSessionForToday(){},byUid:uid=>({uid}),renderHome(){}};
 vm.createContext(ctx);
-vm.runInContext(`let session=null,activeBook='book1';const STORE_SES_PREFIX='test_';${slice('const sessionStoreKey=', 'function savedExtraSessionForToday(')}${slice('function routeReviewUids(', 'function resolveQuestions(')}${slice('function resumeSession(', '/* ============ 問題描画')}${slice('function localSessionPayload(', 'function progressBackupData(')}`,ctx);
+vm.runInContext(`let session=null,activeBook='book1';const STORE_SES_PREFIX='test_',QUESTION_BOOK_KEYS=['book1','book2','answer1','answer2','answer3','answer4'];${slice('const sessionStoreKey=', 'function savedExtraSessionForToday(')}${slice('function routeReviewUids(', 'function resolveQuestions(')}${slice('function resumeSession(', '/* ============ 問題描画')}${slice('function localSessionPayload(', 'function progressBackupData(')}`,ctx);
 assert.deepEqual(Array.from(ctx.routeReviewUids()),['b','a','d','c']);
 storage['test_shared-plan']={mode:'plan',uids:['fresh'],idx:0};
 storage['test_book1']={mode:'order',uids:['fresh'],idx:0};

@@ -9,7 +9,7 @@ vm.runInContext(slice('function latestQuestionOutcome(', 'function compactStatsP
 for(const user of [null,{uid:'member',email:'approved@test',emailVerified:true,allowed:true},{uid:'owner',email:'itaigo921@gmail.com',emailVerified:true,allowed:true}]){
  ctx.window.cbtUser=user;ctx.updateLeaderboardAccess();assert.equal(nodes.rankBtn.classList.hidden,!user);assert.equal(nodes.accessAdminBtn.classList.hidden,user?.uid!=='owner');
 }
-ctx.safeAvatar=()=>'';vm.runInContext(slice('function leaderboardDateKey(','async function renderLeaderboard('),ctx);
+ctx.safeAvatar=()=>'';vm.runInContext("const QUESTION_BOOK_KEYS=['book1','book2','answer1','answer2','answer3','answer4'];"+slice('function leaderboardDateKey(','async function renderLeaderboard('),ctx);
 ctx.mockQuestions=()=>[{no:1,answer:'A'}];
 const data={username:'Test',email:'approved@test',leaderboardVisible:false,books:{book1:{answered:10,correct:9,lastDay:'2026-9-22',dayStreak:8},book2:{answered:30,correct:15,lastDay:'2026-10-16',dayStreak:2}},lastDay:'2026-9-22',game:{xp:100},progressDataV1:'private'};
 const publicData=ctx.leaderboardPublicSummary(data);assert.equal(publicData.answered,40);assert.equal(publicData.correct,24);assert.equal(publicData.email,undefined);assert.equal(publicData.progressDataV1,undefined);

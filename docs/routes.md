@@ -1,13 +1,13 @@
 # Screen and route map
 
-このアプリにURLルーターはない。すべて `index.html` 上のsectionで、`showOnly(id)` が表示を切り替える。認証・授業制限・viewerはsectionとは別のoverlayである。ブラウザURLで保持する画面状態は問題集選択の `?book=book1|book2` だけ。
+このアプリにURLルーターはない。すべて `index.html` 上のsectionで、`showOnly(id)` が表示を切り替える。認証・授業制限・viewerはsectionとは別のoverlayである。ブラウザURLで保持する画面状態は問題集選択の `?book=book1|book2|answer1|answer2|answer3|answer4`。ANSWERのURL状態は追加教材権限がない起動時に `book1` へ戻す。
 
 |Route / screen|目的|関連Feature|主なUI|使用データ|主要関連箇所|
 |---|---|---|---|---|---|
 |`#authGate`|Google／メールログイン、未許可案内|Access & Identity|`#gbtn`, `#authEmailBox`, `#authErr`|Firebase Auth、許可メールhash|`index.html` auth/Firebase bootstrap、`SETUP-LOGIN.md`|
 |`#blockedLoginOverlay`|個別停止ユーザーへ停止表示|Access & Identity|`#blockedLoginBack`|`accessControl/{uid}`、端末notice key|`setBlockedLoginImage()`, `requireAccess()`, `watchAccess()`|
 |`#schoolGate`|授業中の利用停止と自動解除|Access & Identity|`#schoolGateImage`, `#schoolGateMessage`, logout|`schoolAccess/settings`、配信サーバー基準のJST時間割|`refreshSchoolClock()`, `schoolRestriction()`, `updateSchoolGate()`, `firestore.rules`|
-|`#home` / `#regularHome`|問題集選択、成績概要、再開、各機能入口|Question Catalog、Progress|book tabs、`#resumeCard`、mode buttons|問題JSON、本別成績、session、settings|`renderHome()`, `switchBook()`|
+|`#home` / `#regularHome`|問題集1・2／CBT ANSWER巻選択、成績概要、再開、各機能入口|Question Catalog、Progress|book tabs、`#answerVolumeSelector`、`#resumeCard`、mode buttons|問題JSON、本別成績、session、settings|`renderHome()`, `switchBook()`|
 |`#home` / `#mockHome`|模試block・科目選択、問題一覧|Mock Exam|block selector、filters、subject picker|模試assets、block別進捗|`renderMockHome()`|
 |`#home` / `#dictionaryHome`（CBT辞典tab）|辞典②／辞典③模試1／模試2の選択、概要、進捗、領域選択|Dictionary Practice|source selector、start、領域／block buttons、summary|辞典manifest、教材別端末進捗|辞典Featureの `renderHome('dictionary')`|
 |`#home` / `#dictionaryHome`（歯科理工tab）|学校Forms歯科理工の独立入口、概要、進捗|Dental Materials Practice|start、summary|歯科理工manifest、専用端末進捗|`switchBook('dentalMaterials')`、共用viewerの `renderHome('dentalMaterials')`|
@@ -32,6 +32,7 @@
 
 - 認証成功 → access確認 → 授業確認 → cloud merge → `#home`。
 - `#home` → 通常mode／学習計画／一覧／セクション → 共通 `#quiz` → `#finish` または元画面。
+- `#home` のANSWER tab → 許可ユーザーだけ4巻selector → 選択巻の通常mode／一覧／セクション／分析 → 共通 `#quiz`。学習計画入口は表示しない。権限喪失時は問題集1のhomeへ戻る。
 - `#home` の模試tab → `#mockExam` または `#mockSubjectPractice` → 模試home。
 - `#home` のCBT辞典tab → `#dictionaryPractice` → 辞典home。通常問題のfooter・timerは使わない。
 - `#home` の歯科理工tab → `#dictionaryPractice` → 歯科理工home。CBT辞典の教材選択には表示しない。

@@ -101,7 +101,7 @@ assert.match(source,/retryActive\?session\.uids\.slice\(session\.idx\)\.filter\(
   const plan={active:true,items:{},assignments:{'2026-11-10':assignment}},saved={mode:'plan',uids:['a','b','c'],idx:3,resumeIdx:3,assignmentDate:'2026-11-10',records:[]};
   const elements={planHomeCount:{textContent:''}};let removed=0,started=0,opened=0;
   const summary={p:plan,today:'2026-11-10',studyToday:true,total:0,mastered:0,pool:[],due:[],fresh:[],augustPrep:false,lightDay:false};
-  const ctx={Object,Math,Number,Array,Set,Date,dateKey:()=> '2026-11-10',planFor:()=>plan,studyPlanSummary:()=>summary,safeGet:key=>key==='shared'?saved:null,sharedPlanSessionKey:()=> 'shared',safeRemove(){removed++;},saveStudyPlans(){},planQuestion:()=>true,planBookForUid:()=> 'book1',planRouteOrder:u=>u,el:id=>elements[id]||(elements[id]={}),startStudyPlan(){started++;},openStudyPlan(){opened++;}};
+  const ctx={Object,Math,Number,Array,Set,Date,activeBook:'book1',isAnswerBook:()=>false,toast(){},dateKey:()=> '2026-11-10',planFor:()=>plan,studyPlanSummary:()=>summary,safeGet:key=>key==='shared'?saved:null,sharedPlanSessionKey:()=> 'shared',safeRemove(){removed++;},saveStudyPlans(){},planQuestion:()=>true,planBookForUid:()=> 'book1',planRouteOrder:u=>u,el:id=>elements[id]||(elements[id]={}),startStudyPlan(){started++;},openStudyPlan(){opened++;}};
   vm.createContext(ctx);vm.runInContext(slice('function planAssignmentProgress(', 'function renderPlanCalendar('),ctx);
   const homePlanCode=slice('  const hp=planFor();', "  el('slowSec').value=settings.slowSec;");
   vm.runInContext(`(()=>{${homePlanCode}})()`,ctx);

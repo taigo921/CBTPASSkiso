@@ -45,7 +45,7 @@ assert.equal(questionRecord.streak,1,'same-day later mistake does not reset the 
 
 const planStart=source.indexOf('function planItemStreak(');
 const planEnd=source.indexOf('function planFor(',planStart);
-Object.assign(ctx,{PLAN_CORRECT_STREAK_TARGET:3,PLAN_EFFORTS:[100,80,70],PLAN_INTERVALS:[1,3,7],planFinishDate:()=> '2027-01-22',planPersonalInterval:(_uid,days)=>days,addPlanDays:(key,days)=>{
+Object.assign(ctx,{PLAN_CORRECT_STREAK_TARGET:3,PLAN_EFFORTS:[100,80,70],PLAN_INTERVALS:[1,3,7],planBookForUid:uid=>uid==='missing'?null:'book1',planFinishDate:()=> '2027-01-22',planPersonalInterval:(_uid,days)=>days,addPlanDays:(key,days)=>{
   const date=new Date(key+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+days);return date.toISOString().slice(0,10);
 }});
 vm.runInContext(source.slice(planStart,planEnd),ctx);
@@ -125,7 +125,7 @@ assert.equal(status.done,true);assert.equal(status.detail,'誤答理由まで説
 assert.ok(source.includes('id="qProgress"'),'quiz contains the progress panel');
 assert.ok(/renderQuestionProgress\(qkey\(q\),r\)/.test(source),'answer immediately refreshes progress');
 assert.ok(/renderQuestionProgress\(r\.uid,pr\)/.test(source),'understanding feedback immediately refreshes route progress');
-assert.ok(/if\(planFor\(\)\.active\)updateStudyPlan\(qkey\(q\),correct\);/.test(source),'every practice mode advances the active three-correct route');
+assert.ok(/if\(planBookForUid\(qkey\(q\)\)&&planFor\(\)\.active\)updateStudyPlan\(qkey\(q\),correct\);/.test(source),'every route-book practice mode advances the active three-correct route');
 assert.ok(!source.includes('renderQuestionProgress(qkey(q));'),'progress is not rendered before answering');
 assert.match(source,/id="resultBlock"[^>]*>[\s\S]*?id="qProgress"/,'progress panel is inside the explanation result block');
 assert.match(source,/historyStreakV/,'existing plans migrate route streaks from answer history once');

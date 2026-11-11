@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const source=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
 const slice=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b));
-const tabs=['mock','dictionary','dentalMaterials'].map(book=>({dataset:{book},hidden:false}));
+const tabs=['answer','mock','dictionary','dentalMaterials'].map(book=>({dataset:{book},hidden:false}));
 const screens=Object.fromEntries(['mockExam','mockSubjectPractice','dictionaryPractice'].map(id=>[id,{classList:{contains:()=>true}}]));
 let homes=0,toasts=[];
 const context={
@@ -9,7 +9,8 @@ const context={
   document:{querySelector:()=>null,querySelectorAll:selector=>selector.includes('.book-tab')?tabs:[]},
   el:id=>screens[id],renderHome:()=>{homes++;},toast:message=>toasts.push(message),
   mockHomeSelected:false,dictionaryHomeSelected:false,dentalMaterialsHomeSelected:false,
-  BOOKS:{book1:{title:'問題集1'},book2:{title:'問題集2'}},activeBook:'book1'
+  BOOKS:{book1:{title:'問題集1'},book2:{title:'問題集2'}},activeBook:'book1',
+  isAnswerBook:book=>/^answer[1-4]$/.test(book)
 };
 vm.createContext(context);
 vm.runInContext(slice('function isAccessOwner(', 'function isLeaderboardMember('),context);

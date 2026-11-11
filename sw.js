@@ -1,4 +1,4 @@
-const APP_BUILD='20261111-mock-subject-feedback';
+const APP_BUILD='20261111-answer-books';
 const CACHE_NAME='cbtpass-offline-v1';
 const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js','./mock-assets/azabu-2026/photo-pages.js','./features/dictionary-practice/dictionary-practice.css','./features/dictionary-practice/dictionary-practice.js','./dictionary-assets/exercises/manifest.json','./dictionary-assets/mock-exams/manifest.json','./dictionary-assets/dental-materials/manifest.json'];
 // Remove stale copies of source-image data. Each selected book is fetched and cached on demand,
@@ -46,10 +46,13 @@ self.addEventListener('fetch',event=>{
   if(request.method!=='GET')return;
   const url=new URL(request.url);
   const sameOrigin=url.origin===self.location.origin;
+  // Runtime question data, including data/answer1-*.json ... data/answer4-*.json,
+  // uses the same stale-while-revalidate cache as the original question books.
+  const questionData=sameOrigin&&/\/data\/(?:answer[1-4]-[^/]+|[^/]+)\.json$/.test(url.pathname);
   const firebaseSdk=url.origin==='https://www.gstatic.com'&&url.pathname.startsWith('/firebasejs/');
   if(!sameOrigin&&!firebaseSdk)return;
 
-  // HTMLはオンライン時に必ず最新版を優先する。問題JSON・画像はキャッシュを即時表示し、裏で更新する。
+  // HTMLはオンライン時に必ず最新版を優先する。問題JSON（ANSWERを含む）・画像はキャッシュを即時表示し、裏で更新する。
   if(request.mode==='navigate'){
     event.respondWith((async()=>{
       const cache=await caches.open(CACHE_NAME);
@@ -62,10 +65,11 @@ self.addEventListener('fetch',event=>{
   event.respondWith((async()=>{
     const cache=await caches.open(CACHE_NAME);
     const cached=await cache.match(request);
+    const refreshOptions=questionData?{cache:'no-cache'}:undefined;
     if(cached){
-      event.waitUntil(fetch(request).then(response=>putIfCacheable(cache,request,response)).catch(()=>{}));
+      event.waitUntil(fetch(request,refreshOptions).then(response=>putIfCacheable(cache,request,response)).catch(()=>{}));
       return cached;
     }
-    return putIfCacheable(cache,request,await fetch(request));
+    return putIfCacheable(cache,request,await fetch(request,refreshOptions));
   })());
 });

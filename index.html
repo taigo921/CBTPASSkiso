@@ -140,7 +140,7 @@
   .hero p{margin:0;color:var(--muted);font-size:14px;}
 
   .book-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 4px;padding:5px;background:#eaf0fa;border-radius:18px;}
-  @media(min-width:680px){.book-switch{grid-template-columns:repeat(5,minmax(0,1fr));}.book-switch:not(.extra-materials-enabled){grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(min-width:680px){.book-switch{grid-template-columns:repeat(6,minmax(0,1fr));}.book-switch:not(.extra-materials-enabled){grid-template-columns:repeat(2,minmax(0,1fr));}}
   .book-tab{border:0;background:transparent;color:var(--muted);border-radius:14px;padding:12px 8px;cursor:pointer;text-align:center;}
   .book-tab b{display:block;font-size:15px;font-weight:800;}
   .book-tab span{display:block;font-size:11px;margin-top:1px;}
@@ -452,6 +452,7 @@
   .study-time-books{display:flex;gap:8px;margin-top:10px;}
   .study-time-books div{flex:1;background:#F1F6FF;border-radius:10px;padding:9px 10px;font-size:10px;color:var(--muted);}
   .study-time-books b{display:block;color:var(--green-d);font-size:13px;font-variant-numeric:tabular-nums;}
+  #answerVolumeSelector button span{display:block;margin-top:2px;font-size:10px;color:var(--muted);}
   .study-time-note{margin:8px 2px 0;color:var(--muted);font-size:10px;line-height:1.55;}
   @media(max-width:390px){.study-time-card b{font-size:15px}.study-chart{gap:5px}}
   .rank{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);}
@@ -652,6 +653,7 @@
     <div class="book-switch" role="tablist" aria-label="問題集を切り替える">
       <button class="book-tab on" data-book="book1" role="tab" aria-selected="true"><b>問題集1</b><span>基礎系</span></button>
       <button class="book-tab" data-book="book2" role="tab" aria-selected="false"><b>問題集2</b><span>臨床系</span></button>
+      <button class="book-tab" data-book="answer" role="tab" aria-selected="false"><b>ANSWER</b><span>CBT対策4冊</span></button>
       <button class="book-tab" data-book="mock" role="tab" aria-selected="false"><b>2026 9/19</b><span>麻布模試</span></button>
       <button class="book-tab" data-book="dictionary" role="tab" aria-selected="false"><b>CBT辞典</b><span>辞典②・③</span></button>
       <button class="book-tab" data-book="dentalMaterials" role="tab" aria-selected="false"><b>歯科理工</b><span>学校Forms</span></button>
@@ -704,6 +706,12 @@
       </div>
     </div>
     <div id="regularHome">
+    <div id="answerVolumeSelector" class="dictionary-sources hidden" role="group" aria-label="CBT ANSWERの巻を選ぶ">
+      <button type="button" data-answer-book="answer1">① 基礎編<span></span></button>
+      <button type="button" data-answer-book="answer2">② 基礎編<span></span></button>
+      <button type="button" data-answer-book="answer3">③ 臨床編<span></span></button>
+      <button type="button" data-answer-book="answer4">④ 臨床編<span></span></button>
+    </div>
     <div class="game-card" aria-label="レベルとランク">
       <div class="level-orb"><small>LEVEL</small><b id="gameLevel">1</b></div>
       <div class="game-main">
@@ -969,7 +977,7 @@
       <div class="study-time-panel">
         <div class="study-time-head"><b id="studyTimeChartTitle">直近7日の日別時間</b><div class="study-time-ranges"><button type="button" class="on" data-study-range="7">7日</button><button type="button" data-study-range="30">30日</button></div></div>
         <div class="study-chart-scroll"><div class="study-chart" id="studyTimeChart"></div></div>
-        <div class="study-time-books"><div>問題集1<b id="studyTimeBook1">0分</b></div><div>問題集2<b id="studyTimeBook2">0分</b></div></div>
+        <div class="study-time-books"><div>問題集1<b id="studyTimeBook1">0分</b></div><div>問題集2<b id="studyTimeBook2">0分</b></div><div>CBT ANSWER<b id="studyTimeAnswer">0分</b></div></div>
       </div>
       <p class="study-time-note">問題を解いている時間と解説を読んでいる時間を集計します。アプリを閉じたり、バックグラウンドにしている時間は含みません。過去分は端末・クラウドに残っている回答ログから復元できた範囲を表示します。</p>
     </div>
@@ -1087,8 +1095,17 @@ const BOOKS = {
   book2: {
     title:'問題集2', subtitle:'臨床系', questionCount:1009,
     files:["data/E1.json", "data/E2.json", "data/E3.json", "data/E4.json", "data/E5.json"]
-  }
+  },
+  answer1:{title:'ANSWER①',subtitle:'基礎編',questionCount:0,files:[],extra:true},
+  answer2:{title:'ANSWER②',subtitle:'基礎編',questionCount:0,files:[],extra:true},
+  answer3:{title:'ANSWER③',subtitle:'臨床編',questionCount:0,files:[],extra:true},
+  answer4:{title:'ANSWER④',subtitle:'臨床編',questionCount:0,files:[],extra:true}
 };
+const ROUTE_BOOK_KEYS=['book1','book2'];
+const ANSWER_BOOK_KEYS=['answer1','answer2','answer3','answer4'];
+const QUESTION_BOOK_KEYS=[...ROUTE_BOOK_KEYS,...ANSWER_BOOK_KEYS];
+const isAnswerBook=book=>ANSWER_BOOK_KEYS.includes(book);
+const answerVolumeReady=book=>isAnswerBook(book)&&((BOOKS[book].files||[]).length>0||(DEFAULT_QUESTIONS_BY_BOOK[book]||[]).length>0);
 
 // 模試は通常の問題集・忘却曲線・同期成績に混ぜない。公式解答まで照合できた問題から追加する。
 const AZABU_MOCK_2026_BLOCK1=[{
@@ -1309,7 +1326,7 @@ function renderMockHome(){
   if(!list.children.length)list.textContent='該当する問題はありません。';
 }
 
-const DEFAULT_QUESTIONS_BY_BOOK = {book1:[],book2:[]};
+const DEFAULT_QUESTIONS_BY_BOOK = Object.fromEntries(QUESTION_BOOK_KEYS.map(book=>[book,[]]));
 const QUESTION_LOAD_PROMISES = {};
 const OFFLINE_CACHE_NAME='cbtpass-offline-v1';
 // ホーム画面アプリは開きっぱなしだと古いJSを保持しやすい。同期仕様の更新時はこの値を更新する。
@@ -1395,7 +1412,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261111-mock-subject-feedback';
+const SERVICE_WORKER_BUILD='20261111-answer-books';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1435,11 +1452,18 @@ function canUseExtraMaterials(user=window.cbtUser){
 function updateExtraMaterialsAccess(returnHome=true){
   const allowed=canUseExtraMaterials();
   document.querySelector('.book-switch')?.classList.toggle('extra-materials-enabled',allowed);
-  document.querySelectorAll('.book-tab[data-book="mock"],.book-tab[data-book="dictionary"],.book-tab[data-book="dentalMaterials"]').forEach(tab=>tab.hidden=!allowed);
+  document.querySelectorAll('.book-tab[data-book="answer"],.book-tab[data-book="mock"],.book-tab[data-book="dictionary"],.book-tab[data-book="dentalMaterials"]').forEach(tab=>tab.hidden=!allowed);
   if(allowed)return;
-  const extraSelected=mockHomeSelected||dictionaryHomeSelected||dentalMaterialsHomeSelected;
+  const answerSelected=isAnswerBook(activeBook);
+  const extraSelected=answerSelected||mockHomeSelected||dictionaryHomeSelected||dentalMaterialsHomeSelected;
   const extraScreen=['mockExam','mockSubjectPractice','dictionaryPractice'].some(id=>!el(id).classList.contains('hidden'));
   mockHomeSelected=false;dictionaryHomeSelected=false;dentalMaterialsHomeSelected=false;
+  if(answerSelected){
+    if(session&&session.records&&session.idx<session.uids.length)saveSession();
+    saveStats();activeBook='book1';settings.activeBook='book1';saveSettings();
+    stats=statsByBook.book1;QUESTIONS=resolveQuestions();session=null;
+    const url=new URL(location.href);url.searchParams.set('book','book1');history.replaceState(null,'',url);
+  }
   if(returnHome&&(extraSelected||extraScreen))renderHome();
 }
 function isLeaderboardMember(user=window.cbtUser){
@@ -1575,7 +1599,7 @@ async function loadDefaultQuestions(books=Object.keys(BOOKS)) {
 const STORE_Q='cbt_questions_v1', STORE_S='cbt_stats_v2', STORE_S_BOOKS='cbt_stats_books_v1', STORE_SET='cbt_settings_v2', STORE_SES='cbt_session_v2', STORE_SES_PREFIX='cbt_session_v3_', STORE_SECTION_PROGRESS='cbt_section_progress_v1', STORE_PLAN='cbt_study_plan_v1', STORE_GAME='cbt_game_v1', STORE_TIME='cbt_study_time_v1';
 let QUESTIONS=[];
 const emptyStats=()=>({perQ:{},rankAttempts:[],answered:0,correct:0,curStreak:0,bestStreak:0,dayStreak:0,lastDay:null});
-let statsByBook={book1:emptyStats(),book2:emptyStats()};
+let statsByBook=Object.fromEntries(QUESTION_BOOK_KEYS.map(book=>[book,emptyStats()]));
 let stats=statsByBook.book1;
 let game={xp:0,lastBonusDay:null};
 let studyTime={days:{},migratedV:0};
@@ -1610,6 +1634,10 @@ const qkey=q=>q.uid||q.id;
 const qno=q=>q.display_no||q.id;
 function planQuestions(){return [...(DEFAULT_QUESTIONS_BY_BOOK.book1||[]),...(DEFAULT_QUESTIONS_BY_BOOK.book2||[])];}
 function planBookForUid(uid){return (DEFAULT_QUESTIONS_BY_BOOK.book1||[]).some(q=>qkey(q)===uid)?'book1':((DEFAULT_QUESTIONS_BY_BOOK.book2||[]).some(q=>qkey(q)===uid)?'book2':null);}
+function questionBookForUid(uid){
+  const answerMatch=String(uid||'').match(/^ANS([1-4])-/);if(answerMatch)return `answer${answerMatch[1]}`;
+  return QUESTION_BOOK_KEYS.find(book=>(DEFAULT_QUESTIONS_BY_BOOK[book]||[]).some(q=>qkey(q)===uid))||null;
+}
 function planQuestion(uid){return planQuestions().find(q=>qkey(q)===uid);}
 function planRecord(uid){const book=planBookForUid(uid);return book?(statsByBook[book].perQ||{})[uid]:null;}
 // 分野の正式な科目区分。問題データに残る旧ラベルではなく、表示・分析・計画で共通して使う。
@@ -1623,12 +1651,12 @@ function planPersonalProfile(){
   const questions=planQuestions(),book1Count=(DEFAULT_QUESTIONS_BY_BOOK.book1||[]).length,byUid=new Map(questions.map((q,index)=>[qkey(q),{q,index,book:index<book1Count?'book1':'book2',subject:planSubject(q)}])),subjects={};
   const subjectFor=uid=>subjectLabel(byUid.get(uid))||'未分類';
   questions.forEach(q=>{const subject=planSubject(q);if(!subjects[subject])subjects[subject]={subject,attempts:0,correct:0,timeSum:0,timeCount:0,streak:0,score:1};});
-  Object.values(statsByBook).forEach(bookStats=>Object.entries(bookStats.perQ||{}).forEach(([uid,r])=>{
+  ROUTE_BOOK_KEYS.map(book=>statsByBook[book]).forEach(bookStats=>Object.entries(bookStats.perQ||{}).forEach(([uid,r])=>{
     const a=subjects[subjectFor(uid)]||(subjects[subjectFor(uid)]={subject:subjectFor(uid),attempts:0,correct:0,timeSum:0,timeCount:0,streak:0,score:1});
     a.attempts+=(r.correct||0)+(r.wrong||0);a.correct+=r.correct||0;
   }));
   const attempts=[];
-  Object.values(statsByBook).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>attempts.push(a)));
+  ROUTE_BOOK_KEYS.map(book=>statsByBook[book]).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>attempts.push(a)));
   attempts.sort((a,b)=>(a.a||0)-(b.a||0)).forEach(attempt=>{
     const a=subjects[subjectFor(attempt.u)];if(a&&Number.isFinite(+attempt.s)&&+attempt.s>0){a.timeSum+=+attempt.s;a.timeCount++;}
   });
@@ -1902,17 +1930,15 @@ function load(){
   const st=safeGet(STORE_SET); if(st) settings=Object.assign(settings,st);
   const requestedBook=new URLSearchParams(location.search).get('book');
   activeBook=BOOKS[requestedBook]?requestedBook:(BOOKS[settings.activeBook]?settings.activeBook:'book1');
+  if(isAnswerBook(activeBook)&&!canUseExtraMaterials()){settings.answerBook=activeBook;activeBook=settings.activeBook='book1';}
   const stored=safeGet(STORE_S_BOOKS);
   if(stored){
-    statsByBook.book1=Object.assign(emptyStats(),stored.book1||{});
-    statsByBook.book2=Object.assign(emptyStats(),stored.book2||{});
+    QUESTION_BOOK_KEYS.forEach(book=>statsByBook[book]=Object.assign(emptyStats(),stored[book]||{}));
   }else{
     const legacy=safeGet(STORE_S);
     if(legacy&&legacy.perQ){
-      const uidBooks={};
-      Object.entries(DEFAULT_QUESTIONS_BY_BOOK).forEach(([book,list])=>list.forEach(q=>uidBooks[qkey(q)]=book));
       Object.entries(legacy.perQ).forEach(([uid,record])=>{
-        const book=uidBooks[uid]; if(book)statsByBook[book].perQ[uid]=record;
+        const book=questionBookForUid(uid);if(book)statsByBook[book].perQ[uid]=record;
       });
       Object.values(statsByBook).forEach(s=>{
         Object.values(s.perQ).forEach(r=>{s.answered+=(r.correct||0)+(r.wrong||0);s.correct+=(r.correct||0);});
@@ -1995,9 +2021,9 @@ function addPlanDays(key,days){
 }
 function addStudyTime(seconds,book,at=Date.now(),persist=true,countQuestion=true){
   const value=Math.max(0,+seconds||0);if(!value)return;
-  const key=dateKey(new Date(at)),day=studyTime.days[key]||(studyTime.days[key]={seconds:0,questions:0,book1:0,book2:0});
+  const key=dateKey(new Date(at)),day=studyTime.days[key]||(studyTime.days[key]={seconds:0,questions:0});
   day.seconds=(day.seconds||0)+value;if(countQuestion)day.questions=(day.questions||0)+1;
-  if(book==='book1'||book==='book2')day[book]=(day[book]||0)+value;
+  if(QUESTION_BOOK_KEYS.includes(book))day[book]=(day[book]||0)+value;
   if(persist)safeSet(STORE_TIME,studyTime);
 }
 function migrateStudyTimeData(){
@@ -2029,10 +2055,9 @@ function compactStudyTimePayload(){
 function mergeStudyTime(cloud){
   if(!cloud?.days)return;
   Object.entries(cloud.days).forEach(([key,remote])=>{
-    const local=studyTime.days[key]||{};studyTime.days[key]={
-      seconds:Math.max(+local.seconds||0,+remote.seconds||0),questions:Math.max(+local.questions||0,+remote.questions||0),
-      book1:Math.max(+local.book1||0,+remote.book1||0),book2:Math.max(+local.book2||0,+remote.book2||0)
-    };
+    const local=studyTime.days[key]||{},merged={...local,...remote};
+    for(const field of new Set([...Object.keys(local),...Object.keys(remote)]))if(typeof local[field]==='number'||typeof remote[field]==='number')merged[field]=Math.max(+local[field]||0,+remote[field]||0);
+    studyTime.days[key]=merged;
   });
   safeSet(STORE_TIME,studyTime);
 }
@@ -2095,12 +2120,8 @@ function advancePlanCorrectStreak(item,correct,today){
 }
 // ルート開始前・連続正解導入前の回答も含め、問題ごとの実回答履歴の末尾の連続正解数を返す。
 function planHistoryStreak(uid){
-  let best=0;
-  Object.values(statsByBook||{}).forEach(bookStats=>{
-    const r=bookStats?.perQ?.[uid];
-    if(r)best=Math.max(best,questionCorrectStreak(uid,r,bookStats));
-  });
-  return Math.min(PLAN_CORRECT_STREAK_TARGET,best);
+  const book=planBookForUid(uid),bookStats=book&&statsByBook[book],record=bookStats?.perQ?.[uid];
+  return Math.min(PLAN_CORRECT_STREAK_TARGET,record?questionCorrectStreak(uid,record,bookStats):0);
 }
 function raisePlanItemHistoryStreak(p,uid,today=dateKey()){
   const item=p?.items?.[uid];if(!item)return false;
@@ -2217,7 +2238,7 @@ function renderPaperPreview(){
 async function loadPaperChoices(){
   el('paperApply').disabled=true;
   try{
-    await loadDefaultQuestions();
+    await loadDefaultQuestions(ROUTE_BOOK_KEYS);
     el('paperThrough').innerHTML=paperChapters(el('paperBook').value).map(ch=>`<option value="${ch}">${ch} まで</option>`).join('');
     renderPaperPreview();
     const reports=Object.values(planFor().paperProgress||{});
@@ -2226,9 +2247,9 @@ async function loadPaperChoices(){
 }
 function rebuildStudyPlan(showMessage=true){
   const old=planFor(),today=dateKey(),latest={};
-  Object.values(statsByBook).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>{if(a&&a.u&&(!latest[a.u]||(a.a||0)>latest[a.u]))latest[a.u]=a.a||0;}));
+  ROUTE_BOOK_KEYS.map(book=>statsByBook[book]).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>{if(a&&a.u&&(!latest[a.u]||(a.a||0)>latest[a.u]))latest[a.u]=a.a||0;}));
   const p={active:true,examDate:old.examDate,finishLeadDays:old.finishLeadDays,unavailable:old.unavailable,schoolOff:old.schoolOff,lightDays:old.lightDays,augustPrepV:1,correctStreakTargetV:PLAN_CORRECT_STREAK_TARGET,streakOnlyV:PLAN_STREAK_ONLY_VERSION,historyStreakV:PLAN_HISTORY_STREAK_VERSION,items:{},assignments:{},daily:{date:today,count:0,effort:0},createdAt:Date.now(),updatedAt:Date.now()};
-  Object.values(statsByBook).forEach(bookStats=>Object.entries(bookStats.perQ||{}).forEach(([uid,r])=>{
+  ROUTE_BOOK_KEYS.map(book=>statsByBook[book]).forEach(bookStats=>Object.entries(bookStats.perQ||{}).forEach(([uid,r])=>{
     if(((r.correct||0)+(r.wrong||0))<1)return;
     const last=latest[uid]?dateKey(new Date(latest[uid])):today;
     const round=(r.correct||0)+(r.wrong||0),streak=planHistoryStreak(uid),mastered=streak>=PLAN_CORRECT_STREAK_TARGET;
@@ -2262,6 +2283,7 @@ function migrateAdaptiveTodayAssignment(p,key,due,fresh){
   saveStudyPlans();return assignment;
 }
 function updateStudyPlan(uid,correct){
+  if(!planBookForUid(uid))return;
   const p=planFor();if(!p.active)return;
   const today=dateKey(),existing=p.items[uid];
   if(p.daily.date!==today)p.daily={date:today,count:0,effort:0};
@@ -2562,6 +2584,7 @@ function openStudyPlan(){
   renderStudyPlan();showOnly('studyPlan');
 }
 function openPlanFromHome(){
+  if(isAnswerBook(activeBook)){toast('CBT ANSWERは忘却曲線ルートの対象外です');return;}
   const s=studyPlanSummary(),assignment=s.p.assignments?.[s.today];
   if(assignment?.date===s.today&&planAssignmentProgress(assignment).done&&planRetryPendingUids(assignment).length){startStudyPlan();return;}
   openStudyPlan();
@@ -2660,8 +2683,9 @@ function rankInfo(){
   return {name:steps[tier].name,xp,next,remaining:next?Math.max(0,next.xp-xp):0};
 }
 function rankStepsWithXp(){
-  // Use both configured books so thresholds stay stable before lazy loading book2.
-  const total=Object.values(BOOKS).reduce((sum,book)=>sum+book.questionCount,0);
+  // Configured counts keep the original books stable before lazy loading; new volumes can derive their count after loading.
+  const loaded=typeof DEFAULT_QUESTIONS_BY_BOOK==='undefined'?{}:DEFAULT_QUESTIONS_BY_BOOK;
+  const total=QUESTION_BOOK_KEYS.reduce((sum,key)=>sum+Math.max(+BOOKS[key].questionCount||0,(loaded[key]||[]).length),0);
   return RANK_STEPS.map(step=>{
     const perQuestion=step.laps<=1?15*step.laps:15+5*(step.laps-1);
     return Object.assign({},step,{xp:Math.round(total*perQuestion)});
@@ -2989,13 +3013,22 @@ function renderHome(){
   commitExplanationTime();timer.active=false;timer.running=false;
   el('timerChip').classList.remove('show'); clearInterval(timer.iv);
   const book=BOOKS[activeBook];
+  const answerSelected=isAnswerBook(activeBook);
   el('regularHome').classList.toggle('hidden',mockHomeSelected||dictionaryHomeSelected||dentalMaterialsHomeSelected);
   el('mockHome').classList.toggle('hidden',!mockHomeSelected);
   el('dictionaryHome').classList.toggle('hidden',!dictionaryHomeSelected&&!dentalMaterialsHomeSelected);
   el('bookTitle').textContent=dentalMaterialsHomeSelected?'歯科理工 Forms':dictionaryHomeSelected?'CBT辞典':mockHomeSelected?'2026 9/19 麻布模試':book.title;
-  el('qcount').textContent=dentalMaterialsHomeSelected?'学校配布Forms・正答確認済み47問':dictionaryHomeSelected?'辞典②・③の専用演習':mockHomeSelected?'6ブロック・320問':`${book.subtitle} ・ 全 ${QUESTIONS.length} 問`;
+  el('qcount').textContent=dentalMaterialsHomeSelected?'学校配布Forms・正答確認済み47問':dictionaryHomeSelected?'辞典②・③の専用演習':mockHomeSelected?'6ブロック・320問':answerSelected&&!answerVolumeReady(activeBook)?`${book.subtitle} ・ 準備中`:`${book.subtitle} ・ 全 ${QUESTIONS.length} 問`;
+  el('answerVolumeSelector').classList.toggle('hidden',!answerSelected||mockHomeSelected||dictionaryHomeSelected||dentalMaterialsHomeSelected);
+  document.querySelectorAll('[data-answer-book]').forEach(button=>{
+    const volume=button.dataset.answerBook,ready=answerVolumeReady(volume);
+    button.classList.toggle('on',volume===activeBook);button.disabled=!ready;
+    const status=button.querySelector('span');if(status)status.textContent=ready?'':'準備中';
+  });
+  el('planModeBtn').classList.toggle('hidden',answerSelected);
   document.querySelectorAll('.book-tab').forEach(tab=>{
-    const on=tab.dataset.book===(dentalMaterialsHomeSelected?'dentalMaterials':dictionaryHomeSelected?'dictionary':mockHomeSelected?'mock':activeBook);
+    const selectedTab=dentalMaterialsHomeSelected?'dentalMaterials':dictionaryHomeSelected?'dictionary':mockHomeSelected?'mock':answerSelected?'answer':activeBook;
+    const on=tab.dataset.book===selectedTab;
     tab.classList.toggle('on',on);tab.setAttribute('aria-selected',on?'true':'false');
   });
   const logoSmall=document.querySelector('.logo small');if(logoSmall)logoSmall.textContent=dentalMaterialsHomeSelected?'理工':dictionaryHomeSelected?'辞典':mockHomeSelected?'模試':book.title;
@@ -3021,7 +3054,7 @@ function renderHome(){
   el('slowSec').value=settings.slowSec;
   // resume
   savedExtraSessionForToday();
-  const ses=safeGet(sharedPlanSessionKey())||safeGet(sessionStoreKey());
+  const ses=(answerSelected?null:safeGet(sharedPlanSessionKey()))||safeGet(sessionStoreKey());
   const resumeAt=ses&&(Number.isInteger(ses.resumeIdx)?ses.resumeIdx:ses.idx);
   if(ses&&ses.uids&&Number.isInteger(resumeAt)&&resumeAt<ses.uids.length){
     el('resumeCard').classList.remove('hidden');
@@ -3037,21 +3070,23 @@ function renderHome(){
 }
 
 async function switchBook(book){
-  if(['mock','dictionary','dentalMaterials'].includes(book)&&!canUseExtraMaterials()){
+  if((book==='answer'||isAnswerBook(book)||['mock','dictionary','dentalMaterials'].includes(book))&&!canUseExtraMaterials()){
     toast('この教材は管理者の許可が必要です');return;
   }
+  if(book==='answer')book=isAnswerBook(settings.answerBook)?settings.answerBook:'answer1';
   if(book==='mock'){mockHomeSelected=true;dictionaryHomeSelected=false;dentalMaterialsHomeSelected=false;renderHome();return;}
   if(book==='dictionary'){dictionaryHomeSelected=true;mockHomeSelected=false;dentalMaterialsHomeSelected=false;renderHome();return;}
   if(book==='dentalMaterials'){dentalMaterialsHomeSelected=true;dictionaryHomeSelected=false;mockHomeSelected=false;renderHome();return;}
   if(mockHomeSelected||dictionaryHomeSelected||dentalMaterialsHomeSelected){mockHomeSelected=false;dictionaryHomeSelected=false;dentalMaterialsHomeSelected=false;if(book===activeBook){renderHome();return;}}
-  if(!BOOKS[book]||book===activeBook)return;
+  if(!BOOKS[book])return;
+  if(book===activeBook){renderHome();return;}
   if(!questionsLoaded(book)){
     toast(`${BOOKS[book].title}を準備中…`);
     try{await loadDefaultQuestions(book);}catch(_){toast('問題データを読み込めませんでした。通信を確認して再度お試しください');return;}
   }
   if(session&&session.records&&session.idx<session.uids.length)saveSession();
   saveStats();
-  activeBook=book;settings.activeBook=book;saveSettings();
+  activeBook=book;settings.activeBook=book;if(isAnswerBook(book))settings.answerBook=book;saveSettings();
   const url=new URL(location.href);url.searchParams.set('book',book);history.replaceState(null,'',url);
   stats=statsByBook[activeBook];QUESTIONS=resolveQuestions();session=null;
   renderHome();toast(`${BOOKS[book].title}に切り替えました`);
@@ -3274,7 +3309,7 @@ function submit(skip){
   r.history.push({picked:skip?null:picked,pickedDisplay:skip?null:pickedDisplay,answer:q.answer,answerDisplay,correct,skip:!!skip,time:+t.toFixed(1),at:Date.now()});
   r.history=r.history.slice(-20);
   updateQuestionCorrectStreak(r,correct,previousQuestionStreak);
-  if(planFor().active)updateStudyPlan(qkey(q),correct);
+  if(planBookForUid(qkey(q))&&planFor().active)updateStudyPlan(qkey(q),correct);
   if(session.mode==='plan'){
     const progress=markPlanAssignment(qkey(q));
     const assignment=!session.extra?planFor().assignments[session.assignmentDate||dateKey()]:null;
@@ -3389,8 +3424,9 @@ function renderStudyTime(){
   el('studyTimeToday').textContent=formatStudyDuration(days[today]?.seconds||0);
   el('studyTimeWeek').textContent=formatStudyDuration(studyTimeTotal(weekStart));
   el('studyTimeTotal').textContent=formatStudyDuration(studyTimeTotal());
-  let book1=0,book2=0;Object.values(days).forEach(day=>{book1+=+day.book1||0;book2+=+day.book2||0;});
+  let book1=0,book2=0,answer=0;Object.values(days).forEach(day=>{book1+=+day.book1||0;book2+=+day.book2||0;ANSWER_BOOK_KEYS.forEach(book=>answer+=+day[book]||0);});
   el('studyTimeBook1').textContent=formatStudyDuration(book1);el('studyTimeBook2').textContent=formatStudyDuration(book2);
+  el('studyTimeAnswer').textContent=formatStudyDuration(answer);
   const keys=Array.from({length:studyChartRange},(_,index)=>addPlanDays(today,index-studyChartRange+1));
   const maxSeconds=Math.max(1,...keys.map(key=>+days[key]?.seconds||0)),chart=el('studyTimeChart');
   chart.style.minWidth=studyChartRange>7?`${studyChartRange*41}px`:'100%';
@@ -3630,6 +3666,7 @@ el('fileInput').addEventListener('change',e=>{
 
 /* ============ イベント ============ */
 document.querySelectorAll('.book-tab').forEach(b=>b.addEventListener('click',()=>switchBook(b.dataset.book)));
+document.querySelectorAll('[data-answer-book]').forEach(button=>button.addEventListener('click',()=>switchBook(button.dataset.answerBook)));
 el('statsBtn').addEventListener('click',openStats);
 document.querySelectorAll('[data-study-range]').forEach(button=>button.addEventListener('click',()=>{studyChartRange=+button.dataset.studyRange||7;renderStudyTime();}));
 el('listBtn').addEventListener('click',openList);
@@ -3815,6 +3852,14 @@ function compactStatsPayload(source){
   }
   return Object.assign(statsSummaryFor(source),{perQ:pq,lastDay:source.lastDay||null,rankAttempts:(source.rankAttempts||[]).slice(-200)});
 }
+function compactBooksPayload(source=statsByBook){
+  const books={};
+  QUESTION_BOOK_KEYS.forEach(book=>{
+    const payload=compactStatsPayload(source[book]||emptyStats());
+    if(ROUTE_BOOK_KEYS.includes(book)||Object.keys(payload.perQ).length||payload.rankAttempts.length)books[book]=payload;
+  });
+  return books;
+}
 // 問題集ごとの成績を別々に保存。トップ階層は現在の問題集のランキング用。
 function fullStatsPayload(){
   return Object.assign({
@@ -3825,7 +3870,7 @@ function fullStatsPayload(){
     mockExams:localMockPayload(),
     practiceSets:localPracticePayload(),
     sessions:localSessionPayload(),
-    books:{book1:compactStatsPayload(statsByBook.book1),book2:compactStatsPayload(statsByBook.book2)}
+    books:compactBooksPayload()
   },statsSummary());
 }
 // クラウドの記録をローカルに統合（クラウドがマスター・数字は消えない）
@@ -3940,14 +3985,12 @@ function cbtMergeCloud(cd){
     saveGame();
   }
   if(cd.books){
-    statsByBook.book1=mergeStatsTarget(statsByBook.book1,cd.books.book1);
-    statsByBook.book2=mergeStatsTarget(statsByBook.book2,cd.books.book2);
+    QUESTION_BOOK_KEYS.forEach(book=>{if(cd.books[book])statsByBook[book]=mergeStatsTarget(statsByBook[book],cd.books[book]);});
   }else{
     // 旧形式のクラウド成績はUIDから元の問題集へ一度だけ振り分ける。
-    const uidBooks={};Object.entries(DEFAULT_QUESTIONS_BY_BOOK).forEach(([book,list])=>list.forEach(q=>uidBooks[qkey(q)]=book));
-    const split={book1:{perQ:{}},book2:{perQ:{}}};
-    Object.entries(cd.perQ||{}).forEach(([uid,r])=>{const book=uidBooks[uid];if(book)split[book].perQ[uid]=r;});
-    ['book1','book2'].forEach(book=>{
+    const split=Object.fromEntries(QUESTION_BOOK_KEYS.map(book=>[book,{perQ:{}}]));
+    Object.entries(cd.perQ||{}).forEach(([uid,r])=>{const book=questionBookForUid(uid);if(book)split[book].perQ[uid]=r;});
+    QUESTION_BOOK_KEYS.forEach(book=>{
       split[book].bestStreak=cd.bestStreak;split[book].dayStreak=cd.dayStreak;split[book].lastDay=cd.lastDay;
       statsByBook[book]=mergeStatsTarget(statsByBook[book],split[book]);
     });
@@ -4016,7 +4059,7 @@ function mergePracticePayload(local,remote){
 }
 function localSessionPayload(){
   const result={};
-  for(const book of ['book1','book2','shared-plan','route-review']){
+  for(const book of [...QUESTION_BOOK_KEYS,'shared-plan','route-review']){
     const key=STORE_SES_PREFIX+book,value=safeGet(key),deleted=+safeGet(key+'_deleted')||0;
     if(value&&(value.updatedAt||0)>=deleted)result[book]=value;
     else if(deleted)result[book]={deleted:true,updatedAt:deleted};
@@ -4025,7 +4068,7 @@ function localSessionPayload(){
 }
 function mergeSessionPayload(local,remote){
   const result={...local};
-  for(const book of ['book1','book2','shared-plan','route-review'])if(remote[book]&&(!result[book]||(remote[book].updatedAt||0)>(result[book].updatedAt||0)))result[book]=remote[book];
+  for(const book of [...QUESTION_BOOK_KEYS,'shared-plan','route-review'])if(remote[book]&&(!result[book]||(remote[book].updatedAt||0)>(result[book].updatedAt||0)))result[book]=remote[book];
   return result;
 }
 function progressBackupData(){
@@ -4051,9 +4094,10 @@ function ensureProgressBackup(){
 function mergeCloudPayloads(remote,local){
   remote=remote||{};
   const result={...local,books:{},studyPlans:{...remote.studyPlans,...local.studyPlans},studyTime:{days:{}}};
-  for(const book of ['book1','book2']){
+  for(const book of new Set([...QUESTION_BOOK_KEYS,...Object.keys(remote.books||{}),...Object.keys(local.books||{})])){
     const stats=mergeStatsTarget(mergeStatsTarget(emptyStats(),local.books?.[book]),remote.books?.[book]);
-    result.books[book]=compactStatsPayload(stats);
+    const payload=compactStatsPayload(stats);
+    if(ROUTE_BOOK_KEYS.includes(book)||Object.keys(payload.perQ).length||payload.rankAttempts.length)result.books[book]=payload;
   }
   result.game={xp:Math.max(local.game?.xp||0,remote.game?.xp||0),lastBonusDay:[local.game?.lastBonusDay,remote.game?.lastBonusDay].filter(Boolean).sort().pop()||null};
   result.studyPlans.shared=mergeStudyPlanBook(local.studyPlans?.shared,remote.studyPlans?.shared);
@@ -4410,7 +4454,7 @@ function supplementalLeaderboardStats(data){
     bestStreak,dayStreak,lastDay:days.at(-1)||null};
 }
 function combinedLeaderboardStats(user){
-  const books=['book1','book2'].map(book=>user.books?.[book]).filter(Boolean).map(book=>{
+  const books=QUESTION_BOOK_KEYS.map(book=>user.books?.[book]).filter(Boolean).map(book=>{
     const current=book.perQ?statsSummaryFor(book):book;
     return {...book,...current,lastDay:leaderboardDateKey(book.lastDay)};
   });
@@ -4541,7 +4585,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   // 旧形式の成績だけはUIDから問題集を判定するため、最初の一度だけ全問題を読む。
   // 通常起動は選択中の問題集だけでホームを出し、ログイン後のクラウド成績反映を待たせない。
   const needsLegacyQuestionMap=!safeGet(STORE_S_BOOKS)&&!!safeGet(STORE_S);
-  if(needsLegacyQuestionMap){try{await loadDefaultQuestions();}catch(_){}}
+  if(needsLegacyQuestionMap){try{await loadDefaultQuestions(ROUTE_BOOK_KEYS);}catch(_){}}
   load();
   if(!needsLegacyQuestionMap){
     try{await loadDefaultQuestions(activeBook);}catch(_){
@@ -4562,10 +4606,10 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   window.cbtAppReady = true;
   if (window._pendingCloud) { cbtMergeCloud(window._pendingCloud); window._pendingCloud = null; }
   setupOfflineSupport();
-  const deferredBook=activeBook==='book1'?'book2':'book1';
-  // もう一方は初期表示後に読み込む。読み込み完了時にホームだけ更新して、計画の総問題数も揃える。
+  const deferredBooks=ROUTE_BOOK_KEYS.filter(book=>book!==activeBook);
+  // ルート対象の未読込本は初期表示後に読む。ANSWERは選択時だけ読み込む。
   setTimeout(()=>{
-    loadDefaultQuestions(deferredBook).then(async()=>{
+    loadDefaultQuestions(deferredBooks).then(async()=>{
       await finishOfflineQuestionCache();
       if(!session&&!el('home').classList.contains('hidden'))renderHome();
       renderOfflineStatus();
