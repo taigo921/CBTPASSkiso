@@ -21,7 +21,12 @@ const {doc,getDoc,getDocs,collection,setDoc,deleteDoc,serverTimestamp,writeBatch
   // Reproduce the actual legacy date mismatch against the production rules.
   await no(setDoc(doc(member,'leaderboard','member'),{...summary(),lastDay:'2026-9-22'}));
   const vm=require('node:vm'),context={safeAvatar:()=>''};vm.createContext(context);
-  vm.runInContext(html.slice(html.indexOf('function leaderboardDateKey('),html.indexOf('async function renderLeaderboard(')),context);
+  const extractionTargets=[
+    ...['ROUTE_BOOK_KEYS','ANSWER_BOOK_KEYS','QUESTION_BOOK_KEYS'].map(name=>html.match(new RegExp(`const ${name}=.*;`))[0]),
+    html.slice(html.indexOf('function latestQuestionOutcome('),html.indexOf('function statsSummary(){')),
+    html.slice(html.indexOf('function leaderboardDateKey('),html.indexOf('async function renderLeaderboard('))
+  ];
+  vm.runInContext(extractionTargets.join('\n'),context);
   const oldProgress={username:'Test',lastDay:'2026-9-22',answered:40,correct:24,game:{xp:100}};
   const normalized=JSON.parse(JSON.stringify(context.leaderboardPublicSummary(oldProgress)));
   assert.equal(normalized.lastDay,'2026-09-22');assert.equal(oldProgress.lastDay,'2026-9-22');
