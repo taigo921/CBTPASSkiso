@@ -30,7 +30,7 @@
 
 ## 現在開発している機能
 
-- 追加教材「CBT ANSWER」4巻（`answer1`〜`answer4`、表示名ANSWER①〜④）を通常問題集と同じPractice・分析・同期・XP・ランキング経路へ追加。単一タブと巻選択、準備中表示、最後の巻の端末保存、追加教材権限と剥奪時の問題集1復帰、回答がある巻だけのcompact payload、旧payload互換を実装した。学習ルート関連は問題集1・2だけに固定し、`ANS1-`〜`ANS4-` UIDを除外する。ANSWER①は全452問（A 137問、B 315問）を `data/answer1-A1-A4.json`・`answer1-A5-A9.json`・`answer1-B1-B2.json`・`answer1-B3.json`・`answer1-B4.json` に転記し、`BOOKS.answer1.files` に登録した。②〜④は `files: []`（準備中）。build ID `20261112-answer1`。
+- 追加教材「CBT ANSWER」4巻（`answer1`〜`answer4`、表示名ANSWER①〜④）を通常問題集と同じPractice・分析・同期・XP・ランキング経路へ追加。単一タブと巻選択、準備中表示、最後の巻の端末保存、追加教材権限と剥奪時の問題集1復帰、回答がある巻だけのcompact payload、旧payload互換を実装した。学習ルート関連は問題集1・2だけに固定し、`ANS1-`〜`ANS4-` UIDを除外する。ANSWER①は全452問（A 137問、B 315問）を `data/answer1-A1-A4.json`・`answer1-A5-A9.json`・`answer1-B1-B2.json`・`answer1-B3.json`・`answer1-B4.json` に転記し、`BOOKS.answer1.files` に登録した。ANSWER②は全631問（C-2〜C-6、D）を `data/answer2-C2.json`・`answer2-C3.json`・`answer2-C4-C5.json`・`answer2-C6.json`・`answer2-D.json` に転記し `BOOKS.answer2.files` に登録した。③④は `files: []`（準備中）。build ID `20261112-answer2`。
 - 麻布模試の科目別演習に、初期値「1問ずつ答え合わせ」と従来どおりの「本番形式」を追加。即時モードは回答確定直後に正誤・解説文・公式解説画像を表示し、次の未解答へ進む。回答開始後のモード固定、旧保存の本番形式互換、完了後の前後移動・不正解だけ絞り込みを実装。保存キーと回答形式、ブロック模試、成績・ランキング集計は不変。後続のCBT ANSWER対応を含む現在のbuild IDは `20261111-answer-books`。未コミット・未公開。
 
 - 今日の学習ルート課題で間違えた問題を、当日中に正解するまで未解消問題だけ繰り返す。中断再開、翌日分離、追加学習の待機、複数端末の誤答／解消時刻マージを含む。間違い直しの正解は同日の2回目以降なので、間違い直しは解消しても連続正解は増えない。未コミット・未公開。
