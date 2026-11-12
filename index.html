@@ -1096,7 +1096,7 @@ const BOOKS = {
     title:'問題集2', subtitle:'臨床系', questionCount:1009,
     files:["data/E1.json", "data/E2.json", "data/E3.json", "data/E4.json", "data/E5.json"]
   },
-  answer1:{title:'ANSWER①',subtitle:'基礎編',questionCount:0,files:[],extra:true},
+  answer1:{title:'ANSWER①',subtitle:'基礎編',questionCount:452,files:["data/answer1-A1-A4.json", "data/answer1-A5-A9.json", "data/answer1-B1-B2.json", "data/answer1-B3.json", "data/answer1-B4.json"],extra:true},
   answer2:{title:'ANSWER②',subtitle:'基礎編',questionCount:0,files:[],extra:true},
   answer3:{title:'ANSWER③',subtitle:'臨床編',questionCount:0,files:[],extra:true},
   answer4:{title:'ANSWER④',subtitle:'臨床編',questionCount:0,files:[],extra:true}
@@ -1412,7 +1412,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261111-answer-books';
+const SERVICE_WORKER_BUILD='20261112-answer1';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -2683,9 +2683,9 @@ function rankInfo(){
   return {name:steps[tier].name,xp,next,remaining:next?Math.max(0,next.xp-xp):0};
 }
 function rankStepsWithXp(){
-  // Configured counts keep the original books stable before lazy loading; new volumes can derive their count after loading.
+  // Rank thresholds follow the route books only, so adding ANSWER volumes never lowers an existing rank.
   const loaded=typeof DEFAULT_QUESTIONS_BY_BOOK==='undefined'?{}:DEFAULT_QUESTIONS_BY_BOOK;
-  const total=QUESTION_BOOK_KEYS.reduce((sum,key)=>sum+Math.max(+BOOKS[key].questionCount||0,(loaded[key]||[]).length),0);
+  const total=ROUTE_BOOK_KEYS.reduce((sum,key)=>sum+Math.max(+BOOKS[key].questionCount||0,(loaded[key]||[]).length),0);
   return RANK_STEPS.map(step=>{
     const perQuestion=step.laps<=1?15*step.laps:15+5*(step.laps-1);
     return Object.assign({},step,{xp:Math.round(total*perQuestion)});

@@ -1,0 +1,2592 @@
+[
+  {
+    "uid": "ANS1-A-1-1-001",
+    "display_no": "001",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医の倫理原則に含まれるのはどれか。",
+    "choices": {
+      "A": "唱道",
+      "B": "投資",
+      "C": "無危害",
+      "D": "能力形成",
+      "E": "医学的進歩"
+    },
+    "answer": "C",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A, B, D",
+        "text": "唱道や投資，能力形成はヘルスプロモーションを実現するためのプロセスである。"
+      },
+      {
+        "mark": "○",
+        "labels": "C",
+        "text": "「患者に危害を及ぼすのを避ける」という無危害は医の倫理原則に含まれる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "医学的進歩は医の倫理原則には含まれない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-002",
+    "display_no": "002",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "ジュネーブ宣言に謳われているのはどれか。",
+    "choices": {
+      "A": "人体実験の禁止",
+      "B": "患者の権利に関する世界医師会の宣言",
+      "C": "人道的目標に向けての医師の奉仕宣言",
+      "D": "ヘルスプロモーションへの取り組みの宣言",
+      "E": "肉体的、精神的な抵抗力を弱める行為の禁止"
+    },
+    "answer": "C",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "ニュルンベルグ綱領に謳われている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "リスボン宣言に謳われている。"
+      },
+      {
+        "mark": "○",
+        "labels": "C",
+        "text": "ジュネーブ宣言に謳われている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "オタワ憲章に謳われている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "「医の倫理の国際綱領」に類似の内容が謳われている。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-003",
+    "display_no": "003",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "「患者の健康を第一の関心事とする」と謳ったのはどれか。",
+    "choices": {
+      "A": "シドニー宣言",
+      "B": "リスボン宣言",
+      "C": "アルマアタ宣言",
+      "D": "ジュネーブ宣言",
+      "E": "ヘルシンキ宣言"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "死の判定基準に関する宣言である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "患者の権利に関する宣言である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "プライマリヘルスケアに関するWHOの宣言である。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "医師の職業倫理に関する宣言である。「私は、患者の健康を第一の関心事とする」と謳われている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "医学研究倫理に関する宣言である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-004",
+    "display_no": "004",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "「私は良心と尊厳をもって私の専門職を実践する」と謳ったのはどれか。",
+    "choices": {
+      "A": "シドニー宣言",
+      "B": "リスボン宣言",
+      "C": "ジュネーブ宣言",
+      "D": "ヘルシンキ宣言",
+      "E": "ニュルンベルグ綱領"
+    },
+    "answer": "C",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "死の判定基準に関する基本指針を示したものである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "患者の自己決定権について述べられており，インフォームドコンセントの重要性を述べている。"
+      },
+      {
+        "mark": "○",
+        "labels": "C",
+        "text": "ジュネーブ宣言には「私は良心と尊厳をもって医業に従事する」と謳われている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "ヒトを対象とした医学研究の倫理指針である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "ヘルシンキ宣言の基礎となるもの，すなわち医学研究についての倫理を謳ったものである。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-005",
+    "display_no": "005",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "患者が担当医を選択できると謳っているのはどれか。",
+    "choices": {
+      "A": "リスボン宣言",
+      "B": "ジュネーブ宣言",
+      "C": "ヘルシンキ宣言",
+      "D": "ニュルンベルグ綱領",
+      "E": "ヒポクラテスの誓い"
+    },
+    "answer": "A",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "○",
+        "labels": "A",
+        "text": "リスボン宣言には「患者は，医師や病院を自由に選択し変更する権利を有する」と謳われている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "医師の職業倫理についての宣言である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "ヒトを用いた医学研究の倫理についての宣言である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "ニュルンベルグ軍事裁判の結果として提示された，臨床研究で厳守すべき10項目の基本原則である。ヘルシンキ宣言のもととなった。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "ジュネーブ宣言のもととなった医師の職業倫理について述べたものである。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-006",
+    "display_no": "006",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "「すべての人は差別なしに適切な医療を受ける権利を有する」と謳ったのはどれか。",
+    "choices": {
+      "A": "オタワ憲章",
+      "B": "リスボン宣言",
+      "C": "ジュネーブ宣言",
+      "D": "ヘルシンキ宣言",
+      "E": "ニュルンベルグ綱領"
+    },
+    "answer": "B",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "オタワ憲章（またはバンコク憲章）はヘルスプロモーションについて謳われている。"
+      },
+      {
+        "mark": "○",
+        "labels": "B",
+        "text": "リスボン宣言は患者の自己決定権について謳われている。リスボン宣言で「すべての人は，差別なしに適切な医療を受ける権利を有する」と謳われている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "ジュネーブ宣言は世界医師総会で採択された医の倫理宣言である。「医師の奉仕宣言」や「医の倫理規定」と表現される。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "ヘルシンキ宣言はヒトを対象とした医学研究の倫理指針である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "ニュルンベルグ綱領はヘルシンキ宣言の基礎となるもの，すなわち医学研究についての倫理を謳ったものである。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-007",
+    "display_no": "007",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "患者の権利を尊重したインフォームドコンセントの必要性を謳ったのはどれか。",
+    "choices": {
+      "A": "シドニー宣言",
+      "B": "リスボン宣言",
+      "C": "ジュネーブ宣言",
+      "D": "ニュルンベルグ綱領",
+      "E": "ヒポクラテスの誓い"
+    },
+    "answer": "B",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "死の判定基準に関する基本指針を謳ったものである。"
+      },
+      {
+        "mark": "○",
+        "labels": "B",
+        "text": "自己決定に基づき，良質の医療を受ける患者の権利を謳ったものである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "医師の職業倫理を謳ったものである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "人体実験への倫理的指針を定めたものである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "医師のモラルの古典的指針である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-008",
+    "display_no": "008",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療に関する患者の権利はどれか。",
+    "choices": {
+      "A": "病名の変更を求める権利",
+      "B": "入院中の所得保障を求める権利",
+      "C": "自己診断に基づいた治療を求める権利",
+      "D": "保険診療の医療費の減額を求める権利",
+      "E": "治療について他の医師の見解を求める権利"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "病名（診断名）は患者の求めで変更することはできない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "所得保障は医療における患者の権利ではない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "診断は医師，歯科医師が行う。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "医療に関する権利ではない。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "セカンドオピニオンを求めることは患者の権利である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-009",
+    "display_no": "009",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "ヒトを対象とする医学研究の倫理原則が示されているのはどれか。",
+    "choices": {
+      "A": "シドニー宣言",
+      "B": "リスボン宣言",
+      "C": "ジュネーブ宣言",
+      "D": "ヘルシンキ宣言",
+      "E": "ヒポクラテスの誓い"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "死の判定基準に関する基本指針を示したものである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "患者の自己決定権について述べられている。一般診療におけるインフォームドコンセントの重要性を述べている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "世界医師会総会で採択された医の倫理宣言であり，「医師の奉仕宣言」や「医の倫理規定」と表現される。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "ヒトを対象とした医学研究の倫理指針である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "医師の倫理・任務などについてのギリシア神への宣誓文である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-010",
+    "display_no": "010",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "ヘルシンキ宣言に謳われているのはどれか。",
+    "choices": {
+      "A": "患者の権利の基本原則",
+      "B": "安楽死に関する基本原則",
+      "C": "地球環境保全の行動指針",
+      "D": "医師の国際雇用の倫理ガイドライン",
+      "E": "ヒトを対象とする医学的研究の倫理的原則"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "患者の権利の基本原則は，患者の権利章典に関する宣言（アメリカ病院協会，1973），リスボン宣言（世界医師会，1981）にある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "安楽死に関する基本原則は日本にはない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "地球の環境保全の国際規約としては，1992年国連環境開発会議の「気候変動枠組条約」と「生物多様性条約」があり，日本も批准している。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "外国人医師の雇用の倫理ガイドラインとしては，2003年世界医師会ヘルシンキ総会社会医学委員会で「WMA声明案」が討議された。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "ニュルンベルグ綱領をもととして，1964年にヘルシンキで開催された世界医師会総会で採択された。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-011",
+    "display_no": "011",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "ヒトを対象とする医学研究の倫理原則が示されているのはどれか。",
+    "choices": {
+      "A": "シドニー宣言",
+      "B": "リスボン宣言",
+      "C": "ジュネーブ宣言",
+      "D": "ニュルンベルグ綱領",
+      "E": "ヒポクラテスの誓い"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "世界医師総会で採択された移植にかかわる死の判定に関する宣言である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "世界医師総会で採択された患者の権利に関する宣言である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "世界医師総会で採択された医師の職業倫理に関する宣言である。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "ニュルンベルグ軍事裁判でナチスドイツの医学者たちが戦争責任を問われた根拠であり，後の世界医師総会で採択されたヘルシンキ宣言の基となった医学研究の倫理規範である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "紀元前4世紀に医学の祖，ヒポクラテスが唱えたとされる医師の職業倫理規範である。世界医師会総会で採択されたジュネーブ宣言の基になっている。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-012",
+    "display_no": "012",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "「Hippocratesの誓い」にあるのはどれか。",
+    "choices": {
+      "A": "清濁併せのむ度量をもつ。",
+      "B": "婦人に堕胎用器具を与える。",
+      "C": "必要があれば致死薬を投与する。",
+      "D": "どんな不正や加害をも目的としない。",
+      "E": "患者の私生活の内容は医師間で共有する。"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "「清濁併せのむ度量」は豪傑とか英雄とかに必要な資質であり，医師とは無関係である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "流産に導く道具を与えない，という意味のことが記されている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "致死薬を投与してはならない。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "「Hippocratesの誓い」に記されている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "プライバシーの侵害である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-013",
+    "display_no": "013",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": true,
+    "question": "医の倫理に関する宣言等の歴史的変遷の流れを図に示す。\nヒポクラテスの誓い→ア→ヘルシンキ宣言→リスボン宣言／ヒポクラテスの誓い→ジュネーブ宣言→医の倫理の国際綱領→医の倫理綱領\nアはどれか。",
+    "choices": {
+      "A": "オタワ憲章",
+      "B": "シドニー宣言",
+      "C": "アルマアタ宣言",
+      "D": "患者の権利章典",
+      "E": "ニュルンベルグ綱領"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "WHOのヘルスプロモーションに関する勧告である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "死の判定についての倫理指針を示したものである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "WHOのプライマリヘルスケアに関する宣言である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "1973年にアメリカ病院協会が制定した患者の権利に関する基準である。これを受けて1981年にほぼ同じ内容のリスボン宣言が世界医師会総会で採択された。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "1947年にニュルンベルグ国際軍事裁判の結果として提示された，研究目的の医療行為を行うにあたって厳守すべき10項目の基本原則である。その後のヘルシンキ宣言の基礎となった。"
+      }
+    ],
+    "image_base64": "data:image/png;base64,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"
+  },
+  {
+    "uid": "ANS1-A-1-1-014",
+    "display_no": "014",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "ホスピスについて正しいのはどれか。",
+    "choices": {
+      "A": "終末期医療を行う。",
+      "B": "筋弛緩薬を多用する。",
+      "C": "宗教的行事は禁止される。",
+      "D": "保険診療の対象とならない。",
+      "E": "対象疾病は悪性腫瘍に限られる。"
+    },
+    "answer": "A",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "○",
+        "labels": "A",
+        "text": "ターミナルケアとは治療によって根治を期待できない病状の患者への対応で，ターミナルケアを専門に行う施設をホスピスという。疾患にかかわらず，終末期患者をいろいろな面からサポートする医療である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "ホスピスは，残された余生を患者が苦しみなく生き抜くことをサポートするものである。筋弛緩薬を使用した人工呼吸器による管理を行うことはない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "宗教の自由は法で保証されているものである。さらに，ホスピスは患者の尊厳を重視した医療であり，宗教的行事が禁止されることはない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "健康保険が適用され，高額医療制度も受けられる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "ホスピスは，末期癌やAIDSなどの疾患で苦しんでいる人に対し，温かなケアを提供し，人生の最期を安らかに過ごせるよう援助する医療である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-015",
+    "display_no": "015",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "臨床研究に参加する被験者への説明事項で必要なのはどれか。",
+    "choices": {
+      "A": "研究者の住所",
+      "B": "起こり得る危険",
+      "C": "試験結果の通知",
+      "D": "ほかの被験者名",
+      "E": "成果が公表される学会名"
+    },
+    "answer": "B",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "研究者の住所を説明する必要はない。"
+      },
+      {
+        "mark": "○",
+        "labels": "B",
+        "text": "期待される成果や起こり得る危険について説明する必要がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "試験結果とは複数の被験者の介入試験結果であり，説明する必要はない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "個人情報を漏洩してはならない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "成果が公表される学会名を説明する必要はない。むしろ個人が特定できるような成果の公表を行わないことを約束する必要がある。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-016",
+    "display_no": "016",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "治験について正しいのはどれか。",
+    "choices": {
+      "A": "治験の結果は非公開である。",
+      "B": "遺伝カウンセリングは必須である。",
+      "C": "臨床研究の倫理指針の遵守は十分条件である。",
+      "D": "治験終了時はIRB〈施設内倫理委員会〉に終了報告する。",
+      "E": "治験実施医療機関には個人情報管理者の設置が必須である。"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "結果が公開されるべきことは，ヒトを対象とする試験で必要である。ヘルシンキ宣言にも規定されている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "臨床遺伝学に関することである。治験においてこのような規定はない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "治験はヒトを対象とする臨床試験のため，臨床研究の倫理指針を遵守することは十分条件ではなく必要十分条件である。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "IRBでは当該研究の実施や継続の適否を判断するため，治験終了時に報告は必要である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "臨床研究に関する倫理指針では，「被験者の個人情報保護のために必要な措置を講じなければならない」と定められているが，個人情報管理者の設置までは必須ではない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-017",
+    "display_no": "017",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "治験審査委員会・倫理審査委員会〈IRB〉が行うのはどれか。",
+    "choices": {
+      "A": "研究計画の審査",
+      "B": "研究成果の公表",
+      "C": "研究の効果判定",
+      "D": "被験者の健康被害の補償",
+      "E": "被験者への説明の同意と取得"
+    },
+    "answer": "A",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "○",
+        "labels": "A",
+        "text": "ヒトを対象とする研究では研究計画が治験審査委員会・倫理審査委員会〈IRB〉で審査されなければならない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "研究成果の公表は行わない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "研究の効果判定は行わない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "被験者の健康被害の補償は行わない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "被験者への説明の同意と取得は必要であるが，治験審査委員会・倫理審査委員会〈IRB〉が行うものではない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-018",
+    "display_no": "018",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "施設内倫理委員会の役割に含まれるのはどれか。",
+    "choices": {
+      "A": "施設職員に対する接遇教育",
+      "B": "施設職員の倫理規定の策定",
+      "C": "地域住民に対する倫理教育",
+      "D": "インフォームドコンセントの取得",
+      "E": "施設内の患者を対象とした研究の倫理審査"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "倫理委員会とは関係ない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "施設内倫理委員会は研究，診療などについての倫理的検討を行う。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "一般市民への教育とは関係ない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "被験者への説明の同意と取得は必要であるが，治験審査委員会・倫理審査委員会〈IRB〉が行うものではない。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "臨床研究についての審査を行う。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-019",
+    "display_no": "019",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "治験審査委員会で正しいのはどれか。",
+    "choices": {
+      "A": "医師と患者で組織する。",
+      "B": "新薬治験ごとに組織する。",
+      "C": "専門家と非利害関係者で組織する。",
+      "D": "倫理審査委員会によって代替できる。",
+      "E": "医療機関代表者と治験コーディネーターで組織する。"
+    },
+    "answer": "C",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗○",
+        "labels": "A, C",
+        "text": "治験審査委員会は医師と患者で組織されるものではなく，医師や薬剤師などの専門家のほか，病院などと利害関係がない弁護士や大学の教員，一般人などで組織される。患者は含まれない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "治験審査委員会は新薬治験ごとに組織されるのではなく，定期的に開催され実施されるものである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "治験審査委員会は，治験の倫理的な側面についても審査するが，倫理審査委員会によって代替できるものではない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "治験コーディネーターは，医療機関で行われる治験業務がスムーズに行われるように支援する人をいい，治験に参加する患者の相談に応じたり，治験の申請に必要な書類の管理や治験を行う医師のサポートを行ったりする。医療機関代表者と治験コーディネーターはいずれも病院側にとっての利害関係者である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-1-020",
+    "display_no": "020",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "新医薬品の市販直後調査の目的はどれか。",
+    "choices": {
+      "A": "品質の管理",
+      "B": "副作用の調査",
+      "C": "体内動態の測定",
+      "D": "服薬者数の調査",
+      "E": "新しい薬効の探索"
+    },
+    "answer": "B",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "医薬品などの品質管理基準は，同じ「医薬品，医療機器等の品質，有効性及び安全性の確保等に関する法律施行令」ではあってもGVP〈Good Vigilance Practice＝医薬品の製造販売後における安全管理の基準〉とは別のGQP〈Good Quality Practice＝医薬品，医薬部外品，化粧品および医療機器の品質管理の基準に関する省令〉で定められている。"
+      },
+      {
+        "mark": "○",
+        "labels": "B",
+        "text": "重篤な副作用が生じないかを市販直後に監視するのがおもな目的である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C, D, E",
+        "text": "市販直後調査の目的ではない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-2-001",
+    "display_no": "001",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "インフォームドコンセントについて正しいのはどれか。",
+    "choices": {
+      "A": "予約診療を行う。",
+      "B": "診断名の決定を行う。",
+      "C": "家族の希望に合わせる。",
+      "D": "被保険者証を確認する。",
+      "E": "治療計画についての同意を得る。"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A, D",
+        "text": "インフォームドコンセントとは関係がない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "診断名の決定は医師が行うことである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "患者本人の希望に合わせるべきである。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "インフォームドコンセントは説明と同意である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-2-002",
+    "display_no": "002",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "インフォームドコンセントで正しいのはどれか。",
+    "choices": {
+      "A": "同意は無条件で撤回できる。",
+      "B": "歯科医師法で定められている。",
+      "C": "時間をかけて説得が行われる。",
+      "D": "本人と家族の同意が必須である。",
+      "E": "治療法の予後の説明は割愛できる。"
+    },
+    "answer": "A",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "○",
+        "labels": "A",
+        "text": "患者はいったん同意しても，いつでもその同意を撤回することができ，このことによって完全な自己決定権を保障している。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "「医療法」にインフォームドコンセントが規定されている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "説明に時間をかけることは必要であるが，同意を得るまで説得し続けるのはインフォームドコンセントにおける患者の自律尊重に反する。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "判断力ある成人であれば本人だけでよい。本人の意思が最も重要であるが，家族も患者と同意見であれば患者にとってより望ましい状態といえる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "説明にはその治療法で予想される経過・結果を欠かすことはできない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-2-003",
+    "display_no": "003",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "インフォームドコンセントについて正しいのはどれか。",
+    "choices": {
+      "A": "予約診療を行う。",
+      "B": "家族の希望に合わせる。",
+      "C": "被保険者証を確認する。",
+      "D": "未成年者では必要ない。",
+      "E": "治療計画についての同意を得る。"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "予約診療の有無は関係がない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "家族の希望ではなく，本人の希望を尊重する。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "保険治療を行う場合は必要であるが，インフォームドコンセントと直接関係はない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "未成年者でも判断能力があるかぎり同意は必要である。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "治療計画について説明し，同意を得る必要がある。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-2-004",
+    "display_no": "004",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "インフォームドコンセントについて正しいのはどれか。",
+    "choices": {
+      "A": "プライバシーの保てる環境で行う。",
+      "B": "治療方針の説明後はすぐに同意してもらう。",
+      "C": "治療方針に関するデメリットな点は説明しない。",
+      "D": "病状については専門用語を使用して詳しく説明する。",
+      "E": "説明には誤解を招くため絵や写真を用いてはならない。"
+    },
+    "answer": "A",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "○",
+        "labels": "A",
+        "text": "インフォームドコンセントはプライバシーが保てる環境下で行う。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "同意には十分な時間をとり，納得してもらう必要がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "メリットだけでなくデメリットな点も説明する必要がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "病状の説明は患者にわかりやすい言葉を使用して行う必要がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "絵や写真を用いると患者は理解しやすい。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-2-005",
+    "display_no": "005",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "インフォームドコンセントで重要なのはどれか。",
+    "choices": {
+      "A": "患者の決定権を尊重する。",
+      "B": "疼痛の少ない治療を推奨する。",
+      "C": "保険診療の範囲内で説明する。",
+      "D": "不安を与える情報は提供しない。",
+      "E": "患者の感情的な訴えは考慮しない。"
+    },
+    "answer": "A",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "○",
+        "labels": "A",
+        "text": "十分な説明を行い，治療方針について患者に理解してもらったうえで，患者の自己決定を尊重することがインフォームドコンセントの意義である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "疼痛が大きくとも効果が高い方法を患者が選択すれば，それを尊重する。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "保険適用外の診療についても，適応であれば説明すべきである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "治療のリスクや治療をしない場合の予後なども説明すべきである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "患者が冷静に判断できるよう，説明にあたっては感情面への配慮も必要である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-2-006",
+    "display_no": "006",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "成人患者の自己決定権を尊重する理由はどれか。",
+    "choices": {
+      "A": "医師法の応召義務",
+      "B": "医事訴訟での責任回避",
+      "C": "患者の説得時間の短縮",
+      "D": "患者の価値判断の最優先",
+      "E": "ヘルシンキ宣言の規定の遵守"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "「医師法」には「患者の自己決定権の尊重」は記載されていない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "医療訴訟での責任回避とは無関係である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "インフォームドコンセントの原則に反する。「説得」ではない。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "患者の価値観や倫理観を最優先した医療が重要である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "ヘルシンキ宣言には，ヒトを対象とする医学研究の倫理的原則が述べられている。成人患者の自己決定権についてはリスボン宣言が関係する。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-2-007",
+    "display_no": "007",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "患者の自己決定権を尊重する理由はどれか。",
+    "choices": {
+      "A": "医療事故の回避",
+      "B": "説明時間の短縮",
+      "C": "歯科医師法の遵守",
+      "D": "患者の価値観の優先",
+      "E": "診療代支払いの容易化"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "医療事故の回避のためではない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "説明時間の短縮のためではない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "「歯科医師法」には「患者の自己決定権の尊重」は記載されていない。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "患者の価値観や倫理観を最優先した医療が重要である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "診療代支払いの容易化のためではない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-2-008",
+    "display_no": "008",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "「患者の権利」の行使として妥当なのはどれか。",
+    "choices": {
+      "A": "詳しい病状説明を求める。",
+      "B": "入院中に無断で外泊する。",
+      "C": "診療録を無断でコピーする。",
+      "D": "採血に失敗した医師を怒鳴る。",
+      "E": "診察の順番を無視して診察室に入る。"
+    },
+    "answer": "A",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "○",
+        "labels": "A",
+        "text": "患者には自身の病状について知る権利があるので，担当医療者に詳しい説明を求めるのは妥当な行為である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "入院患者の外泊には主治医の許可が必要である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "患者には自身の診療録の開示を請求する権利はあるが，開示するか否かは最終的には医療者側の裁量で決まる。患者が診療録を無断で閲覧したりコピーしたりする権利はない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "採血の失敗は患者の苦痛を増やすが，だからといって医師を怒鳴るのは「患者の権利」の妥当な行使ではない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "いわゆる「割り込み」は社会常識に反する行為であり，「患者の権利」の行使ではまったくない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-2-009",
+    "display_no": "009",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "終末期医療について正しいのはどれか。",
+    "choices": {
+      "A": "我が国では安楽死は法律で認められている。",
+      "B": "我が国では尊厳死と安楽死は同義とされている。",
+      "C": "我が国では「尊厳死宣言文書」は法に基づいて患者が作成する。",
+      "D": "リビングウィルは終末期医療に関する患者の意思表明文書である。",
+      "E": "尊厳死は患者の意思にかかわらず家族の意見で決めることができる。"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "我が国では安楽死について規定した法律はない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "安楽死は末期患者に対して医師が薬物などを投与して死なせることで，尊厳死は末期患者が延命措置を自発的に拒否して自然死することのため異なる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "尊厳死についての法律はない。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "意思決定能力が喪失したときに備えて，事前に意思表明しておくものである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "患者の自己決定権，すなわち本人の意思によるものである。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-2-010",
+    "display_no": "010",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "終末期に自分がどのような医療を受けたいかをあらかじめ文書で示しておくのはどれか。",
+    "choices": {
+      "A": "アドヒアランス",
+      "B": "リビングウィル",
+      "C": "セカンドオピニオン",
+      "D": "ヘルスプロモーション",
+      "E": "インフォームドコンセント"
+    },
+    "answer": "B",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "アドヒアランスとは，患者が積極的に治療方針の決定に参加し，その決定に従い治療を受けることである。"
+      },
+      {
+        "mark": "○",
+        "labels": "B",
+        "text": "リビングウィルとは終末期の医療やケアについての意思表明書である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "セカンドオピニオンとは，決断をするため，当事者以外の専門的な知識をもった第三者に意見を求めることである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "ヘルスプロモーションとは，人々が自らの健康とその決定要因をコントロールし，改善することができるようにするプロセスである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "インフォームドコンセントとは，治療内容などについて患者が十分な説明を受け，同意することである。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-3-001",
+    "display_no": "001",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-3)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "患者への対応として適切なのはどれか。",
+    "choices": {
+      "A": "治療計画を1つに絞って説明する。",
+      "B": "予約外に来院した際は診療を断る。",
+      "C": "理解状況を確認しながら会話をする。",
+      "D": "専門用語を使用して治療計画を説明する。",
+      "E": "治療を行わない際は説明する義務はない。"
+    },
+    "answer": "C",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "いくつかの選択肢を与えるべきである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "応召義務に違反する。"
+      },
+      {
+        "mark": "○",
+        "labels": "C",
+        "text": "患者の理解状況を確認しながら説明する必要がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "専門用語はなるべく使用しないことが望ましい。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "治療を行わないときも説明する必要がある。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-3-002",
+    "display_no": "002",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-3)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "歯科治療を希望した患者に対する対応について正しいのはどれか。",
+    "choices": {
+      "A": "治療計画を1つに絞って説明する。",
+      "B": "直接関係のない話は聞く必要がない。",
+      "C": "専門用語を用いて治療計画を説明する。",
+      "D": "提示した治療計画の長所のみ説明する。",
+      "E": "患者の要望を配慮して治療計画を立案する。"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "ほかの治療計画も選択できる余地を残しておく必要がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "直接関係のない話からも患者の性格などの情報が得られることが多い。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "専門用語を用いた説明はできるだけ避けるべきである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "治療計画は長所と短所を説明すべきである。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "患者の要望を配慮して治療計画を立案することが重要である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-3-003",
+    "display_no": "003",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-3)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "歯科医師の行為として正しいのはどれか。",
+    "choices": {
+      "A": "診察をせずに処方せんを交付した。",
+      "B": "患者が泥酔していたため診療を断った。",
+      "C": "患者の家族からの診断書の交付請求に応じた。",
+      "D": "4年間受診していない患者の診療録を廃棄した。",
+      "E": "診療録を歯科衛生士に記載させたため後で確認した。"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "無診察治療の禁止に違反している。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "応召義務に違反している。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "患者情報の守秘義務に違反している。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "診療録の保存義務（5年間）に違反している。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "歯科衛生士に口述筆記させたときは後で確認する必要がある。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-1-3-004",
+    "display_no": "004",
+    "section": "A-1 プロフェッショナリズム",
+    "category": "A-1-3)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "歯科医師の行為として正しいのはどれか。",
+    "choices": {
+      "A": "3年間受診していない患者の診療録を破棄した。",
+      "B": "診療を求められたが泥酔者であったため断った。",
+      "C": "多忙なため診療録を1週間後にまとめて記載した。",
+      "D": "患者の勤務先から病名の問い合わせがあったが断った。",
+      "E": "主治医が不在であったため診察をせずに処方せんを交付した。"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "診療録の保存期間は最終診療日から5年間である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "応召義務に違反することとなる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "診療録は遅延なく記載しなければならない。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "歯科医師は業務上知り得た秘密を他人に漏らしてはならない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "無診察治療の禁止に違反している。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-1-001",
+    "display_no": "001",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "コミュニケーションの進め方として適切なのはどれか。",
+    "choices": {
+      "A": "専門用語を多用する。",
+      "B": "パターンにはめて会話する。",
+      "C": "closed questionを多用する。",
+      "D": "最初は患者に自由に話してもらう。",
+      "E": "視線はあまり合わせないようにする。"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "専門用語はあまり使用しないことが望ましい。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "パターン化した会話は望ましくない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "open-ended questionを多用するべきである。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "まずは患者に自由に話してもらうことで話の幅が広がる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "アイコンタクトはコミュニケーションにおいては重要であり，視線はある程度合わせて話すべきである。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-1-002",
+    "display_no": "002",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "非言語的コミュニケーションのうち近言語はどれか。",
+    "choices": {
+      "A": "姿勢",
+      "B": "視線",
+      "C": "表情",
+      "D": "身ぶり",
+      "E": "アクセント"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗○",
+        "labels": "A, B, C, D, E",
+        "text": "声の大きさやアクセント，話すスピードを近言語という。姿勢，視線，表情，身ぶりなどは身体的動作である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-1-003",
+    "display_no": "003",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "コミュニケーションにおける言語的手段はどれか。",
+    "choices": {
+      "A": "記号",
+      "B": "点字",
+      "C": "表情",
+      "D": "身振り",
+      "E": "タッチング"
+    },
+    "answer": "B",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "体系化されていない記号は言語とはいえない。"
+      },
+      {
+        "mark": "○",
+        "labels": "B",
+        "text": "点字は体系的言語である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "表情は非言語的コミュニケーションである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "身振りは非言語的コミュニケーションである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "相手に触れることは非言語的コミュニケーションである。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-1-004",
+    "display_no": "004",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-1)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "ペーシングの視覚的要素はどれか。",
+    "choices": {
+      "A": "リズム",
+      "B": "声の速さ",
+      "C": "触れる力",
+      "D": "声のアクセント",
+      "E": "姿勢のマッチング"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A, C",
+        "text": "感覚的要素である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B, D",
+        "text": "聴覚的要素である。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "視覚的要素である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-005",
+    "display_no": "005",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接について適切なのはどれか。",
+    "choices": {
+      "A": "診療録を書いている間は記載に専念する。",
+      "B": "患者と真正面に向き合った位置関係で行う。",
+      "C": "closed questionは患者との信頼関係を構築できる。",
+      "D": "黙りこんでしまう患者には間接話法で話を聞きだす。",
+      "E": "患者の訴えや経過について患者の言葉を使って要約する。"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "診療録を書いている間もできる限りアイコンタクトをとって，患者に傾聴していることを示す。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "真正面に向き合うと尋問のようになり，情緒的関係は期待できない。ユニットの9時の位置のように90度の角度をなす位置関係が最も抵抗なく重要な事柄を話し合えるとされる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "closed questionは最後に正確で詳細な病歴を得るために用いる。患者の考える心配，不安，疑念などや要望が引き出しにくく，患者が自分の問題点を歯科医師に理解してもらえたとの満足感がなく，信頼関係は構築できない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "基本的には患者が再び話を始めるまで見守るべきであるが，どうしても黙ってしまう患者には直接的な質問で聞いていき，後に間接話法で話を引き出す。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "適宜，患者の訴えや経過について患者の言葉で適切に要約し，その要約に間違いがないか確認することで患者の訴えが歯科医師に伝わっていることを示す。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-006",
+    "display_no": "006",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接について正しいのはどれか。",
+    "choices": {
+      "A": "患者の答えを引き出す。",
+      "B": "医療者主体で進められる。",
+      "C": "正確な病歴をとる必要はない。",
+      "D": "確定診断を行うことが主要な目的である。",
+      "E": "患者自身の言葉で話すことが重要である。"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "医療面接では，医療者が患者の答えを引き出すのではなく，患者が自分の言葉で話すことが重要である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "患者主体で進められる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "正確で詳細な病歴の聴取は医療面接の目的の1つである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "医療面接の目的は患者との信頼関係の確立や情報収集である。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "患者が自分の言葉で話すことが重要である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-007",
+    "display_no": "007",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接について正しいのはどれか。",
+    "choices": {
+      "A": "専門用語を用いる。",
+      "B": "患者の話は繰り返さない。",
+      "C": "closed questionを多く用いる。",
+      "D": "患者の目をじっとみつめながら進める。",
+      "E": "胸ポケットにはできるかぎり物は入れない。"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "患者が理解できる言葉を用いるべきである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "医療面接のテクニックに反復という技法がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "閉鎖的な質問の多用は医療面接において好ましくない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "目をみながら会話を進めるのは望ましいが，じっとみつめるわけではなく全体の時間の70～80％くらいがよい。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "患者に不快感を与えないためにも清潔な身体，服装が重要である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-008",
+    "display_no": "008",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "歯科治療における医療面接について正しいのはどれか。",
+    "choices": {
+      "A": "最後に言い忘れがないか尋ねる。",
+      "B": "マニュアルに従って話を進める。",
+      "C": "患者を誘導するように質問を行う。",
+      "D": "姓名の確認は省略することができる。",
+      "E": "主訴は患者自身に診療録に記録してもらう。"
+    },
+    "answer": "A",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "○",
+        "labels": "A",
+        "text": "最後に患者に確認することが好ましい。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "医療面接はマニュアルで進行するものではない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "患者の意見を誘導してはいけない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "必ず姓名の確認を行う。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "診療録の記入は歯科医師が行う。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-009",
+    "display_no": "009",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接で適切なのはどれか。",
+    "choices": {
+      "A": "視線を合わせない。",
+      "B": "専門用語を用いる。",
+      "C": "開放的質問を避ける。",
+      "D": "言い忘れがないか確認する。",
+      "E": "だまって患者の言うことを聞く。"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "円滑なコミュニケーションがとれなくなる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "患者が内容を理解できず，かつ質問しにくい状況となる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "開放的質問を行うことで，患者の問題点がもれなく明確になる。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "患者の言いたいことを言いやすく，もれがないように，かつ明確になるようサポートすることが面接のポイントである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "一方通行の会話になり，コミュニケーションが成立しなくなる。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-010",
+    "display_no": "010",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接での歯科医師の態度として適切なのはどれか。",
+    "choices": {
+      "A": "患者の要求はすべて受け入れる。",
+      "B": "答えにくい質問のときは話題を変える。",
+      "C": "できるだけ視線を合わせないようにする。",
+      "D": "患者の感情の動きを受け入れるようにする。",
+      "E": "沈黙が起こったときはまず歯科医師から話しかける。"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "その医学的妥当性を判断して受け入れるか否かを決めることは歯科医師の義務である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "質問を正面から受け止め，答えにくい理由を述べるなど，誠実に対応すべきである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "「できるだけ視線を合わせない」態度は，良好な患者―歯科医師関係の構築を妨げる。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "患者の感情の動きを察して，それに適切に対応すること（共感）は，「傾聴」とともに医療面接の鍵になる中心的スキルである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "基本的には患者が再び話し始めるまで見守るべきである。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-011",
+    "display_no": "011",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "小児の医療面接で適切なのはどれか。",
+    "choices": {
+      "A": "マスクを着用する。",
+      "B": "開放的な場所で行う。",
+      "C": "保護者の協力を得る。",
+      "D": "来院動機は小児に尋ねる。",
+      "E": "保護者には専門用語を用いる。"
+    },
+    "answer": "C",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "医療面接は，小児，保護者に行うにしても一般的にマスクは外して行う。ただし，感染症の流行期など特別な状況では，患者の了承を得たうえでマスクを着用した医療面接が推奨される。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "医療面接では，様々な情報を聴取するため個人情報に該当するので，開放的な場所で行うと情報漏えいのおそれが出る。"
+      },
+      {
+        "mark": "○",
+        "labels": "C",
+        "text": "小児本人とコミュニケーションが正確にとれないこともあり，基本的に保護者から情報を得るため，保護者の協力を得ることが大切である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "来院動機を話すことができる小児もいるが，低年齢の小児では保護者から聴取する。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "医療面接は保護者だけでなく，成人の患者本人でも専門用語は用いない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-012",
+    "display_no": "012",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "激痛を訴える患者に対する医療面接で適切なのはどれか。",
+    "choices": {
+      "A": "動機付け",
+      "B": "閉鎖的質問",
+      "C": "専門用語の活用",
+      "D": "応急処置後の面接",
+      "E": "時間をかけた面接"
+    },
+    "answer": "B",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "動機付けは慢性疾患で患者の自己管理が重要な場合に行う。"
+      },
+      {
+        "mark": "○",
+        "labels": "B",
+        "text": "急性期の診断を迅速に行うためには，ある程度医療者が主導的立場に立って医学的情報を収集する必要がある。その際には閉鎖的質問が効率的である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "専門用語はどのような場面でも多用すべきでない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "面接で患者から主観的医学情報を得なければ応急処置もできない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "激痛を訴えている患者には不適である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-013",
+    "display_no": "013",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "患者に予後不良の診断結果を伝えるための面談を開始した。\nまず行うべきなのはどれか。",
+    "choices": {
+      "A": "情報を繰り返し伝える。",
+      "B": "できるだけ速く一度に伝える。",
+      "C": "感情を込めずに検査結果を伝える。",
+      "D": "患者がどれだけのことを知っているかを把握する。",
+      "E": "最終的には同じ結果になるので何から話してもよい。"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "一度だけ伝えても患者は理解できないことがある。しかし，患者が十分理解している場合に予後不良なことを繰り返し伝えると心理的ダメージを大きくする。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "患者の反応，理解をみながらそれに合わせて対応する必要がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "無感情に悪い情報を伝えると患者の心理的ダメージは大きい。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "まずは患者がどれだけ情報をもっているかを把握する必要がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "悪い情報を伝える場合には，とくに話す順序が重要である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-014",
+    "display_no": "014",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接で患者の立場に配慮した質問法はどれか。",
+    "choices": {
+      "A": "高圧的な質問",
+      "B": "中立的な質問",
+      "C": "開かれた質問",
+      "D": "誘導型の質問",
+      "E": "繰り返しの質問"
+    },
+    "answer": "C",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "原則的に使用は避けるべきである。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "生年月日，出生地を問う質問で，これ自体は有益でも不利益でもない。"
+      },
+      {
+        "mark": "○",
+        "labels": "C",
+        "text": "「はい」「いいえ」ではなく，患者が自らの言葉で話すことができるため，患者自身の訴えを十分に表現することができる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "質問者の期待する方向に答えを導く危険性がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "患者の質問を繰り返す質問法で，これによって患者も自分の話している内容を聞いてもらっているという安心感をもつことができる。したがって，患者も話しやすくなるため患者の立場にたった質問法といえるが，選択肢Cと比べるとベストとはいえない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-015",
+    "display_no": "015",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "病気の予後についての歯科医師の説明に対して、患者があいまいな説明と感じた。\n最もよくみられる患者の反応はどれか。",
+    "choices": {
+      "A": "失神",
+      "B": "逃避",
+      "C": "不安",
+      "D": "不穏",
+      "E": "めまい"
+    },
+    "answer": "C",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "重大な説明ではありうるが，あいまいと感じる説明で失神発作を誘発することは考えにくい。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "重大な内容では，患者が急に話をそらしたりして歯科医師の説明から逃れようとする反応はないとはいえないが，あいまいと感じて起こる反応ではない。"
+      },
+      {
+        "mark": "○",
+        "labels": "C",
+        "text": "患者にとって単にわかりにくいというだけでなく，重大な結果をほのめかされたのではないかと感じた場合には，不安を感じるであろう。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "不穏の定義を，軽度意識障害を伴う情動不安とすると，中枢神経系疾患や精神疾患を除けば，予後の説明のあいまいさに対する反応として考えにくい。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "患者が重大な内容と受け取った場合には，心因性のめまいを起こす可能性はあるが，あいまいな説明がこの直接の誘因になるとは考えにくい。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-016",
+    "display_no": "016",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "開かれた質問〈open-ended question〉はどれか。",
+    "choices": {
+      "A": "「昨日から痛みましたか」",
+      "B": "「どのような痛みですか」",
+      "C": "「痛み止めは飲みましたか」",
+      "D": "「ズキズキした痛みですか」",
+      "E": "「冷たい水を飲むと痛みますか」"
+    },
+    "answer": "B",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A, C, D, E",
+        "text": "これらはclosed questionである。"
+      },
+      {
+        "mark": "○",
+        "labels": "B",
+        "text": "患者が自由に来院理由や症状について話せるような質問を開かれた質問〈open-ended question〉という。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-017",
+    "display_no": "017",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接における患者の解釈モデルを理解する質問はどれか。",
+    "choices": {
+      "A": "「どのような痛みですか」",
+      "B": "「痛いときに何かしましたか」",
+      "C": "「いつから痛みがありますか」",
+      "D": "「どんなときに痛みがでますか」",
+      "E": "「痛みの原因は何だと思いますか」"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A, B, C, D",
+        "text": "これらは現病歴についての質問である。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "病気の原因に対しての患者なりの解釈を尋ねているので，解釈モデルへの理解に役立つ質問である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-018",
+    "display_no": "018",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接で解釈モデルを尋ねているのはどれか。",
+    "choices": {
+      "A": "「昨夜から痛いのですか」",
+      "B": "「どのような病気が心配ですか」",
+      "C": "「症状について詳しく教えてください」",
+      "D": "「何か言い忘れていることはありませんか」",
+      "E": "「これまでに似たような症状が起きたことはありますか」"
+    },
+    "answer": "B",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A, E",
+        "text": "これらの質問は「はい」「いいえ」で答えられるためclosed questionである。"
+      },
+      {
+        "mark": "○",
+        "labels": "B",
+        "text": "現在の状況を患者本人がどのように考えているか〈解釈モデル〉を尋ねている。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C, D",
+        "text": "これらの質問は患者本人の考え方を尋ねていない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-019",
+    "display_no": "019",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "患者の話の内容を繰り返すことで次の話を促すテクニックはどれか。",
+    "choices": {
+      "A": "解釈",
+      "B": "反映",
+      "C": "反復",
+      "D": "要約",
+      "E": "正当化"
+    },
+    "answer": "C",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "歯科医師または患者にとってあいまいな話をわかりやすく言い直して内容を確認する方法である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "面接の過程で，歯科医師自身にイライラ感や敵意といった感情が生じることがある。この感情は実は患者の精神，心理状態を反映して生じることがあり，これを反映という。"
+      },
+      {
+        "mark": "○",
+        "labels": "C",
+        "text": "患者の話の内容を繰り返すことで次の話を促す方法である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "患者のまわりくどい病歴内容を歯科医師が手短に整理し，確認を求める方法である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "患者自身が正当かどうか自信をもてない気持ちや行動を歯科医師が，その正当性を認め，受け入れてあげることである。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-020",
+    "display_no": "020",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接で傾聴に必要なのはどれか。",
+    "choices": {
+      "A": "多弁",
+      "B": "誘導",
+      "C": "相づち",
+      "D": "簡略化",
+      "E": "オウム返し"
+    },
+    "answer": "C",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "医療者が話しすぎると，傾聴にならない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "患者のありのままの語りに耳を傾けることが傾聴であり，誘導してはならない。"
+      },
+      {
+        "mark": "○",
+        "labels": "C",
+        "text": "医療者が患者の話を聞いているという非言語的表現であり，これにより，患者は自らを語りやすくなる。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "傾聴にはある程度の時間をかける必要がある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "E",
+        "text": "オウム返しは患者の話を聞いているという表現にはならない。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-021",
+    "display_no": "021",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接における歯科医師の態度で適切なのはどれか。",
+    "choices": {
+      "A": "解釈",
+      "B": "批判",
+      "C": "評価",
+      "D": "誘導",
+      "E": "理解"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "歯科医師が患者の訴えや行動を勝手に解釈する態度は望ましくない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "歯科医師が患者の訴えや行動を批判しては対等な関係は築けない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "歯科医師が患者の訴えや行動を評価することで，患者に反発や怒りを生じさせることがある。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "歯科医師が患者の訴えや行動を誘導してはならない。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "歯科医師が患者の訴えを聴取し，行動の理解に努める態度が望ましい。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-022",
+    "display_no": "022",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接における患者への対応で適切なのはどれか。",
+    "choices": {
+      "A": "解釈的態度",
+      "B": "調査的態度",
+      "C": "逃避的態度",
+      "D": "評価的態度",
+      "E": "理解的態度"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "患者の考えや症状などに対して一方的に理由をつけることで，不適切な態度である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "患者に配慮せずに詮索し，相手に考慮の余地を残さないことで，不適切な態度である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "患者の不安などを受け止めることを避け，先を急ぐように進むことで，不適切な態度である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "患者の考え方や感情に対して善悪を評価し，断定的に伝えることで，不適切な態度である。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "患者の境遇や訴えを理解しようとすることで，適切な態度である。適切な態度には，共感的態度，支持的態度，理解的態度，援助的態度がある。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-023",
+    "display_no": "023",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "良好な患者―歯科医師関係を築くのに望ましい態度はどれか。",
+    "choices": {
+      "A": "解釈的態度",
+      "B": "調査的態度",
+      "C": "逃避的態度",
+      "D": "評価的態度",
+      "E": "理解的態度"
+    },
+    "answer": "E",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A",
+        "text": "歯科医師側が患者の訴え，行動を勝手に解釈する態度は望ましくない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B",
+        "text": "患者に警戒心を与え，とくに初診時には望ましくない。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "歯科医師にとって不都合な話や説明しにくい質問を回避する態度である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "D",
+        "text": "自分の判断基準で，善悪を相手に暗示する態度である。"
+      },
+      {
+        "mark": "○",
+        "labels": "E",
+        "text": "患者の訴えをよく聴取し，まず理解する態度が望ましい。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-024",
+    "display_no": "024",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "医療面接で共感的態度を示す発言はどれか。",
+    "choices": {
+      "A": "「それは大変でしたね」",
+      "B": "「それぐらいの痛みは普通です」",
+      "C": "「痛いから口が開かないんですね」",
+      "D": "「痛みを受け入れることが重要です」",
+      "E": "「もっとひどい症状の方もおられます」"
+    },
+    "answer": "A",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "○",
+        "labels": "A",
+        "text": "共感的態度である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "B, D, E",
+        "text": "教示的態度である。"
+      },
+      {
+        "mark": "✗",
+        "labels": "C",
+        "text": "解釈的態度である。"
+      }
+    ]
+  },
+  {
+    "uid": "ANS1-A-4-2-025",
+    "display_no": "025",
+    "section": "A-4 コミュニケーション能力",
+    "category": "A-4-2)",
+    "subject": "",
+    "guide_ref": "",
+    "has_image": false,
+    "question": "口腔に関するQOLの評価に有用なのはどれか。",
+    "choices": {
+      "A": "CPI",
+      "B": "OHI",
+      "C": "PCR",
+      "D": "質問紙法",
+      "E": "咬合力測定"
+    },
+    "answer": "D",
+    "explanation_intro": "",
+    "explanation": [
+      {
+        "mark": "✗",
+        "labels": "A, B, C, E",
+        "text": "客観的評価である。"
+      },
+      {
+        "mark": "○",
+        "labels": "D",
+        "text": "質問紙法（アンケート）は患者の主観的評価（subjective data）を把握するために有用である。"
+      }
+    ]
+  }
+]
