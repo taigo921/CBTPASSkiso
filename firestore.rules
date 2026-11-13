@@ -33,8 +33,20 @@ service cloud.firestore {
         && request.resource.data.updatedBy==request.auth.uid && request.resource.data.updatedAt==request.time;
     }
     function notBlocked(uid) {
-      return !exists(/databases/$(database)/documents/accessControl/$(uid))
-        || get(/databases/$(database)/documents/accessControl/$(uid)).data.blocked == false;
+      return (!exists(/databases/$(database)/documents/accessControl/$(uid))
+        || get(/databases/$(database)/documents/accessControl/$(uid)).data.blocked == false)
+        && !inactive(uid);
+    }
+    function inactive(uid) {
+      let activity = /databases/$(database)/documents/activity/$(uid);
+      let control = /databases/$(database)/documents/accessControl/$(uid);
+      let cutoff = request.time - duration.value(7, 'd');
+      let override = exists(control) ? get(control).data : {'blocked': true};
+      // Together with schoolOpen(), normal member access touches only three
+      // distinct documents (activity, accessControl and schoolAccess).
+      return !isAdmin() && exists(activity)
+        && get(activity).data.lastSeenAt < cutoff
+        && !(override.blocked == false && override.updatedAt >= cutoff);
     }
     match /accessControl/{uid} {
       // A blocked user can still receive their own stop notification.
@@ -47,6 +59,16 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.updatedAt == request.time
         && exists(/databases/$(database)/documents/users/$(uid));
+      allow delete: if false;
+    }
+    match /activity/{uid} {
+      allow get: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if request.auth != null
+        && (isAdmin() || (request.auth.uid == uid && !inactive(uid)))
+        && request.resource.data.keys().hasAll(['lastSeenAt'])
+        && request.resource.data.keys().hasOnly(['lastSeenAt'])
+        && request.resource.data.lastSeenAt == request.time;
       allow delete: if false;
     }
     match /materialAccess/{uid} {

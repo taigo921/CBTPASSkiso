@@ -59,6 +59,16 @@
 - DBアクセス: `requireAccess()`、`watchAccess()`、`fetchAccessUsers()`、`setUserBlocked()`。
 - 権限: 本人は自分のgetのみ、管理者はget/listと他人のcreate/update。deleteは禁止。
 
+`blocked:false` の `updatedAt` から7日間は、古いactivityによる休止ロックを猶予する。解除時も既存どおり3フィールドを厳密に書き、activityや学習記録は削除しない。猶予中にクライアントがactivityを更新できなければ、7日後に再び休止する。
+
+### `activity/{uid}`
+
+- 役割: 最終利用時刻をサーバー時刻で保持し、7日間未利用の一般ユーザーをFirestore Rulesで自動休止する。
+- 主なフィールド: `lastSeenAt`（timestamp）のみ。
+- 更新: 本人がログイン後の起動時と前面復帰時に確認し、約1時間に1回まで `serverTimestamp()` でcreate/updateする。管理者は自動更新対象外。
+- 休止判定: 文書が存在し `lastSeenAt` が `request.time - 7d` より古く、かつ `accessControl/{uid}` の解除から7日以内でなければ休止。文書未作成ユーザーと管理者は対象外。
+- 権限: 本人は自分のgetと、休止前の厳密な1フィールドwriteのみ。管理者はget/list/write可。deleteは禁止。
+
 ### `materialAccess/{uid}`
 
 - 役割: 問題集1・2以外の追加教材（CBT ANSWER、麻布模試、CBT辞典、歯科理工）の利用許可。学習記録とは分離し、取り消しても記録は削除しない。
@@ -97,6 +107,7 @@
 |`togo_dental_materials_forms_progress_v1_{uid}`|学校Forms歯科理工の現在位置、問題別回答履歴、最終正誤|はい。`practiceSets.dentalMaterials`。通常成績・学習ルート・XPとは分離|
 |`togo_sync_backup_20260923_{uid}`|同期形式移行前の端末backup|いいえ|
 |`togo_blocked_login_notice_v1`|停止画面mediaの再表示状態|いいえ|
+|`togo_activity_written_v1_{uid}`|activity書込を約1時間に間引くための端末時刻。保存失敗時はメモリ値を使用|いいえ|
 
 旧key `cbt_stats_v2` は本別形式へのmigration入力としてのみ読む。`cbt_questions_v1` と `cbt_session_v2` は定数が残るが、現行の主要保存先ではない。
 

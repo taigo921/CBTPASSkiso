@@ -42,7 +42,7 @@ toGOは、歯科国試の問題集・麻布模試を演習し、回答履歴、�
 
 |Feature / Domain|責務|主な依存|
 |---|---|---|
-|Access & Identity|ログイン、許可メール、個別停止、授業時間ゲート|Firebase Auth、Firestore access policy|
+|Access & Identity|ログイン、許可メール、個別停止、7日間未利用の自動休止、授業時間ゲート|Firebase Auth、Firestore access policy|
 |Question Catalog|問題集選択、JSON読込、問題UID・ガイド参照|`data/`、Cache Storage|
 |Practice Session|出題、選択肢シャッフル、採点、タイマー、中断再開|Question Catalog、Progress|
 |Study Route|忘却曲線、日次課題、追加学習、本の進捗登録|Question Catalog、Practice、Progress|
@@ -88,6 +88,7 @@ URLルーターはない。`showOnly(id)` が `index.html` 内のsectionを切�
 - 個人進捗: `save`、`readLatest`、`subscribe`
 - ランキング: `publishLeaderboard`、`refreshLeaderboardMembers`、`fetchLeaderboard`
 - 管理: `fetchAccessUsers`、`setUserBlocked`
+- 利用記録: `requireAccess`、`recordActivity`、`activity/{uid}`
 - メール確認: `refreshAdminVerification`、`refreshLeaderboardVerification`、`sendLeaderboardVerification`
 
 FeatureからFirestoreを増やす場合は、この境界と `firestore.rules`、`database.md` を同時に見直す。プロフィール名・画像には現状直接書込が残るが、一般ユーザーへ他人の `users` 文書を公開しない契約は維持する。
@@ -97,12 +98,12 @@ FeatureからFirestoreを増やす場合は、この境界と `firestore.rules`�
 ### 起動と認証
 
 1. Firebase Authがユーザーを復元する。
-2. クライアントの許可メールhashと `accessControl/{uid}` を確認する。
+2. クライアントの許可メールhash、`accessControl/{uid}`、`activity/{uid}` を確認する。一般ユーザーのactivityが7日より古ければ、管理者による解除後7日以内を除いて休止する。
 3. GitHub PagesのHTTP `Date` headerで時刻を校正し、`schoolAccess/settings` と校正済み日本時間から授業制限を確認する。
 4. `users/{uid}` をサーバー優先で読み、ローカル進捗へマージする。
 5. 問題JSONを選択中の本から読み、画面を表示し購読を開始する。
 
-Firestore側でも許可メール、個別停止、授業時間を再判定する。クライアント表示だけを認可境界として扱わない。
+Firestore側でも許可メール、個別停止、7日間未利用、授業時間を再判定する。クライアント表示だけを認可境界として扱わない。
 
 ### 通常演習と同期
 
@@ -129,6 +130,7 @@ Firestore側でも許可メール、個別停止、授業時間を再判定す�
 - 許可ユーザー: `index.html` の `ALLOW` hashと `firestore.rules` の `approvedHashes()` の一致が必要。
 - 管理者: メール確認済みの固定管理者メール。画面、`window.cbtCloud`、Firestoreルールの3層で制限する。
 - 個別停止: `accessControl/{uid}`。停止しても学習記録は削除しない。
+- 自動休止: `activity/{uid}.lastSeenAt`。activity未作成と管理者は対象外で、解除後7日間は古いactivityを猶予する。
 - 授業制限: クライアントはGitHub PagesのHTTP `Date` headerを基準にし、Firestoreは `schoolAccess/settings` と `request.time`（JST換算）で再判定する。管理者、休校日、休日、授業単位解除は例外。
 - ランキング: メール確認済みの許可・非停止ユーザーだけが公開集計を閲覧する。
 

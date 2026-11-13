@@ -556,7 +556,7 @@
 <div id="schoolGate" hidden tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="schoolGateTitle"><img id="schoolGateImage" alt="ログイン停止中のアニメーション" decoding="async"><div class="school-card"><h2 id="schoolGateTitle">授業中のため利用を制限しています</h2><p id="schoolGateMessage"></p><p>休み時間になると自動で使えるようになります。学習記録はそのまま残ります。</p><button type="button" class="ghost-btn" id="schoolLogout">別のアカウントでログイン</button></div></div>
 <div id="authGate">
   <img id="blockedLoginImage" hidden alt="ログイン停止中のアニメーション" decoding="async">
-  <div id="blockedLoginOverlay" hidden><p>このアカウントのアクセスは停止されています。</p><button type="button" id="blockedLoginBack">ログイン画面に戻る</button></div>
+  <div id="blockedLoginOverlay" hidden><p id="blockedLoginMessage">このアカウントのアクセスは停止されています。</p><button type="button" id="blockedLoginBack">ログイン画面に戻る</button></div>
   <div class="auth-card">
     <div class="auth-brand">toGO<span>クイズ</span></div>
     <p class="auth-lead">友達だけの限定アプリです。<br>許可されたメールアドレスでログインしてください。</p>
@@ -763,7 +763,7 @@
     <div class="modes">
       <button class="mode" id="listBtn"><div class="ic">📋</div><div class="t"><b>問題一覧から選ぶ</b><span>状態を見ながら1問ずつ解く</span></div><div class="arr">›</div></button>
       <button class="mode" id="statsBtn"><div class="ic">📊</div><div class="t"><b>学習分析・勉強時間</b><span id="studyTimeHome">今日の勉強時間 0分</span></div><div class="arr">›</div></button>
-      <button class="mode hidden" id="accessAdminBtn"><div class="ic">🔒</div><div class="t"><b>ユーザーのアクセス管理</b><span>管理者専用・アクセス停止／解除・追加教材の許可</span></div><div class="arr">›</div></button>
+      <button class="mode hidden" id="accessAdminBtn"><div class="ic">🔒</div><div class="t"><b>ユーザーのアクセス管理</b><span>管理者専用・アクセス停止／休止解除・追加教材の許可</span></div><div class="arr">›</div></button>
       <button class="mode hidden" id="rankBtn"><div class="ic">🏆</div><div class="t"><b>みんなのランキング</b><span>全教材の合計成績・レベルを比較</span></div><div class="arr">›</div></button>
     </div>
     <div class="offline-status pending" id="offlineStatus" aria-live="polite">📥 オフライン準備を確認中…</div>
@@ -1036,7 +1036,7 @@
 
   <section id="accessAdmin" class="hidden">
     <div class="row-btns"><button type="button" class="ghost-btn" id="accessAdminBack">‹ ホーム</button><button type="button" class="ghost-btn" id="accessAdminRefresh">一覧を更新</button></div>
-    <div class="hero"><h1 style="font-size:24px">ユーザーのアクセス管理</h1><p>登録済みユーザーのアクセス停止・解除と、追加教材の利用許可を管理できます。学習記録は削除しません。</p></div>
+    <div class="hero"><h1 style="font-size:24px">ユーザーのアクセス管理</h1><p>登録済みユーザーの手動停止、休止ロック解除、最終利用日時と追加教材の利用許可を管理できます。学習記録は削除しません。</p></div>
     <p class="mock-note">停止はオンラインのデータ読み書きに適用されます。通信のない端末には再接続時に反映します。管理者自身は停止できません。</p>
     <div class="setting"><b>授業中の利用制限（日本時間）</b><p class="mock-note">月〜金の8:40〜10:10・10:25〜11:55・12:55〜14:25・14:40〜16:10。土日・祝日・登録した休校日は利用できます。管理者は対象外です。祝日は2027年まで対応。</p><p><button type="button" class="ghost-btn" id="schoolReleaseClass">この授業の制限を解除</button></p><p id="schoolReleaseStatus" class="mock-note" role="status">早く授業が終わったときに押すと、全員が利用できます。次の授業から自動で制限を再開します。</p><label><input type="checkbox" id="schoolEnabled"> 授業中の制限を有効にする</label><p><label>休校日 <input type="date" id="schoolExemptDate"></label> <button type="button" class="ghost-btn" id="schoolAddDate">登録</button></p><div id="schoolExemptList"></div><p id="schoolAdminStatus" role="status"></p></div>
     <p id="accessAdminStatus" role="status"></p><div id="accessAdminList"></div>
@@ -1412,11 +1412,40 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261113-notable';
+const SERVICE_WORKER_BUILD='20261113-autolock';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
+const INACTIVITY_LIMIT_MS=7*24*60*60*1000;
+const ACTIVITY_WRITE_INTERVAL_MS=60*60*1000;
+const ACTIVITY_REFRESH_INTERVAL_MS=10*60*1000;
+const ACTIVITY_WRITE_KEY_PREFIX='togo_activity_written_v1_';
+const INACTIVITY_LOCK_MESSAGE='1週間利用がなかったため利用を停止しました。管理者に連絡してください。';
 let blockedLoginNotice=false;
+const activityWriteMemory=new Map();
+function timestampMillis(value){
+  if(value&&typeof value.toMillis==='function')return value.toMillis();
+  if(value&&Number.isFinite(value.seconds))return value.seconds*1000+Math.floor((value.nanoseconds||0)/1e6);
+  return value instanceof Date?value.getTime():NaN;
+}
+function accessNowMillis(now){
+  if(Number.isFinite(now))return now;
+  try{if(typeof schoolNow==='function')return schoolNow().getTime();}catch(_){}
+  return Date.now();
+}
+function recentlyUnblocked(control,now){
+  now=accessNowMillis(now);
+  return control?.blocked===false&&now-timestampMillis(control.updatedAt)<=INACTIVITY_LIMIT_MS;
+}
+function activityIsInactive(activity,control,now){
+  now=accessNowMillis(now);
+  const lastSeen=timestampMillis(activity?.lastSeenAt);
+  return Number.isFinite(lastSeen)&&lastSeen<now-INACTIVITY_LIMIT_MS&&!recentlyUnblocked(control,now);
+}
+function formatActivityJst(activity){
+  const ms=timestampMillis(activity?.lastSeenAt);if(!Number.isFinite(ms))return '記録なし';
+  return new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(ms));
+}
 function hasBlockedLoginNotice(){
   try{return localStorage.getItem(BLOCKED_LOGIN_NOTICE_KEY)==='1';}catch(_){return false;}
 }
@@ -4256,9 +4285,11 @@ async function runCloudSync(){
       Promise.resolve().then(()=>{if(window.cbtUser?.uid===uid)return window.cbtCloud.publishLeaderboard();}).catch(error=>console.warn('leaderboard summary publish error',error?.code||'unavailable'));
     }
     setCloudSyncState(_syncDirty?'pending':'ready',{savedAt:Date.now(),error:''});
+    if(window.cbtRecordActivity)window.cbtRecordActivity();
   }catch(error){
     if(attempt!==_syncAttempt)return;
     console.warn('cloud sync error',error);_syncFailures++;
+    if(String(error?.code||'').includes('permission-denied')&&window.cbtRecheckAccess)window.cbtRecheckAccess();
     const quota=cloudQuotaExceeded(error);
     if(quota)_syncBlockedUntil=Date.now()+CLOUD_SYNC_QUOTA_RETRY_MS+Math.floor(Math.random()*5*60*1000);
     const detail=quota?'クラウドの一時的な利用枠上限です。約1時間後に自動再試行します（resource-exhausted）':cloudErrorDetail(error);
@@ -4355,19 +4386,28 @@ async function renderAccessAdmin(){
       const row=document.createElement('div');row.className='setting';
       const name=document.createElement('b');name.textContent=user.username||'名前未登録';
       const email=document.createElement('p');email.className='mock-note';email.style.overflowWrap='anywhere';email.textContent=user.email||`UID: ${user.uid}`;
+      const activity=document.createElement('p');activity.className='mock-note';
+      const accessState=document.createElement('p');accessState.className='mock-note';
       const button=document.createElement('button');button.type='button';button.className='ghost-btn';
       const materialButton=document.createElement('button');materialButton.type='button';materialButton.className='ghost-btn';
       const self=user.uid===viewer;
-      button.textContent=self?'管理者（停止できません）':user.blocked?'アクセス解除':'アクセス停止';button.disabled=self;
+      const renderUserAccess=()=>{
+        user.inactive=!self&&!user.blocked&&activityIsInactive(user.activity,user.control);
+        activity.textContent=`最終利用日時：${formatActivityJst(user.activity)}（日本時間）`;
+        accessState.textContent=`状態：${user.blocked?'手動ブロック中':user.inactive?'休止ロック中':'利用中'}`;
+        button.textContent=self?'管理者（停止できません）':(user.blocked||user.inactive)?'解除':'アクセス停止';button.disabled=self;
+      };
+      renderUserAccess();
       materialButton.textContent=self?'追加教材：管理者（常に利用可）':user.extra?'追加教材：許可を取り消す':'追加教材：許可する';materialButton.disabled=self;
       button.onclick=async()=>{
         if(!canManageUsers()||window.cbtUser.uid!==viewer)return;
         button.disabled=true;status.textContent='変更を保存中…';
         try{
-          await window.cbtCloud.setUserBlocked(user.uid,!user.blocked);
+          const nextBlocked=!(user.blocked||user.inactive);
+          await window.cbtCloud.setUserBlocked(user.uid,nextBlocked);
           if(!canManageUsers()||window.cbtUser.uid!==viewer)return;
-          user.blocked=!user.blocked;button.textContent=user.blocked?'アクセス解除':'アクセス停止';
-          status.textContent=`${user.username||user.email||'ユーザー'}のアクセスを${user.blocked?'停止':'解除'}しました`;
+          user.blocked=nextBlocked;user.control={blocked:nextBlocked,updatedAt:new Date()};renderUserAccess();
+          status.textContent=`${user.username||user.email||'ユーザー'}のアクセスを${nextBlocked?'停止':'解除'}しました`;
         }catch(_){status.textContent='変更できませんでした。一覧を更新し、Firebaseの権限設定・通信状態を確認してください。';}
         finally{button.disabled=false;}
       };
@@ -4382,7 +4422,7 @@ async function renderAccessAdmin(){
         }catch(_){status.textContent='変更できませんでした。一覧を更新し、Firebaseの権限設定・通信状態を確認してください。';}
         finally{materialButton.disabled=self;}
       };
-      row.append(name,email,button,materialButton);list.append(row);
+      row.append(name,email,activity,accessState,button,materialButton);list.append(row);
     }
   }catch(_){status.textContent='一覧を取得できませんでした。管理者メール・Firebaseの権限設定・通信状態を確認してください。';}
 }
@@ -4987,11 +5027,12 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     fetchAccessUsers: async function(){
       const user=auth.currentUser;
       if(!canManageUsers(user))throw Error('確認済み管理者専用です');
-      const [profiles,controls,materials]=await Promise.all([db.collection('users').get({source:'server'}),db.collection('accessControl').get({source:'server'}),db.collection('materialAccess').get({source:'server'})]);
+      const [profiles,controls,materials,activities]=await Promise.all([db.collection('users').get({source:'server'}),db.collection('accessControl').get({source:'server'}),db.collection('materialAccess').get({source:'server'}),db.collection('activity').get({source:'server'})]);
       if(auth.currentUser?.uid!==user.uid)throw Error('ログインが変更されました');
-      const blocked=new Map();controls.forEach(d=>blocked.set(d.id,d.data().blocked===true));
+      const control=new Map();controls.forEach(d=>control.set(d.id,d.data()));
       const extra=new Map();materials.forEach(d=>extra.set(d.id,d.data().extra===true));
-      const rows=[];profiles.forEach(d=>{const x=d.data();rows.push({uid:d.id,username:String(x.username||''),email:String(x.email||''),blocked:blocked.get(d.id)===true,extra:extra.get(d.id)===true});});
+      const activity=new Map();activities.forEach(d=>activity.set(d.id,d.data()));
+      const rows=[];profiles.forEach(d=>{const x=d.data(),c=control.get(d.id)||null;rows.push({uid:d.id,username:String(x.username||''),email:String(x.email||''),blocked:c?.blocked===true,control:c,activity:activity.get(d.id)||null,extra:extra.get(d.id)===true});});
       return rows.sort((a,b)=>a.email.localeCompare(b.email));
     },
     setUserBlocked: async function(uid,blocked){
@@ -5052,6 +5093,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     },function(error){
       console.warn('cloud subscription error',error);
       setCloudSyncState('unavailable',{error:'更新の受信：'+cloudErrorDetail(error)});
+      if(String(error?.code||'').includes('permission-denied'))recheckAccess();
     });
   }
 
@@ -5095,34 +5137,81 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   setInterval(schoolTick,1000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)schoolTick();});
   document.getElementById('schoolLogout').addEventListener('click',()=>auth.signOut());
-  let stopAccessSubscription=null,stopMaterialAccessSubscription=null,accessEpoch=0;
+  let stopAccessSubscription=null,stopMaterialAccessSubscription=null,accessEpoch=0,inactivityLockedUid=null,activityTimer=null,activityTimerUid=null;
   function clearAccessSubscription(){if(stopAccessSubscription){stopAccessSubscription();stopAccessSubscription=null;}}
   function clearMaterialAccessSubscription(){if(stopMaterialAccessSubscription){stopMaterialAccessSubscription();stopMaterialAccessSubscription=null;}}
+  function stopActivityTimer(){if(activityTimer!==null)clearInterval(activityTimer);activityTimer=null;activityTimerUid=null;}
+  function startActivityTimer(user){
+    if(!user||activityTimerUid===user.uid&&activityTimer!==null)return;
+    stopActivityTimer();activityTimerUid=user.uid;
+    activityTimer=setInterval(()=>{
+      const current=auth.currentUser;
+      if(document.hidden||!current||current.uid!==user.uid||window.cbtUser?.uid!==user.uid)return;
+      return recordActivity(current);
+    },ACTIVITY_REFRESH_INTERVAL_MS);
+  }
   function lockAccess(message,blocked=blockedLoginNotice){
     if(blocked)rememberBlockedLoginNotice(true);
+    if(blocked){const label=document.getElementById('blockedLoginMessage');if(label)label.textContent=message;}
     setBlockedLoginImage(blocked);
     gate.classList.remove('ok');errEl.textContent=message;
     document.getElementById('logoutBtn')?.classList.remove('show');
     document.getElementById('unameModal')?.classList.remove('show');
-    window.cbtUser=null;clearTimeout(_syncT);clearMaterialAccessSubscription();updateLeaderboardAccess();updateExtraMaterialsAccess();
+    window.cbtUser=null;clearTimeout(_syncT);stopActivityTimer();clearMaterialAccessSubscription();updateLeaderboardAccess();updateExtraMaterialsAccess();
     if(stopCloudSubscription){stopCloudSubscription();stopCloudSubscription=null;}
     if(typeof stopTimer==='function')stopTimer();
   }
+  function activityWriteTime(uid,now){
+    let stored=0;try{stored=Number(localStorage.getItem(ACTIVITY_WRITE_KEY_PREFIX+uid))||0;}catch(_){}
+    const memory=activityWriteMemory.get(uid)||0;
+    return Math.max(memory<=now?memory:0,stored<=now?stored:0);
+  }
+  function rememberActivityWrite(uid,time){
+    activityWriteMemory.set(uid,time);try{localStorage.setItem(ACTIVITY_WRITE_KEY_PREFIX+uid,String(time));}catch(_){}
+  }
+  async function recordActivity(user,activity=null,force=false){
+    if(!user||canManageUsers(user)||inactivityLockedUid===user.uid)return false;
+    const now=accessNowMillis(),lastServer=timestampMillis(activity?.lastSeenAt),lastKnown=Math.max(activityWriteTime(user.uid,now),Number.isFinite(lastServer)&&lastServer<=now?lastServer:0);
+    if(!force&&now-lastKnown<ACTIVITY_WRITE_INTERVAL_MS)return false;
+    try{
+      await db.collection('activity').doc(user.uid).set({lastSeenAt:firebase.firestore.FieldValue.serverTimestamp()});
+      rememberActivityWrite(user.uid,accessNowMillis());return true;
+    }catch(error){
+      if(String(error?.code||'').includes('permission-denied'))recheckAccess();
+      else console.warn('activity write error',error?.code||error?.message||error);
+      return false;
+    }
+  }
+  window.cbtRecordActivity=()=>{
+    const user=auth.currentUser;
+    return user&&window.cbtUser?.uid===user.uid?recordActivity(user):false;
+  };
   async function requireAccess(user){
-    const [snap]=await Promise.all([
+    const [snap,activity]=await Promise.all([
       db.collection('accessControl').doc(user.uid).get({source:'server'}),
+      db.collection('activity').doc(user.uid).get({source:'server'}),
       refreshSchoolClock(true)
     ]);
-    if(snap.exists&&snap.data().blocked===true)throw Object.assign(Error('blocked'),{code:'access-blocked'});
+    const control=snap.exists?snap.data():null,activityData=activity.exists?activity.data():null;
+    if(control?.blocked===true)throw Object.assign(Error('blocked'),{code:'access-blocked'});
+    if(!canManageUsers(user)&&activityIsInactive(activityData,control))throw Object.assign(Error('inactive'),{code:'access-inactive'});
     schoolPolicy=await window.cbtCloud.fetchSchoolPolicy();
+    return {control,activity:activityData};
+  }
+  function lockInactive(user,epoch){
+    if(epoch!==accessEpoch||auth.currentUser?.uid!==user.uid)return;
+    inactivityLockedUid=user.uid;watchAccess(user,epoch);lockAccess(INACTIVITY_LOCK_MESSAGE,true);
   }
   function watchAccess(user,epoch){
     clearAccessSubscription();
     stopAccessSubscription=db.collection('accessControl').doc(user.uid).onSnapshot(snapshot=>{
       if(epoch!==accessEpoch||snapshot.metadata.fromCache||snapshot.metadata.hasPendingWrites)return;
       if(snapshot.exists&&snapshot.data().blocked===true){
+        inactivityLockedUid=null;
         lockAccess('管理者によりアクセスが停止されています。管理者に連絡してください。',true);
         auth.signOut().catch(()=>{});
+      }else if(inactivityLockedUid===user.uid&&recentlyUnblocked(snapshot.exists?snapshot.data():null)){
+        inactivityLockedUid=null;rememberBlockedLoginNotice(false);setBlockedLoginImage(false);handleAuthState(user);
       }
     },()=>{if(epoch===accessEpoch)lockAccess('アクセス権を確認できません。通信状態を確認し、アプリを開き直してください。',false);});
   }
@@ -5140,19 +5229,27 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   }
   async function recheckAccess(){
     const user=auth.currentUser,epoch=accessEpoch;
-    if(!user||!window.cbtUser)return;
-    try{await requireAccess(user);}catch(error){
+    if(!user||(!window.cbtUser&&inactivityLockedUid!==user.uid))return;
+    try{
+      const access=await requireAccess(user);
       if(epoch!==accessEpoch)return;
+      if(inactivityLockedUid===user.uid){inactivityLockedUid=null;rememberBlockedLoginNotice(false);setBlockedLoginImage(false);handleAuthState(user);return;}
+      recordActivity(user,access.activity);
+    }catch(error){
+      if(epoch!==accessEpoch)return;
+      if(error.code==='access-inactive'){lockInactive(user,epoch);return;}
       lockAccess(error.code==='access-blocked'?'管理者によりアクセスが停止されています。':'アクセス権を確認できません。通信状態を確認し、アプリを開き直してください。',error.code==='access-blocked');
       if(error.code==='access-blocked')auth.signOut().catch(()=>{});
     }
   }
+  window.cbtRecheckAccess=recheckAccess;
   window.addEventListener('online',recheckAccess);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)recheckAccess();});
 
   // ログイン状態の監視
   async function handleAuthState(user){
-    const epoch=++accessEpoch;clearAccessSubscription();clearMaterialAccessSubscription();
+    const epoch=++accessEpoch;clearAccessSubscription();clearMaterialAccessSubscription();stopActivityTimer();
+    if(!user||inactivityLockedUid!==user.uid)inactivityLockedUid=null;
     if(stopSchoolSubscription){stopSchoolSubscription();stopSchoolSubscription=null;}
     const keepSchoolGate=!!(user&&schoolLocked&&schoolGateUserId===user.uid);
     schoolLoginWaiting=false;
@@ -5170,8 +5267,10 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
       try{ await auth.signOut(); }catch(e){}
       return;
     }
-    try{await requireAccess(user);}catch(error){
+    let accessState;
+    try{accessState=await requireAccess(user);}catch(error){
       if(epoch!==accessEpoch)return;
+      if(error.code==='access-inactive'){lockInactive(user,epoch);return;}
       lockAccess(error.code==='access-blocked'?'管理者によりアクセスが停止されています。管理者に連絡してください。':'アクセス権を確認できません。インターネット接続を確認し、もう一度ログインしてください。',error.code==='access-blocked');
       try{await auth.signOut();}catch(_){}return;
     }
@@ -5190,6 +5289,15 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     }
     catch(error){
       console.warn('cloud profile read error',error);
+      if(String(error?.code||'').includes('permission-denied')){
+        try{accessState=await requireAccess(user);}
+        catch(accessError){
+          if(epoch!==accessEpoch)return;
+          if(accessError.code==='access-inactive'){lockInactive(user,epoch);return;}
+          lockAccess(accessError.code==='access-blocked'?'管理者によりアクセスが停止されています。':'アクセス権を確認できません。アプリを開き直してください。',accessError.code==='access-blocked');
+          if(accessError.code==='access-blocked')auth.signOut().catch(()=>{});return;
+        }
+      }
       // オフライン時だけは、端末内キャッシュで従来どおり開けるようにする。
       if(!navigator.onLine){
         try{snap=await db.collection('users').doc(user.uid).get({source:'cache'});}
@@ -5208,14 +5316,17 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
     }
     window.cbtUser.avatar=safeAvatar(cloudData&&cloudData.avatar);
     if(epoch!==accessEpoch||!window.cbtUser)return;
-    try{await requireAccess(user);}catch(error){
+    try{accessState=await requireAccess(user);}catch(error){
       if(epoch!==accessEpoch)return;
+      if(error.code==='access-inactive'){lockInactive(user,epoch);return;}
       lockAccess(error.code==='access-blocked'?'管理者によりアクセスが停止されています。':'アクセス権を確認できません。アプリを開き直してください。',error.code==='access-blocked');return;
     }
     if(epoch!==accessEpoch||!window.cbtUser)return;
     if(updateSchoolGate(user)){schoolLoginWaiting=true;watchAccess(user,epoch);return;}
     watchAccess(user,epoch);
     watchMaterialAccess(user,epoch);
+    recordActivity(user,accessState.activity);
+    startActivityTimer(user);
 
     reveal();
     startCloudSubscription();

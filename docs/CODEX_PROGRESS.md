@@ -1,6 +1,6 @@
 # Codex progress
 
-最終更新: 2026-11-11
+最終更新: 2026-11-13
 
 基準コミット: `091570f`（検証済み辞典②専用演習の公開）
 
@@ -29,6 +29,8 @@
 - Codex向けのarchitecture、feature map、database、route、development資料。
 
 ## 現在開発している機能
+
+- 7日間アプリを利用していない一般ユーザーを `activity/{uid}.lastSeenAt` と Firestore Rules で自動停止し、管理画面からの解除後7日間を猶予とする機能を実装・回帰追加済み。管理者除外、activity未作成ユーザーの許可、起動時／前面復帰時の1時間間引き更新、手動停止と休止停止の表示分離、permission-denied時の再判定を含む。build ID `20261113-autolock`。commit・push・rules/Pages公開は未実施。
 
 - 追加教材「CBT ANSWER」4巻（`answer1`〜`answer4`、表示名ANSWER①〜④）を通常問題集と同じPractice・分析・同期・XP・ランキング経路へ追加。単一タブと巻選択、準備中表示、最後の巻の端末保存、追加教材権限と剥奪時の問題集1復帰、回答がある巻だけのcompact payload、旧payload互換を実装した。学習ルート関連は問題集1・2だけに固定し、`ANS1-`〜`ANS4-` UIDを除外する。ANSWER①は全452問（A 137問、B 315問）を `data/answer1-A1-A4.json`・`answer1-A5-A9.json`・`answer1-B1-B2.json`・`answer1-B3.json`・`answer1-B4.json` に転記し、`BOOKS.answer1.files` に登録した。ANSWER②は全631問（C-2〜C-6、D）を `data/answer2-C2.json`・`answer2-C3.json`・`answer2-C4-C5.json`・`answer2-C6.json`・`answer2-D.json` に転記し `BOOKS.answer2.files` に登録した。ANSWER③は全773問（E-1-1〜E-1-6、E-2-1〜E-2-4)-(11)）を `data/answer3-E1.json`・`answer3-E2-1-E2-3.json`・`answer3-E2-4-1-2.json`・`answer3-E2-4-3-4.json`・`answer3-E2-4-5.json`・`answer3-E2-4-6.json`・`answer3-E2-4-7-8.json`・`answer3-E2-4-9-11.json` に転記し `BOOKS.answer3.files` に登録した。④は `files: []`（準備中）。build ID `20261113-answer3`。
 - 麻布模試の科目別演習に、初期値「1問ずつ答え合わせ」と従来どおりの「本番形式」を追加。即時モードは回答確定直後に正誤・解説文・公式解説画像を表示し、次の未解答へ進む。回答開始後のモード固定、旧保存の本番形式互換、完了後の前後移動・不正解だけ絞り込みを実装。保存キーと回答形式、ブロック模試、成績・ランキング集計は不変。後続のCBT ANSWER対応を含む現在のbuild IDは `20261111-answer-books`。未コミット・未公開。
@@ -85,6 +87,7 @@
 
 ## テスト結果
 
+- 2026-11-13: 7日未利用の自動休止を実装。指定一覧のbrowser以外22本を `TZ=Asia/Tokyo` / `TZ=UTC` で各1回（計44実行）すべて成功。`test_access_control.cjs` で7日超過、解除後猶予、activity未作成、1時間間引き、文言・状態分岐、rules静的形状を確認。Firestore Emulator用の `test_access_rules.cjs` に休止・解除・7日後再休止・管理者除外・activity未作成・activity schemaを追加したが、ローカルにはJavaとFirebase test moduleがないため本体は未実行。指定どおりbrowser 3本はCI専用として除外。追加でFirebase公開検査7件、現在正答率、全39問題JSON、Service Worker構文、`git diff --check` に成功。通常member accessのRules参照はdistinct 3文書で10-call上限内。commit、push、rules/Pages公開は未実施。
 - 2026-11-11: CBT ANSWER専用回帰で、非許可時のタブ非表示・遷移拒否、許可時の巻選択と通常ホーム、準備中巻、`ANS1-` ダミー回答の `statsByBook.answer1`・compact payload・merge復元、空巻省略、旧payload互換、起動時／権限剥奪時の問題集1復帰、ルート除外を確認。`tests.yml` のNode回帰22本を通常環境と `TZ=UTC` で各全件成功。Firebase公開検査7件、shell構文、全21問題JSON、現在正答率、`git diff --check` も成功。Playwrightはローカルmodule未導入のため未実行。`data/`、commit、push、公開はいずれも変更・実施していない。
 - 2026-11-11: 科目別演習の即時回答確定後は画面上部ではなく結果欄へスムーズスクロールし、「次の問題へ」と本番形式は従来どおり上部へ戻る分岐を回帰で確認。全問正解時の「×の問題だけ」では、解除用トグルと「不正解の問題はありません」だけを表示し、OFFで通常表示へ戻る回帰を追加。`tests.yml` の通常Node回帰21本、Firebase公開検査7件、shell構文、全21問題JSON、`git diff --check` は全件成功。Playwright 3本とFirestore Emulator 3本は必要moduleがなく、隔離`npm install`もネットワーク制約下で完了しないためテスト開始前に停止。Java runtimeも未導入。
 - 2026-11-10: 間違い直し・日次連続正解のレビュー指摘3件を修正。compact historyが最新1件だけでも、`streakDay` が最新回答日以降なら同期済み `streak` を優先し、同日 `×→○` の0・`○→×` の1を維持する。未完了課題の再開は本課題の残りを継続し、完了後だけ間違い直しへ移る。ホームは完了済み課題の間違い直し残数を表示し、保存セッションを保ったまま開始／再開する。`tests.yml` の通常Node回帰21件、Firebase公開検査7件、shell構文、全21問題JSON、`git diff --check` は全件成功。Playwright 3件は依存未導入、Firestoreルール3件は依存とJava未導入のためテスト本体前に停止。

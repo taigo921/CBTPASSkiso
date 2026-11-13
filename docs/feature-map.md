@@ -4,12 +4,12 @@
 
 ## 認証・利用制限
 
-- 機能: Google／メールログイン、許可ユーザー判定、個別アクセス停止、追加教材の利用許可、授業時間制限。
+- 機能: Google／メールログイン、許可ユーザー判定、個別アクセス停止、7日間未利用時の自動休止、追加教材の利用許可、授業時間制限。
 - Route / 画面: `#authGate`、`#blockedLoginOverlay`、`#schoolGate`。通常画面にoverlayする。
 - 主なUI: `#gbtn`、`#authEmailBox`、`#schoolGateImage`、`#schoolLogout`。
-- state / hooks相当: `window.cbtUser`、`canUseExtraMaterials()`、`schoolPolicy`、`handleAuthState()`、`requireAccess()`、`watchAccess()`、`watchMaterialAccess()`、`watchSchoolPolicy()`、`refreshSchoolClock()`、`schoolRestriction()`。
+- state / hooks相当: `window.cbtUser`、`canUseExtraMaterials()`、`schoolPolicy`、`handleAuthState()`、`requireAccess()`、`recordActivity()`、`watchAccess()`、`watchMaterialAccess()`、`watchSchoolPolicy()`、`refreshSchoolClock()`、`schoolRestriction()`。
 - API / service: Firebase Auth、`window.cbtCloud.fetchSchoolPolicy()`、GitHub PagesのHTTP `Date` header（授業判定用サーバー時刻）。
-- DB: `accessControl/{uid}`、`materialAccess/{uid}`、`schoolAccess/settings`、初回プロフィール用 `users/{uid}`。
+- DB: `accessControl/{uid}`、`activity/{uid}`、`materialAccess/{uid}`、`schoolAccess/settings`、初回プロフィール用 `users/{uid}`。activity未作成ユーザーは利用可能で、解除の `accessControl.updatedAt` から7日間は古いactivityによる休止を猶予する。
 - 関連ファイル: `index.html` のaccess/auth/Firebase bootstrap、`assets/blocked-login.gif`、`firestore.rules`、`ACCESS_CONTROL_SETUP.md`、`CLASS_HOURS_ACCESS.md`、`SETUP-LOGIN.md`。
 - 他Featureとの依存: すべての認証後Featureの前提。Web／ホーム画面アプリともログイン時に配信サーバー時刻へ固定し、Firestoreルール側でも `request.time` で同じ制限を再評価する。
 
@@ -135,12 +135,12 @@
 
 ## 管理者画面
 
-- 機能: ユーザー停止／解除、追加教材の許可／取り消し、授業制限on/off、休校日、現在授業だけの解除。
+- 機能: ユーザーの手動停止／解除、休止ロックの状態確認／解除、最終利用日時表示、追加教材の許可／取り消し、授業制限on/off、休校日、現在授業だけの解除。
 - Route / 画面: `#accessAdmin`。
 - 主なUI: `#accessAdminList`、`#schoolEnabled`、`#schoolExemptList`、`#schoolReleaseClass`。
 - state / hooks相当: `renderAccessAdmin()`、`renderSchoolSettings()`、`saveSchoolSettings()`、`canManageUsers()`。
 - API / service: `window.cbtCloud.fetchAccessUsers/setUserBlocked/setMaterialAccess/fetchSchoolPolicy/setSchoolPolicy/releaseSchoolClass`。
-- DB: `users` の管理者list読取、`accessControl/{uid}`、`materialAccess/{uid}`、`schoolAccess/settings`、停止時の `leaderboard/{uid}` 削除。
+- DB: `users` の管理者list読取、`accessControl/{uid}`、`activity/{uid}`、`materialAccess/{uid}`、`schoolAccess/settings`、手動停止時の `leaderboard/{uid}` 削除。
 - 関連ファイル: `index.html` のadmin/school/Firebase gateway、`firestore.rules`、アクセス・授業資料。
 - 他Featureとの依存: Accessを管理する専用Feature。個人進捗の内容は編集しない。
 

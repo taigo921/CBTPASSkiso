@@ -1,7 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const dependency=n=>require(process.env.FIREBASE_TEST_MODULES?path.join(process.env.FIREBASE_TEST_MODULES,n):n);
 const {initializeTestEnvironment,assertSucceeds:ok,assertFails:no}=dependency('@firebase/rules-unit-testing');
-const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,runTransaction,serverTimestamp}=dependency('firebase/firestore');
+const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,runTransaction,serverTimestamp,Timestamp}=dependency('firebase/firestore');
 (async()=>{
  assert.ok(process.env.FIRESTORE_EMULATOR_HOST,'Local emulator required');
  const [host,port]=process.env.FIRESTORE_EMULATOR_HOST.split(':');
@@ -33,6 +33,29 @@ const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,runTransaction,s
     transaction.set(doc(learner,'users','learner','progressChunks','chunk0'),{...chunk,generation:'v2-transaction'});
     transaction.set(doc(learner,'users','learner','progressChunks','chunk1'),{...chunk,generation:'v2-transaction',index:1});
   }));
+  await ok(getDoc(doc(learner,'activity','learner')));
+  await no(getDoc(doc(learner,'activity','other')));await no(getDocs(collection(learner,'activity')));
+  await no(setDoc(doc(learner,'activity','learner'),{lastSeenAt:Timestamp.now()}));
+  await no(setDoc(doc(learner,'activity','learner'),{lastSeenAt:serverTimestamp(),extra:true}));
+  await ok(setDoc(doc(learner,'activity','learner'),{lastSeenAt:serverTimestamp()}));
+  await no(deleteDoc(doc(learner,'activity','learner')));
+  const old=Timestamp.fromMillis(Date.now()-8*24*60*60*1000);
+  await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'activity','learner'),{lastSeenAt:old});});
+  await no(getDoc(doc(learner,'users','learner')));await no(updateDoc(doc(learner,'users','learner'),{inactiveWrite:1}));
+  await no(setDoc(doc(learner,'activity','learner'),{lastSeenAt:serverTimestamp()}));
+  await ok(getDoc(doc(admin,'users','learner')));await ok(getDocs(collection(admin,'activity')));
+  await ok(setDoc(doc(admin,'activity','learner'),{lastSeenAt:serverTimestamp()}));
+  await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'activity','learner'),{lastSeenAt:old});});
+  await ok(setDoc(doc(admin,'accessControl','learner'),record(false)));
+  await ok(getDoc(doc(learner,'users','learner')));await ok(setDoc(doc(learner,'activity','learner'),{lastSeenAt:serverTimestamp()}));
+  await env.withSecurityRulesDisabled(async c=>{
+    const db=c.firestore();await setDoc(doc(db,'activity','learner'),{lastSeenAt:old});await setDoc(doc(db,'accessControl','learner'),{blocked:false,updatedBy:'owner',updatedAt:old});
+  });
+  await no(getDoc(doc(learner,'users','learner')));
+  await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'activity','owner'),{lastSeenAt:old});});
+  await ok(updateDoc(doc(admin,'users','owner'),{adminStillActive:true}));
+  await env.withSecurityRulesDisabled(async c=>{const db=c.firestore();await deleteDoc(doc(db,'activity','learner'));await deleteDoc(doc(db,'accessControl','learner'));});
+  await ok(getDoc(doc(learner,'users','learner')),'missing activity is allowed');
   for(const db of [learner,unverified,anonymous]){await no(getDocs(collection(db,'accessControl')));await no(setDoc(doc(db,'accessControl','learner'),record(true)));}
   await no(getDoc(doc(learner,'accessControl','other')));
   await no(setDoc(doc(admin,'accessControl','owner'),record(true)));
@@ -63,6 +86,6 @@ const {doc,getDoc,getDocs,collection,setDoc,updateDoc,deleteDoc,runTransaction,s
   await ok(getDocs(collection(admin,'materialAccess')));
   await ok(setDoc(doc(admin,'materialAccess','learner'),material(false)));
   await no(deleteDoc(doc(admin,'materialAccess','learner')));
-  console.log('PASS access rules: verified admin, self/schema protection, block/unblock, private data and progress preserved');
+  console.log('PASS access rules: verified admin, manual and seven-day inactivity lock, unlock grace/relock, missing activity allowed, activity schema protected, private data and progress preserved');
  }finally{await env.cleanup();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

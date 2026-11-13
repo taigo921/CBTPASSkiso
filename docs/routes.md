@@ -5,7 +5,7 @@
 |Route / screen|目的|関連Feature|主なUI|使用データ|主要関連箇所|
 |---|---|---|---|---|---|
 |`#authGate`|Google／メールログイン、未許可案内|Access & Identity|`#gbtn`, `#authEmailBox`, `#authErr`|Firebase Auth、許可メールhash|`index.html` auth/Firebase bootstrap、`SETUP-LOGIN.md`|
-|`#blockedLoginOverlay`|個別停止ユーザーへ停止表示|Access & Identity|`#blockedLoginBack`|`accessControl/{uid}`、端末notice key|`setBlockedLoginImage()`, `requireAccess()`, `watchAccess()`|
+|`#blockedLoginOverlay`|手動停止・7日間未利用の休止ユーザーへ理由別の停止表示|Access & Identity|`#blockedLoginBack`|`accessControl/{uid}`、`activity/{uid}`、端末notice key|`setBlockedLoginImage()`, `requireAccess()`, `recordActivity()`, `watchAccess()`|
 |`#schoolGate`|授業中の利用停止と自動解除|Access & Identity|`#schoolGateImage`, `#schoolGateMessage`, logout|`schoolAccess/settings`、配信サーバー基準のJST時間割|`refreshSchoolClock()`, `schoolRestriction()`, `updateSchoolGate()`, `firestore.rules`|
 |`#home` / `#regularHome`|問題集1・2／CBT ANSWER巻選択、成績概要、再開、各機能入口|Question Catalog、Progress|book tabs、`#answerVolumeSelector`、`#resumeCard`、mode buttons|問題JSON、本別成績、session、settings|`renderHome()`, `switchBook()`|
 |`#home` / `#mockHome`|模試block・科目選択、問題一覧|Mock Exam|block selector、filters、subject picker|模試assets、block別進捗|`renderMockHome()`|
@@ -22,7 +22,7 @@
 |`#mockSubjectPractice`|科目をblock横断で順番演習|Mock Exam|subject question/choices/review|科目分類、端末内科目session|`startMockSubjectPractice()`, `renderMockSubjectPractice()`|
 |`#dictionaryPractice`|CBT辞典または独立した歯科理工Formsの共用出題画面。入口ごとの教材以外は混在させない|Dictionary Practice / Dental Materials Practice|問題画像、A〜J、結果、解説画像|選択Featureのmanifest／画像、分離した端末進捗|`features/dictionary-practice/` と各教材assets|
 |`#leaderboard`|公開集計の順位、名前・写真編集|Leaderboard & Profile|tabs、list、rename、avatar|`leaderboard/{uid}`、本人profile|`openLeaderboard()`, `renderLeaderboard()`|
-|`#accessAdmin`|停止／解除、授業制限・休校日管理|Access Administration|user list、school controls|`users`, `accessControl`, `schoolAccess`|`openAccessAdmin()`, `renderAccessAdmin()`, `renderSchoolSettings()`|
+|`#accessAdmin`|手動停止／休止解除、最終利用日時、授業制限・休校日管理|Access Administration|user list、school controls|`users`, `accessControl`, `activity`, `schoolAccess`|`openAccessAdmin()`, `renderAccessAdmin()`, `renderSchoolSettings()`|
 |`#guideViewer` overlay|ガイド編の参照と拡大|Guide Viewer|page images、zoom controls|`guide/*.webp`、`guide_ref`|`openGuide()`, `buildGuidePages()`|
 |`#imageZoomViewer` overlay|問題・模試画像の拡大|Guide Viewer|zoom/pan stage|表示中の画像URL/data URL|`openImageZoom()` とpointer handlers|
 |`#unameModal` / `#avatarCropModal`|プロフィール入力・写真crop|Leaderboard & Profile|text input、canvas、zoom|`users/{uid}` profile|`askUsername()`, avatar関数群|
