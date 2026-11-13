@@ -1271,7 +1271,7 @@
     "subject": "",
     "guide_ref": "",
     "has_image": true,
-    "question": "表：mRNAのトリプレットコドン表。1文字目（5′末端）ごとの2・3文字目は，U：UUU/UUC=Phe，UUA/UUG=Leu，UCU/UCC/UCA/UCG=Ser，UAU/UAC=Tyr，UAA/UAG=終止，UGU/UGC=Cys，UGA=終止，UGG=Trp；C：CUU/CUC/CUA/CUG=Leu，CCU/CCC/CCA/CCG=Pro，CAU/CAC=His，CAA/CAG=Gln，CGU/CGC/CGA/CGG=Arg；A：AUU/AUC/AUA=Ile，AUG=Met（開始），ACU/ACC/ACA/ACG=Thr，AAU/AAC=Asn，AAA/AAG=Lys，AGU/AGC=Ser，AGA/AGG=Arg；G：GUU/GUC/GUA/GUG=Val，GCU/GCC/GCA/GCG=Ala，GAU/GAC=Asp，GAA/GAG=Glu，GGU/GGC/GGA/GGG=Gly。\n鋳型DNA鎖（TAC-CTC-TTA）から合成されるペプチドはどれか。",
+    "question": "鋳型DNA鎖（TAC-CTC-TTA）から合成されるペプチドはどれか。",
     "choices": {
       "A": "チロシン―アラニン―システイン",
       "B": "チロシン―ロイシン―ロイシン",
@@ -1298,7 +1298,7 @@
     "subject": "",
     "guide_ref": "",
     "has_image": true,
-    "question": "表：mRNAのトリプレットコドン表。1文字目（5′末端）ごとの2・3文字目は，U：UUU/UUC=Phe，UUA/UUG=Leu，UCU/UCC/UCA/UCG=Ser，UAU/UAC=Tyr，UAA/UAG=終止，UGU/UGC=Cys，UGA=終止，UGG=Trp；C：CUU/CUC/CUA/CUG=Leu，CCU/CCC/CCA/CCG=Pro，CAU/CAC=His，CAA/CAG=Gln，CGU/CGC/CGA/CGG=Arg；A：AUU/AUC/AUA=Ile，AUG=Met（開始），ACU/ACC/ACA/ACG=Thr，AAU/AAC=Asn，AAA/AAG=Lys，AGU/AGC=Ser，AGA/AGG=Arg；G：GUU/GUC/GUA/GUG=Val，GCU/GCC/GCA/GCG=Ala，GAU/GAC=Asp，GAA/GAG=Glu，GGU/GGC/GGA/GGG=Gly。\n3′-CCU-5′をアンチコドンにもつtRNAが運搬するアミノ酸はどれか。",
+    "question": "3′-CCU-5′をアンチコドンにもつtRNAが運搬するアミノ酸はどれか。",
     "choices": {
       "A": "リシン",
       "B": "グリシン",
@@ -2583,7 +2583,7 @@
     "subject": "",
     "guide_ref": "",
     "has_image": true,
-    "question": "ある生体材料の生化学的性質を以下に示す。\n情報枠：グリシンを多く含む。三重らせん構造をもつ。生合成にはビタミンCが必要である。\nこの材料を口腔粘膜の欠損部に使用する理由はどれか。",
+    "question": "ある生体材料の生化学的性質を以下に示す。\nこの材料を口腔粘膜の欠損部に使用する理由はどれか。",
     "choices": {
       "A": "耐食性",
       "B": "抗菌作用",
