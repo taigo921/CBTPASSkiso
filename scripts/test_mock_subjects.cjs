@@ -108,5 +108,5 @@ assert.equal(elements.mockSubjectReviewEmpty.classList.contains('hidden'),true,'
 
 assert.match(source,/data-mock-subject-mode="instant"[^>]*>1問ずつ答え合わせ/);
 assert.match(source,/data-mock-subject-mode="exam"[^>]*>本番形式（最後にまとめて）/);
-assert.match(source,/20261113-answer3/);
+assert.match(source,/20261113-nodesc/);
 console.log('PASS mock subjects: mappings, instant/exam modes, resume, explanations, completed review navigation and wrong-only filtering');
