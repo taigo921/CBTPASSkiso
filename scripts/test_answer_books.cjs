@@ -51,7 +51,7 @@ ${slice('function mergeCloudPayloads(', '// Detailed progress is loaded by UID')
   assert.equal(context.activeBook,'answer1','ANSWER tab selects the remembered/default volume');
   assert.ok(homes>0,'selecting an available ANSWER volume renders the normal home');
   assert.equal(vm.runInContext("answerVolumeReady('answer1')",context),true);
-  assert.equal(vm.runInContext("answerVolumeReady('answer3')",context),false,'empty volumes remain unavailable');
+  assert.equal(vm.runInContext("answerVolumeReady('answer4')",context),false,'empty volumes remain unavailable');
 
   vm.runInContext(`
     const record=statsByBook.answer1.perQ['ANS1-001']={correct:1,wrong:0,last:'correct',history:[{correct:true,at:100}],fav:false};
