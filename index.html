@@ -4395,7 +4395,7 @@ async function renderAccessAdmin(){
         user.inactive=!self&&!user.blocked&&activityIsInactive(user.activity,user.control);
         activity.textContent=`最終利用日時：${formatActivityJst(user.activity)}（日本時間）`;
         accessState.textContent=`状態：${user.blocked?'手動ブロック中':user.inactive?'休止ロック中':'利用中'}`;
-        button.textContent=self?'管理者（停止できません）':(user.blocked||user.inactive)?'解除':'アクセス停止';button.disabled=self;
+        button.textContent=self?'管理者（停止できません）':(user.blocked||user.inactive)?'アクセス解除':'アクセス停止';button.disabled=self;
       };
       renderUserAccess();
       materialButton.textContent=self?'追加教材：管理者（常に利用可）':user.extra?'追加教材：許可を取り消す':'追加教材：許可する';materialButton.disabled=self;
