@@ -33,6 +33,16 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ runner.temp }}/site
+      # The artifact API can lag behind a large upload; give it time to list the artifact.
+      - name: Wait for artifact listing
+        run: sleep 30
       - name: Publish
         id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - name: Retry publish
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 60
+      - name: Publish (retry)
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
