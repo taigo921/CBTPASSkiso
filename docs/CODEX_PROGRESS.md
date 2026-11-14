@@ -30,7 +30,7 @@
 
 ## 現在開発している機能
 
-- ガイドviewerの深いページでズームすると固定12pxのページ間隔を文書全体比率へ含めた誤差が累積し、大きく別ページへ飛ぶ不具合を修正。同一 `.guide-page` 内のフォーカス座標を `getBoundingClientRect()` で保持し、ピンチ更新をanimation frame単位へ集約した。`touch-action: pan-x pan-y` と2本指moveのキャンセルを維持し、build IDは `20261114-guidezoom`。未コミット・未公開。
+- ガイドviewerのiPhone Safariピンチ中に非同期スクロール位置が旧レイアウト倍率で再適用され、深いページから約200ページ飛ぶ不具合を修正。2本指操作中はスクロールとレイアウトを凍結し、`transform` だけでプレビューして、終了時に同一 `.guide-page` 内の位置を最終中心へ一度だけ確定する。ボタン・Ctrl+ホイールもレイアウト変更中はoverflowを凍結し、復元直後に確定位置を再適用する。build IDは `20261114-guidepinch`。未コミット・未公開、実機iPhone Safari確認待ち。
 
 - 7日間アプリを利用していない一般ユーザーを `activity/{uid}.lastSeenAt` と Firestore Rules で自動停止し、管理画面からの解除後7日間を猶予とする機能を実装・回帰追加済み。管理者除外、activity未作成ユーザーの許可、起動時／前面復帰時の1時間間引き更新、手動停止と休止停止の表示分離、permission-denied時の再判定を含む。build ID `20261113-autolock`。commit・push・rules/Pages公開は未実施。
 
@@ -89,6 +89,7 @@
 
 ## テスト結果
 
+- 2026-11-14: ガイドviewerのピンチをレイアウト変更なしのtransformプレビューへ変更。p.221で中心を移動する `1→2.5` 倍の確定後も同じページ内位置が最終中心へ来ること、moveフレームが `width` / `maxWidth` / `scrollTop` / `scrollLeft` を書かないことを回帰で確認。Playwright用3本とFirestore Emulator専用3本を除く全Node回帰24本を `TZ=Asia/Tokyo` / `TZ=UTC`、標準入力 `</dev/null` で各1回（計48実行）し全件成功。Service Worker構文、`git diff --check` も成功。commit、push、Pages公開は未実施。
 - 2026-11-14: ガイドviewerのページ基準ズーム回帰を追加し、p.221・固定12px gapで `1→1.2→2→1.2→1` 倍後も同一ページ内の焦点が維持されることを確認。Playwright用3本とFirestore Emulator専用3本を除くNode回帰24本を `TZ=Asia/Tokyo` / `TZ=UTC` で各1回（計48実行）し全件成功。Service Worker構文、`git diff --check` も成功。commit、push、Pages公開は未実施。
 - 2026-11-13: 7日未利用の自動休止を実装。指定一覧のbrowser以外22本を `TZ=Asia/Tokyo` / `TZ=UTC` で各1回（計44実行）すべて成功。`test_access_control.cjs` で7日超過、解除後猶予、activity未作成、1時間間引き、文言・状態分岐、rules静的形状を確認。Firestore Emulator用の `test_access_rules.cjs` に休止・解除・7日後再休止・管理者除外・activity未作成・activity schemaを追加したが、ローカルにはJavaとFirebase test moduleがないため本体は未実行。指定どおりbrowser 3本はCI専用として除外。追加でFirebase公開検査7件、現在正答率、全39問題JSON、Service Worker構文、`git diff --check` に成功。通常member accessのRules参照はdistinct 3文書で10-call上限内。commit、push、rules/Pages公開は未実施。
 - 2026-11-11: CBT ANSWER専用回帰で、非許可時のタブ非表示・遷移拒否、許可時の巻選択と通常ホーム、準備中巻、`ANS1-` ダミー回答の `statsByBook.answer1`・compact payload・merge復元、空巻省略、旧payload互換、起動時／権限剥奪時の問題集1復帰、ルート除外を確認。`tests.yml` のNode回帰22本を通常環境と `TZ=UTC` で各全件成功。Firebase公開検査7件、shell構文、全21問題JSON、現在正答率、`git diff --check` も成功。Playwrightはローカルmodule未導入のため未実行。`data/`、commit、push、公開はいずれも変更・実施していない。

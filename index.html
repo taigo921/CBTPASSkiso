@@ -1412,7 +1412,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261114-guidezoom';
+const SERVICE_WORKER_BUILD='20261114-guidepinch';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1749,7 +1749,7 @@ const GUIDE_TOTAL_PAGES=681;
 let guidePagesBuilt=false;
 let guideLoadObserver=null;
 let guideReturnScrollY=0;
-const guideZoomState={scale:1,lastDistance:0,lastCenter:null,pinchFrame:0,pendingPinch:null,pinchActive:false};
+const guideZoomState={scale:1,pinchFrame:0,restoreFrame:0,pendingPinch:null,pinchActive:false,startScale:1,startDistance:0,startCenter:null,lastCenter:null,targetScale:1,anchorPage:null,anchorRect:null,anchorFx:0,anchorFy:0,pinchMoved:false,scrollFrozen:false,previousOverflow:''};
 function guideZoomScrollDelta(oldPageRect,newPageRect,focusClient,targetClient=focusClient){
   const fx=oldPageRect.width?(focusClient.x-oldPageRect.left)/oldPageRect.width:0;
   const fy=oldPageRect.height?(focusClient.y-oldPageRect.top)/oldPageRect.height:0;
@@ -1770,13 +1770,32 @@ function guidePageAtClientY(clientY){
     return distance(a)-distance(b);
   })[0]||null;
 }
+function freezeGuideScroll(){
+  const scroll=el('guideScroll'),top=scroll.scrollTop,left=scroll.scrollLeft;
+  if(guideZoomState.restoreFrame){cancelAnimationFrame(guideZoomState.restoreFrame);guideZoomState.restoreFrame=0;}
+  if(!guideZoomState.scrollFrozen){guideZoomState.previousOverflow=scroll.style.overflow;guideZoomState.scrollFrozen=true;}
+  scroll.style.overflow='hidden';scroll.scrollTop=top;scroll.scrollLeft=left;
+}
+function restoreGuideScroll(top=null,left=null,afterFrame=true){
+  const restore=()=>{
+    guideZoomState.restoreFrame=0;
+    const scroll=el('guideScroll');
+    if(guideZoomState.scrollFrozen){scroll.style.overflow=guideZoomState.previousOverflow;guideZoomState.scrollFrozen=false;guideZoomState.previousOverflow='';}
+    if(top!==null)scroll.scrollTop=top;
+    if(left!==null)scroll.scrollLeft=left;
+  };
+  if(guideZoomState.restoreFrame)cancelAnimationFrame(guideZoomState.restoreFrame);
+  if(afterFrame)guideZoomState.restoreFrame=requestAnimationFrame(restore);else restore();
+}
 function applyGuideZoom(nextScale,point=null,previousPoint=null){
+  if(guideZoomState.pinchActive)return;
   const scroll=el('guideScroll'),pages=el('guidePages'),next=Math.max(1,Math.min(4,nextScale));
   // 画面中央ではなく、指（またはズームボタンの中心）が指していたガイド上の位置を保つ。
   // 固定幅のページ間gapを含む文書全体ではなく、同じページ内の位置を基準にする。
   const scrollRect=scroll.getBoundingClientRect();
   const current=point||{x:scrollRect.left+scrollRect.width/2,y:scrollRect.top+scrollRect.height/2},previous=previousPoint||current;
   const focusPage=guidePageAtClientY(previous.y),oldPageRect=focusPage?.getBoundingClientRect();
+  freezeGuideScroll();
   guideZoomState.scale=next;
   pages.style.width=`${next*100}%`;pages.style.maxWidth=`${976*next}px`;
   // Safariでレイアウト更新前のスクロール位置が使われると、拡大時に別のページへ飛ぶため同期させる。
@@ -1786,11 +1805,26 @@ function applyGuideZoom(nextScale,point=null,previousPoint=null){
     scroll.scrollLeft+=delta.left;scroll.scrollTop+=delta.top;
   }
   el('guideZoomReset').textContent=`${next.toFixed(next%1?1:0)}×`;
+  restoreGuideScroll(scroll.scrollTop,scroll.scrollLeft);
+}
+function renderGuidePinchFrame(pending){
+  if(!pending||!guideZoomState.pinchActive||!guideZoomState.startDistance)return;
+  const next=Math.max(1,Math.min(4,guideZoomState.startScale*pending.distance/guideZoomState.startDistance));
+  guideZoomState.targetScale=next;guideZoomState.lastCenter=pending.center;guideZoomState.pinchMoved=true;
+  const dx=pending.center.x-guideZoomState.startCenter.x,dy=pending.center.y-guideZoomState.startCenter.y;
+  el('guidePages').style.transform=`translate(${dx}px, ${dy}px) scale(${next/guideZoomState.startScale})`;
+  el('guideZoomReset').textContent=`${next.toFixed(next%1?1:0)}×`;
+}
+function clearGuidePinchVisual(){
+  const pages=el('guidePages');
+  pages.style.transform='';pages.style.transformOrigin='';pages.style.willChange='';
 }
 function resetGuideZoom(){
   const pages=el('guidePages');
   if(guideZoomState.pinchFrame)cancelAnimationFrame(guideZoomState.pinchFrame);
-  Object.assign(guideZoomState,{scale:1,lastDistance:0,lastCenter:null,pinchFrame:0,pendingPinch:null,pinchActive:false});
+  if(guideZoomState.restoreFrame)cancelAnimationFrame(guideZoomState.restoreFrame);
+  clearGuidePinchVisual();restoreGuideScroll(null,null,false);
+  Object.assign(guideZoomState,{scale:1,pinchFrame:0,restoreFrame:0,pendingPinch:null,pinchActive:false,startScale:1,startDistance:0,startCenter:null,lastCenter:null,targetScale:1,anchorPage:null,anchorRect:null,anchorFx:0,anchorFy:0,pinchMoved:false});
   pages.style.width='100%';pages.style.maxWidth='976px';el('guideZoomReset').textContent='1×';
 }
 function buildGuidePages(){
@@ -1922,27 +1956,39 @@ el('guideScroll').addEventListener('touchstart',event=>{
   if(event.touches.length!==2)return;
   if(guideZoomState.pinchFrame)cancelAnimationFrame(guideZoomState.pinchFrame);
   const a=event.touches[0],b=event.touches[1];
-  guideZoomState.pinchFrame=0;guideZoomState.pendingPinch=null;guideZoomState.pinchActive=true;
-  guideZoomState.lastDistance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-  guideZoomState.lastCenter={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};
+  const center={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2},page=guidePageAtClientY(center.y),rect=page?.getBoundingClientRect(),pages=el('guidePages'),pagesRect=pages.getBoundingClientRect();
+  freezeGuideScroll();
+  Object.assign(guideZoomState,{pinchFrame:0,pendingPinch:null,pinchActive:true,startScale:guideZoomState.scale,startDistance:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),startCenter:center,lastCenter:center,targetScale:guideZoomState.scale,anchorPage:page,anchorRect:rect,anchorFx:rect&&rect.width?(center.x-rect.left)/rect.width:0,anchorFy:rect&&rect.height?(center.y-rect.top)/rect.height:0,pinchMoved:false});
+  pages.style.transformOrigin=`${center.x-pagesRect.left}px ${center.y-pagesRect.top}px`;pages.style.willChange='transform';
 },{passive:true});
 el('guideScroll').addEventListener('touchmove',event=>{
-  if(event.touches.length!==2)return;event.preventDefault();
+  if(event.touches.length!==2||!guideZoomState.pinchActive)return;event.preventDefault();
   const a=event.touches[0],b=event.touches[1];
   guideZoomState.pendingPinch={distance:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),center:{x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2}};
   if(guideZoomState.pinchFrame)return;
   guideZoomState.pinchFrame=requestAnimationFrame(()=>{
     guideZoomState.pinchFrame=0;
     const pending=guideZoomState.pendingPinch;guideZoomState.pendingPinch=null;
-    if(pending&&guideZoomState.lastDistance)applyGuideZoom(guideZoomState.scale*pending.distance/guideZoomState.lastDistance,pending.center,guideZoomState.lastCenter);
-    if(pending){guideZoomState.lastDistance=pending.distance;guideZoomState.lastCenter=pending.center;}
-    if(!guideZoomState.pinchActive){guideZoomState.lastDistance=0;guideZoomState.lastCenter=null;}
+    renderGuidePinchFrame(pending);
   });
 },{passive:false});
 function endGuidePinch(event){
-  if(event.touches.length>=2)return;
+  if(event.touches.length>=2||!guideZoomState.pinchActive)return;
   if(guideZoomState.pinchFrame)cancelAnimationFrame(guideZoomState.pinchFrame);
-  Object.assign(guideZoomState,{lastDistance:0,lastCenter:null,pinchFrame:0,pendingPinch:null,pinchActive:false});
+  if(guideZoomState.pendingPinch)renderGuidePinchFrame(guideZoomState.pendingPinch);
+  const scroll=el('guideScroll'),pages=el('guidePages'),moved=guideZoomState.pinchMoved,anchorPage=guideZoomState.anchorPage,oldRect=guideZoomState.anchorRect,focus=oldRect?{x:oldRect.left+guideZoomState.anchorFx*oldRect.width,y:oldRect.top+guideZoomState.anchorFy*oldRect.height}:guideZoomState.startCenter,target=guideZoomState.lastCenter||guideZoomState.startCenter,next=guideZoomState.targetScale;
+  clearGuidePinchVisual();
+  Object.assign(guideZoomState,{pinchFrame:0,pendingPinch:null,pinchActive:false,startDistance:0,startCenter:null,lastCenter:null,anchorPage:null,anchorRect:null,pinchMoved:false});
+  if(!moved){restoreGuideScroll(null,null,false);return;}
+  guideZoomState.scale=next;
+  pages.style.width=`${next*100}%`;pages.style.maxWidth=`${976*next}px`;
+  void pages.getBoundingClientRect().width;
+  if(anchorPage&&oldRect&&focus&&target){
+    const delta=guideZoomScrollDelta(oldRect,anchorPage.getBoundingClientRect(),focus,target);
+    scroll.scrollLeft+=delta.left;scroll.scrollTop+=delta.top;
+  }
+  el('guideZoomReset').textContent=`${next.toFixed(next%1?1:0)}×`;
+  restoreGuideScroll(scroll.scrollTop,scroll.scrollLeft);
 }
 el('guideScroll').addEventListener('touchend',endGuidePinch,{passive:true});
 el('guideScroll').addEventListener('touchcancel',endGuidePinch,{passive:true});
