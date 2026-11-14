@@ -29,6 +29,7 @@ node scripts/test_mock_subjects.cjs
 node scripts/test_app_update.cjs
 node scripts/test_access_control.cjs
 node scripts/test_extra_materials_access.cjs
+node scripts/test_guide_zoom.cjs
 node scripts/test_school_hours.cjs
 node scripts/test_admin_ranking.cjs
 node scripts/test_paper_progress.cjs
@@ -69,6 +70,7 @@ Firestore権限を変えた場合は、実プロジェクトではなくロー�
 |認証・停止・授業|access control、school hours、blocked login browser、rules emulator|
 |ランキング|admin ranking、leaderboard rules、sync|
 |Service Worker・更新|app update、browser tests|
+|ガイドviewer・ズーム|guide zoom、browser tests|
 
 ## Release boundaries
 

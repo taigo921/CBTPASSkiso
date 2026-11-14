@@ -35,6 +35,7 @@ jobs:
           node scripts/test_access_control.cjs
           node scripts/test_extra_materials_access.cjs
           node scripts/test_answer_books.cjs
+          node scripts/test_guide_zoom.cjs
           if [ -f scripts/test_school_hours.cjs ]; then node scripts/test_school_hours.cjs; fi
           node scripts/test_admin_ranking.cjs
           node scripts/test_paper_progress.cjs

@@ -1,6 +1,6 @@
 # Codex progress
 
-最終更新: 2026-11-13
+最終更新: 2026-11-14
 
 基準コミット: `091570f`（検証済み辞典②専用演習の公開）
 
@@ -29,6 +29,8 @@
 - Codex向けのarchitecture、feature map、database、route、development資料。
 
 ## 現在開発している機能
+
+- ガイドviewerの深いページでズームすると固定12pxのページ間隔を文書全体比率へ含めた誤差が累積し、大きく別ページへ飛ぶ不具合を修正。同一 `.guide-page` 内のフォーカス座標を `getBoundingClientRect()` で保持し、ピンチ更新をanimation frame単位へ集約した。`touch-action: pan-x pan-y` と2本指moveのキャンセルを維持し、build IDは `20261114-guidezoom`。未コミット・未公開。
 
 - 7日間アプリを利用していない一般ユーザーを `activity/{uid}.lastSeenAt` と Firestore Rules で自動停止し、管理画面からの解除後7日間を猶予とする機能を実装・回帰追加済み。管理者除外、activity未作成ユーザーの許可、起動時／前面復帰時の1時間間引き更新、手動停止と休止停止の表示分離、permission-denied時の再判定を含む。build ID `20261113-autolock`。commit・push・rules/Pages公開は未実施。
 
@@ -87,6 +89,7 @@
 
 ## テスト結果
 
+- 2026-11-14: ガイドviewerのページ基準ズーム回帰を追加し、p.221・固定12px gapで `1→1.2→2→1.2→1` 倍後も同一ページ内の焦点が維持されることを確認。Playwright用3本とFirestore Emulator専用3本を除くNode回帰24本を `TZ=Asia/Tokyo` / `TZ=UTC` で各1回（計48実行）し全件成功。Service Worker構文、`git diff --check` も成功。commit、push、Pages公開は未実施。
 - 2026-11-13: 7日未利用の自動休止を実装。指定一覧のbrowser以外22本を `TZ=Asia/Tokyo` / `TZ=UTC` で各1回（計44実行）すべて成功。`test_access_control.cjs` で7日超過、解除後猶予、activity未作成、1時間間引き、文言・状態分岐、rules静的形状を確認。Firestore Emulator用の `test_access_rules.cjs` に休止・解除・7日後再休止・管理者除外・activity未作成・activity schemaを追加したが、ローカルにはJavaとFirebase test moduleがないため本体は未実行。指定どおりbrowser 3本はCI専用として除外。追加でFirebase公開検査7件、現在正答率、全39問題JSON、Service Worker構文、`git diff --check` に成功。通常member accessのRules参照はdistinct 3文書で10-call上限内。commit、push、rules/Pages公開は未実施。
 - 2026-11-11: CBT ANSWER専用回帰で、非許可時のタブ非表示・遷移拒否、許可時の巻選択と通常ホーム、準備中巻、`ANS1-` ダミー回答の `statsByBook.answer1`・compact payload・merge復元、空巻省略、旧payload互換、起動時／権限剥奪時の問題集1復帰、ルート除外を確認。`tests.yml` のNode回帰22本を通常環境と `TZ=UTC` で各全件成功。Firebase公開検査7件、shell構文、全21問題JSON、現在正答率、`git diff --check` も成功。Playwrightはローカルmodule未導入のため未実行。`data/`、commit、push、公開はいずれも変更・実施していない。
 - 2026-11-11: 科目別演習の即時回答確定後は画面上部ではなく結果欄へスムーズスクロールし、「次の問題へ」と本番形式は従来どおり上部へ戻る分岐を回帰で確認。全問正解時の「×の問題だけ」では、解除用トグルと「不正解の問題はありません」だけを表示し、OFFで通常表示へ戻る回帰を追加。`tests.yml` の通常Node回帰21本、Firebase公開検査7件、shell構文、全21問題JSON、`git diff --check` は全件成功。Playwright 3本とFirestore Emulator 3本は必要moduleがなく、隔離`npm install`もネットワーク制約下で完了しないためテスト開始前に停止。Java runtimeも未導入。

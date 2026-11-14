@@ -158,6 +158,7 @@ for test in \
   test_progress_preservation \
   test_mock_exam \
   test_mock_subjects \
+  test_guide_zoom \
   test_app_update \
   test_access_control \
   test_school_hours \

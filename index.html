@@ -1412,7 +1412,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261114-answer4';
+const SERVICE_WORKER_BUILD='20261114-guidezoom';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -1749,27 +1749,48 @@ const GUIDE_TOTAL_PAGES=681;
 let guidePagesBuilt=false;
 let guideLoadObserver=null;
 let guideReturnScrollY=0;
-const guideZoomState={scale:1,lastDistance:0,lastCenter:null};
+const guideZoomState={scale:1,lastDistance:0,lastCenter:null,pinchFrame:0,pendingPinch:null,pinchActive:false};
+function guideZoomScrollDelta(oldPageRect,newPageRect,focusClient,targetClient=focusClient){
+  const fx=oldPageRect.width?(focusClient.x-oldPageRect.left)/oldPageRect.width:0;
+  const fy=oldPageRect.height?(focusClient.y-oldPageRect.top)/oldPageRect.height:0;
+  return {left:newPageRect.left+fx*newPageRect.width-targetClient.x,top:newPageRect.top+fy*newPageRect.height-targetClient.y};
+}
+function guidePageAtClientY(clientY){
+  const pages=el('guidePages').querySelectorAll('.guide-page');
+  let low=0,high=pages.length-1;
+  while(low<=high){
+    const middle=(low+high)>>1,page=pages[middle],rect=page.getBoundingClientRect();
+    if(clientY<rect.top)high=middle-1;
+    else if(clientY>rect.bottom)low=middle+1;
+    else return page;
+  }
+  const candidates=[pages[Math.max(0,Math.min(pages.length-1,low-1))],pages[Math.max(0,Math.min(pages.length-1,low))]].filter(Boolean);
+  return candidates.sort((a,b)=>{
+    const distance=page=>{const rect=page.getBoundingClientRect();return clientY<rect.top?rect.top-clientY:Math.max(0,clientY-rect.bottom);};
+    return distance(a)-distance(b);
+  })[0]||null;
+}
 function applyGuideZoom(nextScale,point=null,previousPoint=null){
   const scroll=el('guideScroll'),pages=el('guidePages'),next=Math.max(1,Math.min(4,nextScale));
-  if(next===guideZoomState.scale)return;
   // 画面中央ではなく、指（またはズームボタンの中心）が指していたガイド上の位置を保つ。
-  // ページが中央寄せの状態から横に広がるケースでも、offsetLeft / 実寸を使うことでジャンプしない。
-  const current=point||{x:scroll.clientWidth/2,y:scroll.clientHeight/2},previous=previousPoint||current;
-  const oldWidth=pages.offsetWidth,oldHeight=pages.offsetHeight,oldLeft=pages.offsetLeft,oldTop=pages.offsetTop;
-  const ratioX=oldWidth?(scroll.scrollLeft+previous.x-oldLeft)/oldWidth:0;
-  const ratioY=oldHeight?(scroll.scrollTop+previous.y-oldTop)/oldHeight:0;
+  // 固定幅のページ間gapを含む文書全体ではなく、同じページ内の位置を基準にする。
+  const scrollRect=scroll.getBoundingClientRect();
+  const current=point||{x:scrollRect.left+scrollRect.width/2,y:scrollRect.top+scrollRect.height/2},previous=previousPoint||current;
+  const focusPage=guidePageAtClientY(previous.y),oldPageRect=focusPage?.getBoundingClientRect();
   guideZoomState.scale=next;
   pages.style.width=`${next*100}%`;pages.style.maxWidth=`${976*next}px`;
   // Safariでレイアウト更新前のスクロール位置が使われると、拡大時に別のページへ飛ぶため同期させる。
-  void pages.offsetWidth;
-  const newLeft=pages.offsetLeft,newTop=pages.offsetTop;
-  scroll.scrollLeft=Math.max(0,newLeft+ratioX*pages.offsetWidth-current.x);
-  scroll.scrollTop=Math.max(0,newTop+ratioY*pages.offsetHeight-current.y);
+  void pages.getBoundingClientRect().width;
+  if(focusPage&&oldPageRect){
+    const delta=guideZoomScrollDelta(oldPageRect,focusPage.getBoundingClientRect(),previous,current);
+    scroll.scrollLeft+=delta.left;scroll.scrollTop+=delta.top;
+  }
   el('guideZoomReset').textContent=`${next.toFixed(next%1?1:0)}×`;
 }
 function resetGuideZoom(){
-  const pages=el('guidePages');guideZoomState.scale=1;guideZoomState.lastDistance=0;guideZoomState.lastCenter=null;
+  const pages=el('guidePages');
+  if(guideZoomState.pinchFrame)cancelAnimationFrame(guideZoomState.pinchFrame);
+  Object.assign(guideZoomState,{scale:1,lastDistance:0,lastCenter:null,pinchFrame:0,pendingPinch:null,pinchActive:false});
   pages.style.width='100%';pages.style.maxWidth='976px';el('guideZoomReset').textContent='1×';
 }
 function buildGuidePages(){
@@ -1899,20 +1920,33 @@ el('guideZoomIn').addEventListener('click',()=>applyGuideZoom(guideZoomState.sca
 el('guideZoomReset').addEventListener('click',()=>applyGuideZoom(1));
 el('guideScroll').addEventListener('touchstart',event=>{
   if(event.touches.length!==2)return;
-  const rect=el('guideScroll').getBoundingClientRect(),a=event.touches[0],b=event.touches[1];
+  if(guideZoomState.pinchFrame)cancelAnimationFrame(guideZoomState.pinchFrame);
+  const a=event.touches[0],b=event.touches[1];
+  guideZoomState.pinchFrame=0;guideZoomState.pendingPinch=null;guideZoomState.pinchActive=true;
   guideZoomState.lastDistance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-  guideZoomState.lastCenter={x:(a.clientX+b.clientX)/2-rect.left,y:(a.clientY+b.clientY)/2-rect.top};
+  guideZoomState.lastCenter={x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2};
 },{passive:true});
 el('guideScroll').addEventListener('touchmove',event=>{
   if(event.touches.length!==2)return;event.preventDefault();
-  const rect=el('guideScroll').getBoundingClientRect(),a=event.touches[0],b=event.touches[1],distance=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),center={x:(a.clientX+b.clientX)/2-rect.left,y:(a.clientY+b.clientY)/2-rect.top};
-  if(guideZoomState.lastDistance)applyGuideZoom(guideZoomState.scale*distance/guideZoomState.lastDistance,center,guideZoomState.lastCenter);
-  guideZoomState.lastDistance=distance;guideZoomState.lastCenter=center;
+  const a=event.touches[0],b=event.touches[1];
+  guideZoomState.pendingPinch={distance:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),center:{x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2}};
+  if(guideZoomState.pinchFrame)return;
+  guideZoomState.pinchFrame=requestAnimationFrame(()=>{
+    guideZoomState.pinchFrame=0;
+    const pending=guideZoomState.pendingPinch;guideZoomState.pendingPinch=null;
+    if(pending&&guideZoomState.lastDistance)applyGuideZoom(guideZoomState.scale*pending.distance/guideZoomState.lastDistance,pending.center,guideZoomState.lastCenter);
+    if(pending){guideZoomState.lastDistance=pending.distance;guideZoomState.lastCenter=pending.center;}
+    if(!guideZoomState.pinchActive){guideZoomState.lastDistance=0;guideZoomState.lastCenter=null;}
+  });
 },{passive:false});
-function endGuidePinch(event){if(event.touches.length<2){guideZoomState.lastDistance=0;guideZoomState.lastCenter=null;}}
+function endGuidePinch(event){
+  if(event.touches.length>=2)return;
+  if(guideZoomState.pinchFrame)cancelAnimationFrame(guideZoomState.pinchFrame);
+  Object.assign(guideZoomState,{lastDistance:0,lastCenter:null,pinchFrame:0,pendingPinch:null,pinchActive:false});
+}
 el('guideScroll').addEventListener('touchend',endGuidePinch,{passive:true});
 el('guideScroll').addEventListener('touchcancel',endGuidePinch,{passive:true});
-el('guideScroll').addEventListener('wheel',event=>{if(!event.ctrlKey)return;event.preventDefault();const rect=el('guideScroll').getBoundingClientRect();applyGuideZoom(guideZoomState.scale*(event.deltaY<0?1.12:.89),{x:event.clientX-rect.left,y:event.clientY-rect.top});},{passive:false});
+el('guideScroll').addEventListener('wheel',event=>{if(!event.ctrlKey)return;event.preventDefault();applyGuideZoom(guideZoomState.scale*(event.deltaY<0?1.12:.89),{x:event.clientX,y:event.clientY});},{passive:false});
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&!el('guideViewer').classList.contains('hidden'))closeGuide();
 });
