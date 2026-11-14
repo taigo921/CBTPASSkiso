@@ -206,6 +206,7 @@
 
   function renderFavorite(){
     const item=manifest.items[currentIndex],on=progress.favorites[item.sourceId]?.on===true,button=$('dictionaryFavBtn');
+    if(!button)return;
     button.textContent=on?'★':'☆';button.classList.toggle('on',on);button.setAttribute('aria-pressed',String(on));
   }
 
