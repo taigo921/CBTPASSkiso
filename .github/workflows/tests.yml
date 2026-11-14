@@ -49,6 +49,7 @@ jobs:
           node scripts/test_dictionary_practice.cjs
           node scripts/test_dictionary3_practice.cjs
           node scripts/test_dental_materials_forms.cjs
+          node scripts/test_dictionary_review_modes.cjs
           node scripts/test_rank_progression.cjs
           git diff --check
           python3 - <<'PY'

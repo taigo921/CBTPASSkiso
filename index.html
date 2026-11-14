@@ -690,6 +690,11 @@
           <div><b id="dictionaryCorrect">0</b>前回正解</div>
           <div><b id="dictionaryAttempts">0</b>総回答</div>
         </div>
+        <div class="dictionary-modes" id="dictionaryModes" role="group" aria-label="出題する問題を選ぶ">
+          <button type="button" class="on" data-dictionary-mode="all">すべて</button>
+          <button type="button" data-dictionary-mode="wrong">✗ 間違えた問題 (<span>0</span>)</button>
+          <button type="button" data-dictionary-mode="fav">★ お気に入り (<span>0</span>)</button>
+        </div>
         <button type="button" class="btn" id="dictionaryStart" disabled>読み込み中…</button>
         <div class="sec-h">領域から始める</div>
         <div class="dictionary-groups" id="dictionaryGroups">
@@ -934,7 +939,10 @@
       <button type="button" class="ghost-btn" id="dictionaryHomeBack">辞典一覧へ</button>
     </div>
     <div class="dictionary-card">
-      <span class="dictionary-source-id" id="dictionaryNumber">—</span>
+      <div class="dictionary-question-meta">
+        <span class="dictionary-source-id" id="dictionaryNumber">—</span>
+        <button type="button" class="dictionary-fav" id="dictionaryFavBtn" aria-pressed="false" title="お気に入り" aria-label="お気に入り">☆</button>
+      </div>
       <img id="dictionaryQuestionImage" class="dictionary-image" alt="辞典②の問題">
       <p id="dictionaryHistory" class="dictionary-note hidden"></p>
       <div id="dictionaryChoices" class="dictionary-choices" aria-label="回答を選ぶ"></div>
@@ -1412,7 +1420,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261114-guidepinch';
+const SERVICE_WORKER_BUILD='20261115-dictreview';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -4142,12 +4150,12 @@ const PRACTICE_PROGRESS_PREFIXES={
 };
 function practiceProgressKey(source,uid=window.cbtUser?.uid||'local'){return (PRACTICE_PROGRESS_PREFIXES[source]||'')+uid;}
 function localPracticePayload(){
-  return Object.fromEntries(Object.keys(PRACTICE_PROGRESS_PREFIXES).map(source=>[source,safeGet(practiceProgressKey(source))||{index:0,answers:{},updatedAt:0}]));
+  return Object.fromEntries(Object.keys(PRACTICE_PROGRESS_PREFIXES).map(source=>[source,safeGet(practiceProgressKey(source))||{index:0,answers:{},favorites:{},updatedAt:0}]));
 }
 function mergePracticePayload(local,remote){
   const result={};
   for(const source of Object.keys(PRACTICE_PROGRESS_PREFIXES)){
-    const a=local?.[source]||{},b=remote?.[source]||{},answers={};
+    const a=local?.[source]||{},b=remote?.[source]||{},answers={},favorites={};
     for(const id of new Set([...Object.keys(a.answers||{}),...Object.keys(b.answers||{})])){
       const left=a.answers?.[id]||{},right=b.answers?.[id]||{},attempts=[],seen=new Set();
       for(const attempt of [...(Array.isArray(left.attempts)?left.attempts:[]),...(Array.isArray(right.attempts)?right.attempts:[])]){
@@ -4161,8 +4169,18 @@ function mergePracticePayload(local,remote){
       answers[id]={...newer,attempts};
       if(latest){answers[id].lastCorrect=latest.correct;answers[id].lastPicked=latest.picked;}
     }
+    for(const id of new Set([...Object.keys(a.favorites||{}),...Object.keys(b.favorites||{})])){
+      const left=a.favorites?.[id],right=b.favorites?.[id];
+      const leftValid=left&&typeof left==='object'&&typeof left.on==='boolean';
+      const rightValid=right&&typeof right==='object'&&typeof right.on==='boolean';
+      if(!leftValid&&!rightValid)continue;
+      const leftAt=leftValid&&Number.isFinite(+left.at)?+left.at:0;
+      const rightAt=rightValid&&Number.isFinite(+right.at)?+right.at:0;
+      const selected=rightValid&&(!leftValid||rightAt>leftAt)?right:left;
+      favorites[id]={on:selected.on,at:Number.isFinite(+selected.at)?+selected.at:0};
+    }
     const newer=(b.updatedAt||0)>(a.updatedAt||0)?b:a;
-    result[source]={...newer,index:Number.isInteger(newer.index)?newer.index:0,answers,updatedAt:Math.max(a.updatedAt||0,b.updatedAt||0)};
+    result[source]={...newer,index:Number.isInteger(newer.index)?newer.index:0,answers,favorites,updatedAt:Math.max(a.updatedAt||0,b.updatedAt||0)};
   }
   return result;
 }

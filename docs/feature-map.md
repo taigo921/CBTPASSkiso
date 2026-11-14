@@ -81,10 +81,10 @@
 
 ## CBT辞典演習
 
-- 機能: 辞典② 956問、辞典③の誌上模試1（320問）・模試2（304問）を選び、原本ID順または領域／ブロック別に解く。正誤確定後に公式解説を表示し、教材別・端末別に再開する。
+- 機能: 辞典② 956問、辞典③の誌上模試1（320問）・模試2（304問）を選び、原本ID順または領域／ブロック別に解く。正誤確定後に公式解説を表示し、教材別・端末別に再開する。問題別お気に入りと、間違えた問題だけ／お気に入りだけの固定スナップショット演習を持つ。
 - Route / 画面: `#dictionaryHome`、`#dictionaryPractice`。
-- 主なUI: `[data-dictionary-source]`、`#dictionaryStart`、`[data-dictionary-group]`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
-- state / hooks相当: `features/dictionary-practice/dictionary-practice.js` 内の `SOURCES`、`sourceKey`、`manifest`、`progress`、`currentIndex`、`renderHome()`、`open()`、`renderQuestion()`、`submit()`。
+- 主なUI: `[data-dictionary-source]`、`#dictionaryModes`、`#dictionaryStart`、`[data-dictionary-group]`、`#dictionaryFavBtn`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
+- state / hooks相当: `features/dictionary-practice/dictionary-practice.js` 内の `SOURCES`、`sourceKey`、`manifest`、`progress`、`mode`、`sessionMode`、`sessionIndices`、`currentIndex`、`renderHome()`、`open()`、`renderQuestion()`、`submit()`。
 - API / service: 各教材manifestの静的fetch、LocalStorage、共通 `openImageZoom()`、`cloudSyncSoon()`。
 - DB: 辞典②、辞典③模試1、模試2で異なるLocalStorage keyを使い、圧縮進捗の `practiceSets` として本人のFirestoreへ同期する。
 - 関連ファイル: `features/dictionary-practice/`、`dictionary-assets/exercises/`、`dictionary-assets/mock-exams/`、`scripts/import_cbt_dictionary.py`、`scripts/import_cbt_dictionary3.py`、各静的テスト、`scripts/test_dictionary_browser.cjs`。
@@ -92,7 +92,7 @@
 
 ## 歯科理工Forms演習
 
-- 機能: 学校配布の歯科理工Formsで正答確認済みの47問を、CBT辞典とは別のホームタブから解く。単一選択と複数選択を採点し、回答後に正答参照画像を表示する。
+- 機能: 学校配布の歯科理工Formsで正答確認済みの47問を、CBT辞典とは別のホームタブから解く。単一選択と複数選択を採点し、回答後に正答参照画像を表示する。共用UIで問題別お気に入りと、間違えた問題だけ／お気に入りだけの演習も行う。
 - Route / 画面: ホームの `[data-book="dentalMaterials"]`、共用UIの `#dictionaryHome` と `#dictionaryPractice`。
 - 主なUI: 歯科理工tab、`#dictionaryStart`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
 - state / hooks相当: `dentalMaterialsHomeSelected` と、共用viewer内の `SOURCES.dentalMaterials`、manifest、専用progress。

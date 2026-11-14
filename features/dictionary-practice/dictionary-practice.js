@@ -10,7 +10,11 @@
   let sourceKey='dictionary2';
   let manifest=null;
   let loadPromise=null;
-  let progress={answers:{},index:0,updatedAt:0};
+  let progress={answers:{},favorites:{},index:0,updatedAt:0};
+  let mode='all';
+  let sessionMode='all';
+  let sessionIndices=null;
+  let sessionPosition=0;
   let currentIndex=0;
   let picked='';
   let answered=false;
@@ -20,17 +24,24 @@
   const source=()=>SOURCES[sourceKey];
   const storeKey=()=>source().prefix+owner();
 
-  function loadProgress(){
-    try{
-      const raw=JSON.parse(localStorage.getItem(storeKey())||'null');
-      progress=raw&&typeof raw==='object'?raw:{answers:{},index:0,updatedAt:0};
-    }catch(_){ progress={answers:{},index:0,updatedAt:0}; }
-    if(!progress.answers||typeof progress.answers!=='object')progress.answers={};
-    progress.index=Number.isInteger(progress.index)?progress.index:0;
+  function normalizeProgress(value){
+    const normalized=value&&typeof value==='object'&&!Array.isArray(value)?value:{answers:{},favorites:{},index:0,updatedAt:0};
+    if(!normalized.answers||typeof normalized.answers!=='object'||Array.isArray(normalized.answers))normalized.answers={};
+    if(!normalized.favorites||typeof normalized.favorites!=='object'||Array.isArray(normalized.favorites))normalized.favorites={};
+    normalized.index=Number.isInteger(normalized.index)?normalized.index:0;
+    return normalized;
   }
 
+  function loadProgress(){
+    try{progress=normalizeProgress(JSON.parse(localStorage.getItem(storeKey())||'null'));}
+    catch(_){progress=normalizeProgress(null);}
+    return progress;
+  }
+
+  function resumeIndexForSave(activeMode,index,previous){return activeMode==='all'?index:previous;}
+
   function saveProgress(){
-    progress.index=currentIndex;
+    progress.index=resumeIndexForSave(sessionMode,currentIndex,progress.index);
     progress.updatedAt=Date.now();
     try{localStorage.setItem(storeKey(),JSON.stringify(progress));}
     catch(error){console.warn('dictionary progress save failed',error);}
@@ -43,14 +54,14 @@
     if(!loadPromise){
       let guarded;
       const pending=fetch(selected.url,{cache:'no-cache'}).then(async response=>{
-      if(!response.ok)throw new Error(`manifest HTTP ${response.status}`);
-      const data=await response.json();
-      if(data.schemaVersion!==selected.schema||(!selected.allowUnresolved&&data.unresolved?.length))throw new Error(`${selected.shortTitle}の検証済みデータではありません`);
-      const items=selected.mock?data.items?.filter(item=>item.mock===selected.mock):data.items;
-      if(items?.length!==selected.count)throw new Error(`${selected.shortTitle}の問題数が一致しません`);
-      const loaded={...data,count:items.length,items};
-      if(sourceKey===requestedKey&&loadPromise===guarded)manifest=loaded;
-      return loaded;
+        if(!response.ok)throw new Error(`manifest HTTP ${response.status}`);
+        const data=await response.json();
+        if(data.schemaVersion!==selected.schema||(!selected.allowUnresolved&&data.unresolved?.length))throw new Error(`${selected.shortTitle}の検証済みデータではありません`);
+        const items=selected.mock?data.items?.filter(item=>item.mock===selected.mock):data.items;
+        if(items?.length!==selected.count)throw new Error(`${selected.shortTitle}の問題数が一致しません`);
+        const loaded={...data,count:items.length,items};
+        if(sourceKey===requestedKey&&loadPromise===guarded)manifest=loaded;
+        return loaded;
       });
       guarded=pending.catch(error=>{if(loadPromise===guarded)loadPromise=null;throw error;});
       loadPromise=guarded;
@@ -64,7 +75,7 @@
     return sourceId.startsWith('E')?sourceId.slice(0,2):sourceId.slice(0,1);
   }
 
-  function groupKeys(){return source().groups|| (source().mock?['B1','B2','B3','B4','B5','B6']:['A','B','C','D','E1','E2','E3','E4']);}
+  function groupKeys(){return source().groups||(source().mock?['B1','B2','B3','B4','B5','B6']:['A','B','C','D','E1','E2','E3','E4']);}
 
   function renderGroupButtons(){
     const groups=$('dictionaryGroups');if(!groups)return;
@@ -72,19 +83,64 @@
     bindGroupButtons();
   }
 
-  function summary(){
-    const entries=Object.values(progress.answers);
+  function summaryProgress(value){
+    const answers=value?.answers&&typeof value.answers==='object'&&!Array.isArray(value.answers)?value.answers:{};
+    const entries=Object.values(answers);
     return {
       answered:entries.length,
-      correct:entries.filter(item=>item.lastCorrect===true).length,
-      attempts:entries.reduce((sum,item)=>sum+(Array.isArray(item.attempts)?item.attempts.length:0),0)
+      correct:entries.filter(item=>item?.lastCorrect===true).length,
+      attempts:entries.reduce((sum,item)=>sum+(Array.isArray(item?.attempts)?item.attempts.length:0),0)
     };
   }
 
+  function summary(){return summaryProgress(progress);}
+
+  function filteredIndices(selectedMode,items,value){
+    if(selectedMode==='all')return items.map((_,index)=>index);
+    if(selectedMode==='wrong')return items.flatMap((item,index)=>value?.answers?.[item.sourceId]?.lastCorrect===false?[index]:[]);
+    if(selectedMode==='fav')return items.flatMap((item,index)=>value?.favorites?.[item.sourceId]?.on===true?[index]:[]);
+    return [];
+  }
+
+  function moveSnapshotPosition(indices,position,delta){return Math.max(0,Math.min(indices.length-1,position+delta));}
+
   function setSource(next){
     if(!SOURCES[next]||next===sourceKey)return false;
-    sourceKey=next;manifest=null;loadPromise=null;progress={answers:{},index:0,updatedAt:0};currentIndex=0;
+    sourceKey=next;manifest=null;loadPromise=null;progress=normalizeProgress(null);currentIndex=0;mode='all';sessionMode='all';sessionIndices=null;sessionPosition=0;
     return true;
+  }
+
+  function modeLabel(selectedMode){return selectedMode==='wrong'?'間違えた問題':'お気に入り';}
+
+  function renderHomeMode(){
+    if(!manifest)return;
+    const allIndices=filteredIndices('all',manifest.items,progress);
+    const wrongIndices=filteredIndices('wrong',manifest.items,progress);
+    const favIndices=filteredIndices('fav',manifest.items,progress);
+    const byMode={all:allIndices,wrong:wrongIndices,fav:favIndices};
+    document.querySelectorAll('[data-dictionary-mode]').forEach(button=>{
+      button.classList.toggle('on',button.dataset.dictionaryMode===mode);
+      button.setAttribute('aria-pressed',String(button.dataset.dictionaryMode===mode));
+      const count=button.querySelector('span');
+      if(count)count.textContent=byMode[button.dataset.dictionaryMode].length;
+    });
+    const selected=byMode[mode];
+    const start=$('dictionaryStart');
+    if(mode==='all'){
+      start.textContent=summary().answered?'続きから再開':'最初から始める';
+      start.disabled=false;
+    }else if(selected.length){
+      start.textContent=`${modeLabel(mode)}を解く（${selected.length}問）`;
+      start.disabled=false;
+    }else{
+      start.textContent=`${modeLabel(mode)}はありません`;
+      start.disabled=true;
+    }
+    document.querySelectorAll('[data-dictionary-group]').forEach(button=>{
+      const count=selected.filter(index=>groupFor(manifest.items[index].sourceId)===button.dataset.dictionaryGroup).length;
+      button.querySelector('span').textContent=`${count}問`;
+      button.disabled=!count;
+    });
   }
 
   async function renderHome(scope='dictionary'){
@@ -109,16 +165,10 @@
       $('dictionaryAnswered').textContent=sums.answered;
       $('dictionaryCorrect').textContent=sums.correct;
       $('dictionaryAttempts').textContent=sums.attempts;
-      $('dictionaryStart').textContent=sums.answered?'続きから再開':'最初から始める';
-      $('dictionaryStart').disabled=false;
       const gap=sourceKey==='mock2'?' ／ 原本PDFに存在しない16問は未収録':'';
       const formsGap=sourceKey==='dentalMaterials'?` ／ 原本50問中、正答表示のない${manifest.unresolved.length}問は未収録`:'';
       status.textContent=`原本ID・正答・解説画面を検証済み（全${manifest.count}問）${gap}${formsGap}`;
-      document.querySelectorAll('[data-dictionary-group]').forEach(button=>{
-        const count=manifest.items.filter(item=>groupFor(item.sourceId)===button.dataset.dictionaryGroup).length;
-        button.querySelector('span').textContent=`${count}問`;
-        button.disabled=!count;
-      });
+      renderHomeMode();
     }catch(error){
       if(sourceKey!==requestedKey)return;
       console.error(error);status.textContent=`${source().shortTitle}を読み込めませんでした。通信を確認して開き直してください。`;
@@ -126,19 +176,37 @@
     }
   }
 
-  function selectSource(next){
-    if(setSource(next))renderHome('dictionary');
-  }
+  function selectSource(next){if(setSource(next))renderHome('dictionary');}
 
-  async function open(index){
+  async function open(index,requestedMode=mode){
     try{await loadManifest();loadProgress();}
     catch(error){console.error(error);return;}
-    currentIndex=Math.max(0,Math.min(manifest.items.length-1,Number.isInteger(index)?index:progress.index));
+    sessionMode=requestedMode;
+    if(sessionMode==='all'){
+      sessionIndices=null;sessionPosition=0;
+      currentIndex=Math.max(0,Math.min(manifest.items.length-1,Number.isInteger(index)?index:progress.index));
+    }else{
+      sessionIndices=filteredIndices(sessionMode,manifest.items,progress);
+      if(!sessionIndices.length){renderHomeMode();return;}
+      const requestedPosition=sessionIndices.indexOf(index);
+      sessionPosition=requestedPosition>=0?requestedPosition:0;
+      currentIndex=sessionIndices[sessionPosition];
+    }
     saveProgress();renderQuestion();
   }
 
-  function firstIndexForGroup(group){
-    return manifest.items.findIndex(item=>groupFor(item.sourceId)===group);
+  function firstIndexForGroup(group,indices=filteredIndices(mode,manifest.items,progress)){
+    return indices.find(index=>groupFor(manifest.items[index].sourceId)===group)??-1;
+  }
+
+  function sessionLength(){return sessionMode==='all'?manifest.items.length:sessionIndices.length;}
+  function sessionOrdinal(){return sessionMode==='all'?currentIndex+1:sessionPosition+1;}
+  function isFirst(){return sessionOrdinal()===1;}
+  function isLast(){return sessionOrdinal()===sessionLength();}
+
+  function renderFavorite(){
+    const item=manifest.items[currentIndex],on=progress.favorites[item.sourceId]?.on===true,button=$('dictionaryFavBtn');
+    button.textContent=on?'★':'☆';button.classList.toggle('on',on);button.setAttribute('aria-pressed',String(on));
   }
 
   function renderQuestion(){
@@ -149,16 +217,17 @@
     $('footer').classList.add('hidden');
     $('timerChip').classList.remove('show');
     $('routeBackBtn').classList.add('hidden');
-    $('pbarFill').style.width=`${(currentIndex+1)/manifest.items.length*100}%`;
+    $('pbarFill').style.width=`${sessionOrdinal()/sessionLength()*100}%`;
     $('dictionaryPracticeTitle').textContent=source().shortTitle;
     $('dictionaryHomeBack').textContent=sourceKey==='dentalMaterials'?'歯科理工へ':'辞典一覧へ';
     $('dictionaryNumber').textContent=item.sourceId;
-    $('dictionaryProgress').textContent=`${currentIndex+1} / ${manifest.items.length}問`;
+    $('dictionaryProgress').textContent=sessionMode==='all'?`${sessionOrdinal()} / ${sessionLength()}問`:`${sessionOrdinal()} / ${sessionLength()}問（${modeLabel(sessionMode)}）`;
+    renderFavorite();
     $('dictionaryQuestionImage').src=item.questionImage;
     $('dictionaryQuestionImage').alt=`${source().shortTitle} ${item.sourceId} の問題`;
     $('dictionaryExplanationTitle').textContent=source().explanationTitle||'公式解説';
-    $('dictionaryPrev').disabled=currentIndex===0;
-    $('dictionaryNext').disabled=currentIndex===manifest.items.length-1;
+    $('dictionaryPrev').disabled=isFirst();
+    $('dictionaryNext').disabled=isLast();
     const choices=$('dictionaryChoices');choices.innerHTML='';choices.classList.toggle('with-labels',Boolean(item.choiceLabels));
     const requiredChoices=item.answer.length;
     for(const key of item.choices){
@@ -191,6 +260,12 @@
     window.scrollTo({top:0,behavior:'smooth'});
   }
 
+  function toggleFavorite(){
+    const item=manifest?.items?.[currentIndex];if(!item)return;
+    progress.favorites[item.sourceId]={on:progress.favorites[item.sourceId]?.on!==true,at:Date.now()};
+    saveProgress();renderFavorite();
+  }
+
   function submit(){
     if(answered||!picked)return;
     const item=manifest.items[currentIndex];
@@ -212,32 +287,37 @@
     progress.answers[item.sourceId]=record;saveProgress();
     $('dictionaryHistory').textContent=`この問題の回答回数 ${record.attempts.length}回 ・ 今回 ${correct?'○':'×'}`;
     $('dictionaryHistory').classList.remove('hidden');
-    $('dictionarySubmit').disabled=false;$('dictionarySubmit').textContent=currentIndex<manifest.items.length-1?'次の問題へ':'ホームへ戻る';
+    $('dictionarySubmit').disabled=false;$('dictionarySubmit').textContent=isLast()?'ホームへ戻る':'次の問題へ';
   }
 
   function move(delta){
-    saveProgress();currentIndex=Math.max(0,Math.min(manifest.items.length-1,currentIndex+delta));renderQuestion();
+    saveProgress();
+    if(sessionMode==='all')currentIndex=Math.max(0,Math.min(manifest.items.length-1,currentIndex+delta));
+    else{sessionPosition=moveSnapshotPosition(sessionIndices,sessionPosition,delta);currentIndex=sessionIndices[sessionPosition];}
+    renderQuestion();
   }
 
   function bindGroupButtons(){
     document.querySelectorAll('[data-dictionary-group]').forEach(button=>button.addEventListener('click',async()=>{
-      await loadManifest();const index=firstIndexForGroup(button.dataset.dictionaryGroup);if(index>=0)open(index);
+      await loadManifest();
+      const indices=filteredIndices(mode,manifest.items,progress),index=firstIndexForGroup(button.dataset.dictionaryGroup,indices);
+      if(index>=0)open(index,mode);
     }));
   }
 
   function bind(){
-    $('dictionaryStart')?.addEventListener('click',()=>open(progress.index));
+    $('dictionaryStart')?.addEventListener('click',()=>open(mode==='all'?progress.index:undefined,mode));
     document.querySelectorAll('[data-dictionary-source]').forEach(button=>button.addEventListener('click',()=>selectSource(button.dataset.dictionarySource)));
+    document.querySelectorAll('[data-dictionary-mode]').forEach(button=>button.addEventListener('click',()=>{mode=button.dataset.dictionaryMode;renderHomeMode();}));
     bindGroupButtons();
     $('dictionaryHomeBack')?.addEventListener('click',()=>window.renderHome());
+    $('dictionaryFavBtn')?.addEventListener('click',toggleFavorite);
     $('dictionaryPrev')?.addEventListener('click',()=>move(-1));
     $('dictionaryNext')?.addEventListener('click',()=>move(1));
-    $('dictionarySubmit')?.addEventListener('click',()=>{
-      if(!answered)submit();else if(currentIndex<manifest.items.length-1)move(1);else window.renderHome();
-    });
+    $('dictionarySubmit')?.addEventListener('click',()=>{if(!answered)submit();else if(!isLast())move(1);else window.renderHome();});
     for(const id of ['dictionaryQuestionImage','dictionaryExplanationImage'])$(id)?.addEventListener('click',event=>window.openImageZoom(event.currentTarget.currentSrc||event.currentTarget.src,event.currentTarget.alt));
   }
 
-  window.dictionaryPractice={renderHome,open,reloadProgress:loadProgress};
+  window.dictionaryPractice={renderHome,open,reloadProgress:loadProgress,filteredIndices,moveSnapshotPosition,resumeIndexForSave,summaryProgress,normalizeProgress};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
 })();

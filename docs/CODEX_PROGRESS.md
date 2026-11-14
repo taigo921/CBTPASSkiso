@@ -1,6 +1,6 @@
 # Codex progress
 
-最終更新: 2026-11-14
+最終更新: 2026-11-15
 
 基準コミット: `091570f`（検証済み辞典②専用演習の公開）
 
@@ -29,6 +29,8 @@
 - Codex向けのarchitecture、feature map、database、route、development資料。
 
 ## 現在開発している機能
+
+- CBT辞典②・③模試1・2と学校Forms歯科理工の画像演習に、問題別お気に入り、間違えた問題だけ／お気に入りだけの固定スナップショット演習、複数端末で解除も保持するお気に入り同期を実装・回帰済み。通常演習の再開位置、回答集計、ランキングは変更しない。build IDは `20261115-dictreview`。未コミット・未公開、レビュー待ち。
 
 - ガイドviewerのiPhone Safariピンチ中に非同期スクロール位置が旧レイアウト倍率で再適用され、深いページから約200ページ飛ぶ不具合を修正。2本指操作中はスクロールとレイアウトを凍結し、`transform` だけでプレビューして、終了時に同一 `.guide-page` 内の位置を最終中心へ一度だけ確定する。ボタン・Ctrl+ホイールもレイアウト変更中はoverflowを凍結し、復元直後に確定位置を再適用する。build IDは `20261114-guidepinch`。未コミット・未公開、実機iPhone Safari確認待ち。
 
@@ -88,6 +90,8 @@
 - 未解決（原本不足）: 辞典③の模試2はブロック6表紙に40問とあるが、本文は問261（1）〜266（4）の24問でPDFが終了する。模試2は304問、2模試合計は624問であり、不足16問の原本が追加されるまで推測で補完しない。
 
 ## テスト結果
+
+- 2026-11-15: CBT辞典・歯科理工の問題別お気に入りと誤答／お気に入り限定演習を追加。誤答判定、解除tombstoneを含むお気に入り同期、独立項目のunion、同時刻local優先、固定スナップショット移動、通常再開位置の不変、集計からのお気に入り除外、旧payload互換を確認。`TZ=Asia/Tokyo` で `tests.yml` regression jobのブラウザー不要Node回帰24本、Firebase公開検査7件、shell構文、全51問題JSON、JavaScript構文、`git diff --check` に成功。commit、push、公開は未実施。
 
 - 2026-11-14: ガイドviewerのピンチをレイアウト変更なしのtransformプレビューへ変更。p.221で中心を移動する `1→2.5` 倍の確定後も同じページ内位置が最終中心へ来ること、moveフレームが `width` / `maxWidth` / `scrollTop` / `scrollLeft` を書かないことを回帰で確認。Playwright用3本とFirestore Emulator専用3本を除く全Node回帰24本を `TZ=Asia/Tokyo` / `TZ=UTC`、標準入力 `</dev/null` で各1回（計48実行）し全件成功。Service Worker構文、`git diff --check` も成功。commit、push、Pages公開は未実施。
 - 2026-11-14: ガイドviewerのページ基準ズーム回帰を追加し、p.221・固定12px gapで `1→1.2→2→1.2→1` 倍後も同一ページ内の焦点が維持されることを確認。Playwright用3本とFirestore Emulator専用3本を除くNode回帰24本を `TZ=Asia/Tokyo` / `TZ=UTC` で各1回（計48実行）し全件成功。Service Worker構文、`git diff --check` も成功。commit、push、Pages公開は未実施。

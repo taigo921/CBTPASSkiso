@@ -101,10 +101,10 @@
 |`cbt_study_time_v1`|日別秒数・問題数・本別時間|はい|
 |`togo_mock_azabu2026_block{1..6}_v1_{uid}`|ブロック別模試の位置・回答|はい|
 |`togo_mock_subject_v1_{uid}_{subject}`|科目別模試session|いいえ。export対象外|
-|`togo_dictionary2_progress_v1_{uid}`|辞典②の現在位置、問題別回答履歴、最終正誤|はい。`practiceSets.dictionary2`。通常成績・学習ルート・XPとは分離|
-|`togo_dictionary3_mock1_progress_v1_{uid}`|辞典③模試1の現在位置、問題別回答履歴、最終正誤|はい。`practiceSets.dictionary3Mock1`。通常成績・学習ルート・XPとは分離|
-|`togo_dictionary3_mock2_progress_v1_{uid}`|辞典③模試2の現在位置、問題別回答履歴、最終正誤|はい。`practiceSets.dictionary3Mock2`。通常成績・学習ルート・XPとは分離|
-|`togo_dental_materials_forms_progress_v1_{uid}`|学校Forms歯科理工の現在位置、問題別回答履歴、最終正誤|はい。`practiceSets.dentalMaterials`。通常成績・学習ルート・XPとは分離|
+|`togo_dictionary2_progress_v1_{uid}`|辞典②の現在位置、問題別回答履歴・最終正誤、お気に入り（解除tombstoneを含む）|はい。`practiceSets.dictionary2`。通常成績・学習ルート・XPとは分離|
+|`togo_dictionary3_mock1_progress_v1_{uid}`|辞典③模試1の現在位置、問題別回答履歴・最終正誤、お気に入り（解除tombstoneを含む）|はい。`practiceSets.dictionary3Mock1`。通常成績・学習ルート・XPとは分離|
+|`togo_dictionary3_mock2_progress_v1_{uid}`|辞典③模試2の現在位置、問題別回答履歴・最終正誤、お気に入り（解除tombstoneを含む）|はい。`practiceSets.dictionary3Mock2`。通常成績・学習ルート・XPとは分離|
+|`togo_dental_materials_forms_progress_v1_{uid}`|学校Forms歯科理工の現在位置、問題別回答履歴・最終正誤、お気に入り（解除tombstoneを含む）|はい。`practiceSets.dentalMaterials`。通常成績・学習ルート・XPとは分離|
 |`togo_sync_backup_20260923_{uid}`|同期形式移行前の端末backup|いいえ|
 |`togo_blocked_login_notice_v1`|停止画面mediaの再表示状態|いいえ|
 |`togo_activity_written_v1_{uid}`|activity書込を約1時間に間引くための端末時刻。保存失敗時はメモリ値を使用|いいえ|
@@ -131,6 +131,7 @@ CBT ANSWERは `answer1`〜`answer4` の通常演習用Question Catalogとして�
 
 - クラウド保存はread-merge-writeを同じFirestore transactionで行う。
 - 回答回数、XP、best streakなど既存の累積値を古い端末で減らさない。
+- 辞典・歯科理工の `favorites[sourceId]` は `{on, at}` とし、端末間では新しい `at` を採用する。同時刻はlocalを維持し、解除も `on:false` のtombstoneとして同期する。
 - malformedな `progressDataV1`、欠損・不一致の `progressDataV2` chunkは空データとして上書きせず、保存を止める。
 - leaderboard公開失敗はprivate progress同期の失敗として扱わない。
 - access停止や授業制限で個人進捗を削除しない。

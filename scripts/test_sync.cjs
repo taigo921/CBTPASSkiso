@@ -36,6 +36,14 @@ const old={5:{index:0,answers:{1:{picked:'B',answered:false,updatedAt:50}}}},fre
 for(const [a,b] of [[old,fresh],[fresh,old]]){const m=mergeMockPayload(a,b);assert(m[5].index===2,'linked frontier retained');assert(m[5].answers[1].picked==='A','confirmed answer beats newer unconfirmed selection');}
 assert(mergeSessionPayload({book1:{idx:3,updatedAt:1}},{book1:{idx:9,updatedAt:2}}).book1.idx===9,'resume follows newer device');
 assert(mergeSessionPayload({book1:{deleted:true,updatedAt:3}},{book1:{idx:9,updatedAt:2}}).book1.deleted,'deleted resume does not resurrect');
+const favoriteOn={dictionary2:{index:4,updatedAt:100,favorites:{A001:{on:true,at:100}},answers:{}}};
+const favoriteOffLater={dictionary2:{index:8,updatedAt:200,favorites:{A001:{on:false,at:200},B001:{on:true,at:150}},answers:{}}};
+const favoriteMerged=mergePracticePayload(favoriteOn,favoriteOffLater).dictionary2;
+assert(favoriteMerged.favorites.A001.on===false&&favoriteMerged.favorites.A001.at===200,'later unfavorite tombstone wins across devices');
+assert(favoriteMerged.favorites.B001.on===true,'independent favorites form a union');
+const favoriteTie=mergePracticePayload({dictionary2:{favorites:{A001:{on:true,at:300}}}},{dictionary2:{favorites:{A001:{on:false,at:300}}}}).dictionary2;
+assert(favoriteTie.favorites.A001.on===true,'equal favorite timestamps keep local state');
+assert(Object.keys(mergePracticePayload({dictionary2:{answers:{}}},{dictionary2:{answers:{}}}).dictionary2.favorites).length===0,'old practice payloads without favorites remain valid');
 const streakPayload=compactStatsPayload({perQ:{q:{correct:3,wrong:0,last:'correct',history:[{correct:true,at:20}],streak:3,streakDay:'2026-11-10'}},rankAttempts:[]});
 assert(streakPayload.perQ.q.s===3&&streakPayload.perQ.q.sd==='2026-11-10','compact payload keeps the per-question streak and update day');
 const cloudNewer=mergeStatsTarget(emptyStats(),{perQ:{q:{c:3,w:0,h:{correct:true,at:20},s:3,sd:'2026-11-10'}}});
