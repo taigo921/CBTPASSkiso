@@ -1099,7 +1099,7 @@ const BOOKS = {
   answer1:{title:'ANSWER①',subtitle:'基礎編',questionCount:452,files:["data/answer1-A1-A4.json", "data/answer1-A5-A9.json", "data/answer1-B1-B2.json", "data/answer1-B3.json", "data/answer1-B4.json"],extra:true},
   answer2:{title:'ANSWER②',subtitle:'基礎編',questionCount:631,files:["data/answer2-C2.json", "data/answer2-C3.json", "data/answer2-C4-C5.json", "data/answer2-C6.json", "data/answer2-D.json"],extra:true},
   answer3:{title:'ANSWER③',subtitle:'臨床編',questionCount:773,files:["data/answer3-E1.json", "data/answer3-E2-1-E2-3.json", "data/answer3-E2-4-1-2.json", "data/answer3-E2-4-3-4.json", "data/answer3-E2-4-5.json", "data/answer3-E2-4-6.json", "data/answer3-E2-4-7-8.json", "data/answer3-E2-4-9-11.json"],extra:true},
-  answer4:{title:'ANSWER④',subtitle:'臨床編',questionCount:0,files:[],extra:true}
+  answer4:{title:'ANSWER④',subtitle:'臨床編',questionCount:800,files:["data/answer4-E3-1-2.json", "data/answer4-E3-3-1.json", "data/answer4-E3-3-2.json", "data/answer4-E3-3-3.json", "data/answer4-E3-4-1.json", "data/answer4-E3-4-2a.json", "data/answer4-E3-4-2b.json", "data/answer4-E3-4-3.json", "data/answer4-E4-1a.json", "data/answer4-E4-1b.json", "data/answer4-E4-2.json", "data/answer4-E5-E6.json"],extra:true}
 };
 const ROUTE_BOOK_KEYS=['book1','book2'];
 const ANSWER_BOOK_KEYS=['answer1','answer2','answer3','answer4'];
@@ -1412,7 +1412,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261113-autolock';
+const SERVICE_WORKER_BUILD='20261114-answer4';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
