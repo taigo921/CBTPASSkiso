@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Answer FX draft</title>
+<style>
+  :root{--cream:#FBF8F1}
+  body{margin:0;background:#2a1a12;font-family:-apple-system,"Hiragino Sans",sans-serif;color:#fff;display:flex;flex-wrap:wrap;gap:24px;justify-content:center;padding:20px}
+  .phone{position:relative;width:300px;height:600px;border-radius:28px;overflow:hidden;background:var(--cream);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .cap{text-align:center;font-weight:800;margin:8px 0 0}
+  .fake{position:absolute;inset:0;padding:60px 18px;color:#2A1F1A}
+  .fake .card{background:#fff;border-radius:16px;padding:16px;font-weight:700;font-size:14px;box-shadow:0 2px 10px rgba(60,30,10,.1)}
+  .fake .ch{margin-top:10px;border:1px solid #EDE5D8;border-radius:12px;padding:10px;font-size:13px}
+  .fake .hdr{position:absolute;left:0;right:0;top:0;height:44px;background:#8B1A1A}
+  .ov{position:absolute;inset:0;pointer-events:none}
+  svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+
+  /* ===== correct ===== */
+  .ok .dim{animation:okDim 3.4s infinite}
+  @keyframes okDim{0%{opacity:0}10%{opacity:1}80%{opacity:1}92%,100%{opacity:0}}
+  .ok .santa{animation:okSanta 3.4s infinite;transform-origin:150px 600px}
+  @keyframes okSanta{0%{transform:translateY(420px) scale(.9)}16%{transform:translateY(-10px) scale(1.02)}22%{transform:translateY(0) scale(1)}78%{transform:translateY(0)}92%,100%{transform:translateY(460px)}}
+  .ok .arm{transform-origin:236px 452px;animation:okArm 3.4s infinite}
+  @keyframes okArm{0%,22%{transform:rotate(0)}34%{transform:rotate(26deg)}42%{transform:rotate(-14deg)}50%{transform:rotate(40deg)}62%{transform:rotate(8deg)}68%{transform:rotate(-8deg)}74%{transform:rotate(8deg)}80%,100%{transform:rotate(0)}}
+  .ok .gift{animation:okGift 3.4s infinite;transform-origin:0 0}
+  @keyframes okGift{0%,22%{transform:translate(262px,300px) scale(.55) rotate(0);opacity:1}34%{transform:translate(296px,314px) scale(.55) rotate(20deg)}
+    42%{transform:translate(240px,262px) scale(1) rotate(-20deg)}58%{transform:translate(150px,290px) scale(6.5) rotate(340deg);opacity:1}62%{transform:translate(150px,290px) scale(7.2) rotate(360deg);opacity:0}100%{opacity:0}}
+  .ok .flash{animation:okFlash 3.4s infinite}
+  @keyframes okFlash{0%,57%{opacity:0}60%{opacity:.85}72%,100%{opacity:0}}
+  .ok .burst{transform-origin:150px 290px;animation:okBurst 3.4s infinite}
+  @keyframes okBurst{0%,58%{transform:scale(.2);opacity:0}62%{opacity:1}84%{transform:scale(1.25);opacity:1}92%,100%{transform:scale(1.35);opacity:0}}
+  .ok .eyesA{animation:blink 3.4s infinite}
+  @keyframes blink{0%,64%{opacity:1}66%,70%{opacity:0}72%,100%{opacity:1}}
+  .ok .wink{animation:wink 3.4s infinite;opacity:0}
+  @keyframes wink{0%,64%{opacity:0}66%,70%{opacity:1}72%,100%{opacity:0}}
+
+  /* ===== wrong ===== */
+  .ng .dim{animation:ngDim 3.4s infinite}
+  @keyframes ngDim{0%{opacity:0}8%{opacity:1}82%{opacity:1}94%,100%{opacity:0}}
+  .ng .gift{animation:ngGift 3.4s infinite;transform-origin:0 0}
+  @keyframes ngGift{0%{transform:translate(150px,300px) scale(0);opacity:0}10%{transform:translate(150px,300px) scale(2.4);opacity:1}
+    14%,40%{transform:translate(150px,300px) scale(2.2)}46%,52%{transform:translate(84px,314px) scale(1.25) rotate(-10deg)}
+    56%{transform:translate(108px,314px) scale(1.25) rotate(-6deg)}74%{transform:translate(-378px,300px) scale(1.25) rotate(-16deg)}100%{transform:translate(-378px,300px);opacity:0}}
+  .ng .glow{transform-origin:150px 300px;animation:ngGlow 3.4s infinite}
+  @keyframes ngGlow{0%,8%{opacity:0;transform:scale(.4)}14%,40%{opacity:1;transform:scale(1)}48%,100%{opacity:0;transform:scale(1.3)}}
+  .ng .santa{animation:ngSanta 3.4s infinite}
+  @keyframes ngSanta{0%,16%{transform:translate(360px,0)}34%{transform:translate(150px,0)}40%{transform:translate(140px,0)}46%,52%{transform:translate(132px,0)}
+    56%{transform:translate(156px,0)}74%{transform:translate(-330px,-14px)}100%{transform:translate(-330px,-14px)}}
+  .ng .speed{animation:ngSpeed 3.4s infinite}
+  @keyframes ngSpeed{0%,54%{opacity:0}58%,72%{opacity:.9}78%,100%{opacity:0}}
+  .ng .puff{transform-origin:150px 330px;animation:ngPuff 3.4s infinite}
+  @keyframes ngPuff{0%,62%{opacity:0;transform:scale(.3)}70%{opacity:.95;transform:scale(1)}88%{opacity:0;transform:scale(1.4)}100%{opacity:0}}
+  .ng .sparkle{animation:tw 1s infinite}
+  @keyframes tw{0%,100%{opacity:.2}50%{opacity:1}}
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E23A3A"/><stop offset=".6" stop-color="#B01E1E"/><stop offset="1" stop-color="#6E1010"/></linearGradient>
+    <radialGradient id="skin" cx=".42" cy=".38" r=".75"><stop offset="0" stop-color="#FCE3D0"/><stop offset=".7" stop-color="#EFBC9C"/><stop offset="1" stop-color="#D99878"/></radialGradient>
+    <linearGradient id="beard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#D5DAE0"/></linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF0B3"/><stop offset=".4" stop-color="#E6BE45"/><stop offset="1" stop-color="#9A700A"/></linearGradient>
+    <linearGradient id="giftRed" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8433A"/><stop offset="1" stop-color="#8E1414"/></linearGradient>
+    <linearGradient id="giftGreen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E9A55"/><stop offset="1" stop-color="#14532D"/></linearGradient>
+    <radialGradient id="okDim" cx=".5" cy=".45" r=".7"><stop offset="0" stop-color="#5a1010" stop-opacity=".55"/><stop offset="1" stop-color="#1a0606" stop-opacity=".82"/></radialGradient>
+    <radialGradient id="goldGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#FFE9A0" stop-opacity=".95"/><stop offset=".5" stop-color="#F5D06F" stop-opacity=".35"/><stop offset="1" stop-color="#F5D06F" stop-opacity="0"/></radialGradient>
+
+    <!-- gift centered at 0,0 (~70px wide) -->
+    <g id="gift">
+      <rect x="-32" y="-16" width="64" height="46" rx="4" fill="url(#giftRed)"/>
+      <rect x="-36" y="-26" width="72" height="14" rx="3" fill="#C42A26"/>
+      <rect x="-6" y="-26" width="12" height="56" fill="url(#gold)"/>
+      <path d="M0,-26 C-10,-46 -32,-44 -26,-30 C-22,-24 -10,-25 0,-26 Z M0,-26 C10,-46 32,-44 26,-30 C22,-24 10,-25 0,-26 Z" fill="url(#gold)" stroke="#8a6408" stroke-width="1"/>
+      <circle cx="0" cy="-27" r="5" fill="#F5D06F" stroke="#8a6408" stroke-width="1"/>
+      <rect x="-30" y="-14" width="22" height="5" rx="2" fill="#fff" opacity=".25"/>
+    </g>
+
+    <!-- ===== realistic santa (front). frame 300 wide, head ~y280-410, body to y820 ===== -->
+    <filter id="fur" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency=".55" numOctaves="3" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 .55  0 0 0 0 .56  0 0 0 0 .6  0 0 0 .35 -.05" result="shade"/>
+      <feComposite in="shade" in2="d" operator="in" result="s"/>
+      <feMerge><feMergeNode in="d"/><feMergeNode in="s"/></feMerge>
+    </filter>
+    <filter id="hair" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9 .08" numOctaves="2" seed="3" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 .55  0 0 0 0 .58  0 0 0 0 .64  0 0 0 .55 -.12" result="streak"/>
+      <feComposite in="streak" in2="SourceGraphic" operator="in" result="s"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="s"/></feMerge>
+    </filter>
+    <filter id="blur3"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="blur6"><feGaussianBlur stdDeviation="6"/></filter>
+    <radialGradient id="skinR" cx=".45" cy=".4" r=".72"><stop offset="0" stop-color="#F9DCC6"/><stop offset=".55" stop-color="#EDB896"/><stop offset=".85" stop-color="#D99572"/><stop offset="1" stop-color="#B9765A"/></radialGradient>
+    <radialGradient id="noseR" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#F7B6A2"/><stop offset=".6" stop-color="#E07F68"/><stop offset="1" stop-color="#B85A48"/></radialGradient>
+    <radialGradient id="cheekR" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#E8705E" stop-opacity=".55"/><stop offset="1" stop-color="#E8705E" stop-opacity="0"/></radialGradient>
+    <linearGradient id="beardR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".6" stop-color="#EEF0F2"/><stop offset="1" stop-color="#C9CDD3"/></linearGradient>
+    <linearGradient id="coatR" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6E0F0F"/><stop offset=".25" stop-color="#B51E1E"/><stop offset=".5" stop-color="#D42C2A"/><stop offset=".75" stop-color="#B01C1C"/><stop offset="1" stop-color="#5E0C0C"/></linearGradient>
+    <linearGradient id="hatR" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D93030"/><stop offset=".55" stop-color="#A81B1B"/><stop offset="1" stop-color="#5E0C0C"/></linearGradient>
+    <linearGradient id="furR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DCDDDF"/></linearGradient>
+    <linearGradient id="leather" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4A3A30"/><stop offset=".5" stop-color="#231912"/><stop offset="1" stop-color="#0E0906"/></linearGradient>
+    <radialGradient id="iris" cx=".45" cy=".4" r=".6"><stop offset="0" stop-color="#9C7A55"/><stop offset=".7" stop-color="#5E4128"/><stop offset="1" stop-color="#2E1E12"/></radialGradient>
+
+    <g id="mitten">
+      <path d="M-15,-14 C-20,-2 -18,14 -6,18 C6,22 18,14 18,0 C18,-12 10,-20 0,-20 C-6,-20 -12,-18 -15,-14 Z" fill="url(#leather)"/>
+      <path d="M-15,-6 C-24,-8 -28,2 -22,8 C-18,12 -12,8 -12,4" fill="url(#leather)"/>
+      <path d="M-4,-14 C2,-16 8,-12 10,-6" stroke="#8a7464" stroke-width="2" fill="none" opacity=".6" stroke-linecap="round"/>
+    </g>
+
+    <g id="santaBody">
+      <!-- coat -->
+      <path d="M26,820 L26,610 C26,488 78,440 150,434 C222,440 274,488 274,610 L274,820 Z" fill="url(#coatR)"/>
+      <path d="M96,470 C104,520 102,580 96,640 M206,470 C198,520 200,580 206,640 M70,600 C90,620 104,660 108,720 M230,600 C210,620 196,660 192,720" stroke="#5a0a0a" stroke-width="6" fill="none" opacity=".35" filter="url(#blur3)"/>
+      <path d="M120,452 C130,480 134,520 132,560" stroke="#F36A5E" stroke-width="10" fill="none" opacity=".18" filter="url(#blur6)"/>
+      <!-- center fur trim -->
+      <path d="M134,440 C138,520 136,640 138,820 L164,820 C164,640 162,520 166,440 Z" fill="url(#furR)" filter="url(#fur)"/>
+      <!-- belt -->
+      <path d="M30,530 C90,540 210,540 270,530 L270,562 C210,572 90,572 30,562 Z" fill="#1E140D"/>
+      <path d="M30,534 C90,544 210,544 270,534" stroke="#4a3a30" stroke-width="2" fill="none"/>
+      <rect x="128" y="526" width="44" height="42" rx="5" fill="none" stroke="url(#gold)" stroke-width="7"/>
+      <rect x="146" y="532" width="8" height="30" rx="2" fill="url(#gold)"/>
+      <!-- resting arm (viewer left) -->
+      <path d="M78,462 C46,494 40,546 54,590" stroke="#9E1A1A" stroke-width="40" stroke-linecap="round" fill="none"/>
+      <path d="M70,470 C50,500 46,540 54,576" stroke="#D2302C" stroke-width="10" stroke-linecap="round" fill="none" opacity=".35" filter="url(#blur3)"/>
+      <ellipse cx="56" cy="592" rx="26" ry="14" fill="url(#furR)" filter="url(#fur)"/>
+      <use href="#mitten" transform="translate(58,614) rotate(10)"/>
+      <!-- neck shadow -->
+      <ellipse cx="150" cy="448" rx="60" ry="18" fill="#3a0606" opacity=".45" filter="url(#blur6)"/>
+
+      <!-- ears -->
+      <path d="M92,336 C80,330 76,350 82,364 C86,374 94,374 96,366 Z" fill="#E2A383"/>
+      <path d="M208,336 C220,330 224,350 218,364 C214,374 206,374 204,366 Z" fill="#E2A383"/>
+      <!-- face -->
+      <path d="M94,300 C94,276 120,262 150,262 C180,262 206,276 206,300 L208,370 C208,404 182,420 150,420 C118,420 92,404 92,370 Z" fill="url(#skinR)"/>
+      <path d="M118,292 C134,288 166,288 182,292 M124,284 C138,281 162,281 176,284" stroke="#C98568" stroke-width="1.4" fill="none" opacity=".6"/>
+      <!-- eye sockets -->
+      <ellipse cx="126" cy="334" rx="18" ry="11" fill="#B9765A" opacity=".28" filter="url(#blur3)"/>
+      <ellipse cx="174" cy="334" rx="18" ry="11" fill="#B9765A" opacity=".28" filter="url(#blur3)"/>
+      <!-- cheeks -->
+      <ellipse cx="114" cy="366" rx="22" ry="15" fill="url(#cheekR)"/>
+      <ellipse cx="186" cy="366" rx="22" ry="15" fill="url(#cheekR)"/>
+
+      <!-- beard (layered curls) -->
+      <g filter="url(#hair)">
+        <path d="M84,346 C74,404 92,470 118,500 C130,516 142,524 150,526 C158,524 170,516 182,500 C208,470 226,404 216,346 C206,378 186,396 150,398 C114,396 94,378 84,346 Z" fill="url(#beardR)"/>
+        <g fill="url(#beardR)" stroke="#D6DADF" stroke-width="1">
+          <path d="M90,400 c-10,14 -6,34 8,40 c-4,-14 0,-28 -8,-40 z"/>
+          <path d="M210,400 c10,14 6,34 -8,40 c4,-14 0,-28 8,-40 z"/>
+          <path d="M104,452 c-6,16 2,32 16,36 c-6,-12 -4,-26 -16,-36 z"/>
+          <path d="M196,452 c6,16 -2,32 -16,36 c6,-12 4,-26 16,-36 z"/>
+          <path d="M132,490 c-4,14 4,28 14,32 c-4,-10 -2,-22 -14,-32 z"/>
+          <path d="M168,490 c4,14 -4,28 -14,32 c4,-10 2,-22 14,-32 z"/>
+        </g>
+      </g>
+      <g stroke="#B9BFC7" stroke-width="1.2" fill="none" opacity=".75">
+        <path d="M100,410 C106,440 118,470 134,496 M114,410 C120,440 130,468 142,492 M150,412 L150,518 M186,410 C180,440 170,468 158,492 M200,410 C194,440 182,470 166,496"/>
+        <path d="M94,380 C98,410 108,436 120,456 M206,380 C202,410 192,436 180,456"/>
+      </g>
+      <!-- mouth -->
+      <path d="M128,392 C138,412 162,412 172,392 C160,398 140,398 128,392 Z" fill="#5E1414"/>
+      <path d="M134,394 C142,398 158,398 166,394 L164,398 C156,401 144,401 136,398 Z" fill="#F4EEE6"/>
+      <!-- mustache -->
+      <g filter="url(#hair)">
+        <path d="M150,370 C138,360 118,360 104,370 C94,378 88,392 80,394 C92,402 112,400 126,392 C138,386 146,382 150,380 Z" fill="url(#beardR)"/>
+        <path d="M150,370 C162,360 182,360 196,370 C206,378 212,392 220,394 C208,402 188,400 174,392 C162,386 154,382 150,380 Z" fill="url(#beardR)"/>
+      </g>
+      <path d="M104,378 C118,372 134,374 146,378 M196,378 C182,372 166,374 154,378" stroke="#BCC2CA" stroke-width="1.2" fill="none"/>
+      <!-- nose -->
+      <path d="M140,330 C138,344 132,352 134,362 C136,372 146,374 150,372 C154,374 164,372 166,362 C168,352 162,344 160,330 Z" fill="url(#noseR)"/>
+      <ellipse cx="144" cy="353" rx="4" ry="6" fill="#fff" opacity=".35"/>
+      <path d="M138,366 C141,370 145,370 147,368 M153,368 C155,370 159,370 162,366" stroke="#9C4A3A" stroke-width="1.6" fill="none"/>
+      <!-- brows -->
+      <g stroke="#FFFFFF" stroke-linecap="round" fill="none" filter="url(#hair)">
+        <path d="M106,314 C116,302 132,300 142,308" stroke-width="10"/>
+        <path d="M158,308 C168,300 184,302 194,314" stroke-width="10"/>
+      </g>
+      <path d="M108,312 C118,304 130,303 140,309 M160,309 C170,303 182,304 192,312" stroke="#C9CED6" stroke-width="1.2" fill="none"/>
+
+      <!-- hat -->
+      <path d="M88,300 C86,234 120,206 160,208 C206,212 232,246 236,300 Z" fill="url(#hatR)"/>
+      <path d="M160,208 C220,196 262,232 270,282" stroke="#8E1616" stroke-width="30" stroke-linecap="round" fill="none"/>
+      <path d="M160,210 C214,200 252,230 262,272" stroke="#D93030" stroke-width="8" stroke-linecap="round" fill="none" opacity=".45" filter="url(#blur3)"/>
+      <path d="M118,226 C126,250 128,274 124,296 M190,222 C198,248 202,274 200,296" stroke="#5E0C0C" stroke-width="5" fill="none" opacity=".35" filter="url(#blur3)"/>
+      <circle cx="272" cy="292" r="20" fill="url(#furR)" filter="url(#fur)"/>
+      <path d="M80,294 C84,282 110,278 150,278 C190,278 216,282 222,294 C226,306 222,318 214,320 C190,314 112,314 86,320 C78,318 76,306 80,294 Z" fill="url(#furR)" filter="url(#fur)"/>
+    </g>
+
+    <!-- eyes: open, smiling (realistic) -->
+    <g id="eyesHappy">
+      <path d="M112,336 C118,326 134,326 140,336 C134,340 118,340 112,336 Z" fill="#FBF7F2"/>
+      <path d="M160,336 C166,326 182,326 188,336 C182,340 166,340 160,336 Z" fill="#FBF7F2"/>
+      <circle cx="126" cy="334" r="5.5" fill="url(#iris)"/><circle cx="174" cy="334" r="5.5" fill="url(#iris)"/>
+      <circle cx="126" cy="334" r="2.4" fill="#120a05"/><circle cx="174" cy="334" r="2.4" fill="#120a05"/>
+      <circle cx="124" cy="332" r="1.4" fill="#fff"/><circle cx="172" cy="332" r="1.4" fill="#fff"/>
+      <path d="M110,336 C118,324 134,324 142,334 M158,334 C166,324 182,324 190,336" stroke="#5E3A26" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <path d="M110,340 C118,346 134,346 142,340 M158,340 C166,346 182,346 190,340" stroke="#C98568" stroke-width="1.4" fill="none"/>
+      <path d="M104,334 l-8,-4 M104,338 l-9,1 M104,342 l-7,5 M196,334 l8,-4 M196,338 l9,1 M196,342 l7,5" stroke="#B9765A" stroke-width="1.3" stroke-linecap="round"/>
+    </g>
+    <g id="eyesWink">
+      <path d="M112,336 C118,326 134,326 140,336 C134,340 118,340 112,336 Z" fill="#FBF7F2"/>
+      <circle cx="126" cy="334" r="5.5" fill="url(#iris)"/><circle cx="126" cy="334" r="2.4" fill="#120a05"/><circle cx="124" cy="332" r="1.4" fill="#fff"/>
+      <path d="M110,336 C118,324 134,324 142,334" stroke="#5E3A26" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <path d="M160,336 C168,342 180,342 188,334" stroke="#5E3A26" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M196,334 l8,-4 M196,338 l9,1 M196,342 l7,5 M104,338 l-9,1" stroke="#B9765A" stroke-width="1.3" stroke-linecap="round"/>
+    </g>
+    <g id="eyesSly">
+      <path d="M112,338 C118,330 134,330 140,338 C134,341 118,341 112,338 Z" fill="#FBF7F2"/>
+      <path d="M160,338 C166,330 182,330 188,338 C182,341 166,341 160,338 Z" fill="#FBF7F2"/>
+      <circle cx="119" cy="336" r="5" fill="url(#iris)"/><circle cx="167" cy="336" r="5" fill="url(#iris)"/>
+      <circle cx="118" cy="336" r="2.2" fill="#120a05"/><circle cx="166" cy="336" r="2.2" fill="#120a05"/>
+      <path d="M110,334 C120,330 132,330 142,336 M158,336 C168,330 180,330 190,334" stroke="#5E3A26" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+      <g stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" fill="none" filter="url(#hair)"><path d="M106,318 L142,326"/><path d="M158,326 L194,314"/></g>
+    </g>
+
+    <!-- raised throwing arm (viewer right), shoulder at 236,452 -->
+    <g id="armThrow">
+      <path d="M228,462 C258,424 270,382 268,334" stroke="#9E1A1A" stroke-width="40" stroke-linecap="round" fill="none"/>
+      <path d="M236,450 C256,420 264,384 262,346" stroke="#D2302C" stroke-width="9" stroke-linecap="round" fill="none" opacity=".35" filter="url(#blur3)"/>
+      <ellipse cx="268" cy="330" rx="15" ry="26" fill="url(#furR)" filter="url(#fur)"/>
+      <use href="#mitten" transform="translate(268,302) rotate(-90)"/>
+    </g>
+    <!-- reaching arm to the left -->
+    <g id="armReach">
+      <path d="M80,466 C44,452 8,442 -30,442" stroke="#9E1A1A" stroke-width="38" stroke-linecap="round" fill="none"/>
+      <path d="M70,456 C40,446 10,440 -20,438" stroke="#D2302C" stroke-width="8" stroke-linecap="round" fill="none" opacity=".35" filter="url(#blur3)"/>
+      <ellipse cx="-32" cy="442" rx="14" ry="24" fill="url(#furR)" filter="url(#fur)"/>
+      <use href="#mitten" transform="translate(-54,440) rotate(180)"/>
+    </g>
+  </defs>
+</svg>
+
+<div>
+  <div class="phone ok">
+    <div class="fake"><div class="hdr"></div><div class="card">問題文がここに入ります。<div class="ch">A 選択肢</div><div class="ch">B 選択肢</div><div class="ch">C 選択肢</div></div></div>
+    <svg class="ov" viewBox="0 0 300 600" preserveAspectRatio="xMidYMax slice">
+      <rect class="dim" width="300" height="600" fill="url(#okDim)"/>
+      <g class="dim"><circle cx="150" cy="290" r="210" fill="url(#goldGlow)"/></g>
+      <g class="burst">
+        <g fill="#F5D06F">
+          <path d="M150,110 l6,16 16,6 -16,6 -6,16 -6,-16 -16,-6 16,-6z"/><path d="M40,200 l5,12 12,5 -12,5 -5,12 -5,-12 -12,-5 12,-5z"/>
+          <path d="M262,190 l5,12 12,5 -12,5 -5,12 -5,-12 -12,-5 12,-5z"/><path d="M60,400 l4,10 10,4 -10,4 -4,10 -4,-10 -10,-4 10,-4z"/><path d="M246,410 l4,10 10,4 -10,4 -4,10 -4,-10 -10,-4 10,-4z"/>
+        </g>
+        <g>
+          <rect x="88" y="150" width="9" height="16" rx="2" fill="#E23A3A" transform="rotate(30 92 158)"/><rect x="214" y="140" width="9" height="16" rx="2" fill="#22A35A" transform="rotate(-20 218 148)"/>
+          <rect x="30" y="300" width="9" height="16" rx="2" fill="#F5D06F" transform="rotate(60 34 308)"/><rect x="262" y="300" width="9" height="16" rx="2" fill="#E23A3A" transform="rotate(-50 266 308)"/>
+          <rect x="120" y="440" width="9" height="16" rx="2" fill="#22A35A" transform="rotate(20 124 448)"/><rect x="190" y="460" width="9" height="16" rx="2" fill="#F5D06F" transform="rotate(-30 194 468)"/>
+          <circle cx="70" cy="250" r="5" fill="#22A35A"/><circle cx="236" cy="252" r="5" fill="#F5D06F"/><circle cx="150" cy="470" r="5" fill="#E23A3A"/>
+        </g>
+      </g>
+      <g class="santa">
+        <use href="#santaBody"/>
+        <g class="eyesA"><use href="#eyesHappy"/></g><g class="wink"><use href="#eyesWink"/></g>
+        <g class="arm"><use href="#armThrow"/></g>
+      </g>
+      <g class="gift"><use href="#gift"/></g>
+      <rect class="flash" width="300" height="600" fill="#FFF6D6"/>
+    </svg>
+  </div>
+  <p class="cap">正解：サンタがプレゼントを投げてくる</p>
+</div>
+
+<div>
+  <div class="phone ng">
+    <div class="fake"><div class="hdr"></div><div class="card">問題文がここに入ります。<div class="ch">A 選択肢</div><div class="ch">B 選択肢</div><div class="ch">C 選択肢</div></div></div>
+    <svg class="ov" viewBox="0 0 300 600" preserveAspectRatio="xMidYMax slice">
+      <rect class="dim" width="300" height="600" fill="#140a06" opacity=".72"/>
+      <g class="glow"><circle cx="150" cy="300" r="120" fill="url(#goldGlow)"/>
+        <g fill="#F5D06F" class="sparkle"><path d="M80,230 l4,10 10,4 -10,4 -4,10 -4,-10 -10,-4 10,-4z"/><path d="M220,250 l4,10 10,4 -10,4 -4,10 -4,-10 -10,-4 10,-4z"/><path d="M200,370 l3,8 8,3 -8,3 -3,8 -3,-8 -8,-3 8,-3z"/></g>
+      </g>
+      <g class="gift"><use href="#gift"/></g>
+      <g class="santa">
+        <g transform="translate(0,-110)"><use href="#armReach"/><use href="#santaBody"/><use href="#eyesSly"/></g>
+      </g>
+      <g class="speed" stroke="#F6F2EA" stroke-width="4" stroke-linecap="round" opacity=".9">
+        <path d="M200,300 L290,300 M214,330 L296,330 M190,360 L280,360 M220,270 L290,270"/>
+      </g>
+      <g class="puff" fill="#EDE5D8">
+        <circle cx="150" cy="330" r="22"/><circle cx="124" cy="338" r="16"/><circle cx="176" cy="338" r="16"/><circle cx="140" cy="314" r="14"/><circle cx="164" cy="316" r="14"/>
+      </g>
+    </svg>
+  </div>
+  <p class="cap">不正解：サンタがプレゼントを奪っていく</p>
+</div>
+</body></html>
