@@ -27,6 +27,7 @@ node scripts/test_progress_preservation.cjs
 node scripts/test_mock_exam.cjs
 node scripts/test_mock_subjects.cjs
 node scripts/test_app_update.cjs
+node scripts/test_auto_update.cjs
 node scripts/test_access_control.cjs
 node scripts/test_extra_materials_access.cjs
 node scripts/test_guide_zoom.cjs

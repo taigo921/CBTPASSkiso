@@ -50,5 +50,16 @@
 .dictionary-explanation { margin-top: 12px; }
 .dictionary-explanation h2 { margin: 0 0 8px; font-size: 15px; }
 .dictionary-note { margin: 12px 2px 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+
+html.xmas .dictionary-summary div,
+html.xmas .dictionary-source-id { background: #F6EBCB; }
+html.xmas .dictionary-fav:not(.on) { color: #8A817A; }
+html.xmas .dictionary-sources button.on,
+html.xmas .dictionary-modes button.on,
+html.xmas .dictionary-choice.selected:not(.correct):not(.wrong) { border-color: var(--green); background: #EAF5EC; color: var(--green-d); }
+html.xmas .dictionary-image,
+html.xmas .dictionary-choice { border-color: #D8CDBE; }
+html.xmas .dictionary-actions .primary { background: var(--green); border-color: var(--green); }
+html.xmas .dictionary-actions .primary:disabled { background: #D8DDCF; border-color: #D8DDCF; color: #6B5E55; opacity: 1; }
 @media (min-width: 780px) { .dictionary-card { padding: 20px; } .dictionary-groups { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 480px) { .dictionary-sources { grid-template-columns: 1fr; } .dictionary-modes { gap: 5px; } .dictionary-modes button { font-size: 10px; } .dictionary-choices { grid-template-columns: repeat(5, 1fr); } }

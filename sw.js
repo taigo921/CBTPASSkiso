@@ -1,4 +1,4 @@
-const APP_BUILD='20261118-xmas-sleigh';
+const APP_BUILD='20261118-autoupdate2';
 const CACHE_NAME='cbtpass-offline-v1';
 const APP_SHELL=['./','./index.html','./mock-assets/azabu-2026/blocks.js','./mock-assets/azabu-2026/subjects.js','./mock-assets/azabu-2026/photo-pages.js','./features/dictionary-practice/dictionary-practice.css','./features/dictionary-practice/dictionary-practice.js','./dictionary-assets/exercises/manifest.json','./dictionary-assets/mock-exams/manifest.json','./dictionary-assets/dental-materials/manifest.json'];
 // Remove stale copies of source-image data. Each selected book is fetched and cached on demand,
@@ -39,13 +39,24 @@ self.addEventListener('install',event=>{
   })());
 });
 
-self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
+async function deleteCachedUpdateChecks(){
+  const cache=await caches.open(CACHE_NAME);
+  const requests=await cache.keys();
+  await Promise.all(requests.filter(request=>{
+    const url=new URL(request.url);
+    return /\/sw\.js$/.test(url.pathname)&&url.searchParams.has('check');
+  }).map(request=>cache.delete(request)));
+}
+
+self.addEventListener('activate',event=>event.waitUntil(Promise.all([deleteCachedUpdateChecks(),self.clients.claim()])));
 
 self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET')return;
   const url=new URL(request.url);
   const sameOrigin=url.origin===self.location.origin;
+  // Update probes must bypass runtime caching; their timestamp query would otherwise grow the cache forever.
+  if(sameOrigin&&/\/sw\.js$/.test(url.pathname))return;
   // Runtime question data, including data/answer1-*.json ... data/answer4-*.json,
   // uses the same stale-while-revalidate cache as the original question books.
   const questionData=sameOrigin&&/\/data\/(?:answer[1-4]-[^/]+|[^/]+)\.json$/.test(url.pathname);

@@ -247,11 +247,18 @@
           picked=[...item.choices].filter(choice=>selected.has(choice)).join('');
           choices.querySelectorAll('button').forEach(node=>node.classList.toggle('selected',picked.includes(node.dataset.choice)));
         }
+        progress.pendingPick={sourceId:item.sourceId,picked};
+        saveProgress();
         $('dictionarySubmit').disabled=picked.length!==requiredChoices;
       });
       choices.appendChild(button);
     }
-    $('dictionarySubmit').disabled=true;$('dictionarySubmit').textContent='回答する';
+    const pending=progress.pendingPick;
+    if(pending?.sourceId===item.sourceId&&typeof pending.picked==='string'&&[...pending.picked].every(key=>item.choices.includes(key))){
+      picked=[...item.choices].filter(key=>pending.picked.includes(key)).join('');
+      choices.querySelectorAll('button').forEach(button=>button.classList.toggle('selected',picked.includes(button.dataset.choice)));
+    }else if(pending)delete progress.pendingPick;
+    $('dictionarySubmit').disabled=picked.length!==requiredChoices;$('dictionarySubmit').textContent='回答する';
     $('dictionaryResult').classList.add('hidden');
     $('dictionaryExplanation').classList.add('hidden');
     $('dictionaryExplanationImage').removeAttribute('src');
@@ -271,6 +278,7 @@
   function submit(){
     if(answered||!picked)return;
     const item=manifest.items[currentIndex];
+    delete progress.pendingPick;
     answered=true;
     const correct=picked===item.answer;
     $('dictionaryChoices').querySelectorAll('button').forEach(button=>{
