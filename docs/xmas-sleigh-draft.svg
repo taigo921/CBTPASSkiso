@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240" width="1280" height="480">
+  <title>Santa sleigh draft (realistic)</title>
+  <style>
+    .leg-a,.leg-b{transform-box:fill-box;transform-origin:50% 0}
+    .leg-a{animation:gA .46s ease-in-out infinite alternate}
+    .leg-b{animation:gB .46s ease-in-out infinite alternate}
+    .bob{animation:bob .46s ease-in-out infinite alternate}
+    .bob2{animation:bob .46s .11s ease-in-out infinite alternate}
+    .sway{animation:sway 1.1s ease-in-out infinite alternate}
+    .tw{transform-box:fill-box;transform-origin:50% 50%;animation:tw 1.3s ease-in-out infinite}
+    .tw:nth-child(2n){animation-delay:.45s}.tw:nth-child(3n){animation-delay:.9s}
+    @keyframes gA{from{transform:rotate(30deg)}to{transform:rotate(-26deg)}}
+    @keyframes gB{from{transform:rotate(-26deg)}to{transform:rotate(30deg)}}
+    @keyframes bob{from{transform:translateY(-3px)}to{transform:translateY(3px)}}
+    @keyframes sway{from{transform:translateY(-2px) rotate(-.8deg)}to{transform:translateY(2px) rotate(.8deg)}}
+    @keyframes tw{0%,100%{opacity:.15;transform:scale(.5)}50%{opacity:1;transform:scale(1)}}
+  </style>
+  <defs>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#2a1208" flood-opacity=".28"/>
+    </filter>
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="furTex" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9 .25" numOctaves="2" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .22 0" result="a"/>
+      <feComposite in="a" in2="SourceGraphic" operator="in" result="t"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="t"/></feMerge>
+    </filter>
+
+    <linearGradient id="deerFur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4E301A"/><stop offset=".45" stop-color="#7C5130"/><stop offset=".8" stop-color="#A47A52"/><stop offset="1" stop-color="#C7A57E"/>
+    </linearGradient>
+    <linearGradient id="deerHead" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5C3920"/><stop offset=".6" stop-color="#8A5E39"/><stop offset="1" stop-color="#B08660"/>
+    </linearGradient>
+    <linearGradient id="legFur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6B4427"/><stop offset=".7" stop-color="#4F321C"/><stop offset=".82" stop-color="#E4D6C0"/><stop offset="1" stop-color="#D2C2A8"/>
+    </linearGradient>
+    <linearGradient id="legFar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4A2E19"/><stop offset=".7" stop-color="#3A2413"/><stop offset=".82" stop-color="#B9AA92"/><stop offset="1" stop-color="#A89880"/>
+    </linearGradient>
+    <linearGradient id="antler" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#6E5236"/><stop offset="1" stop-color="#C8B08A"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF0B3"/><stop offset=".35" stop-color="#E6BE45"/><stop offset=".7" stop-color="#B8860B"/><stop offset="1" stop-color="#7A5A08"/>
+    </linearGradient>
+    <linearGradient id="lacquer" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0362E"/><stop offset=".45" stop-color="#B31B1B"/><stop offset="1" stop-color="#6E0E0E"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#D93030"/><stop offset=".6" stop-color="#A81E1E"/><stop offset="1" stop-color="#6E1010"/>
+    </linearGradient>
+    <radialGradient id="skin" cx=".4" cy=".4" r=".7">
+      <stop offset="0" stop-color="#FBE0CC"/><stop offset=".7" stop-color="#EDB99A"/><stop offset="1" stop-color="#D99878"/>
+    </radialGradient>
+    <linearGradient id="beard" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D9DDE2"/>
+    </linearGradient>
+    <linearGradient id="burlap" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E3CDA0"/><stop offset=".6" stop-color="#BE9A62"/><stop offset="1" stop-color="#8C6A3C"/>
+    </linearGradient>
+    <linearGradient id="strap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B3262A"/><stop offset="1" stop-color="#6E1214"/>
+    </linearGradient>
+
+    <!-- ===== Reindeer (faces left). Origin ≈ body center ===== -->
+    <g id="legFront"><path d="M-6,0 C-8,10 -6,18 -4,26 C-3,33 -3,40 -3,46 L-4,51 L4,51 L3,46 C3,40 4,33 5,26 C7,17 8,8 7,0 Z"/><path d="M-5,50 L4,50 L6,56 L-7,56 Z" fill="#231409"/><path d="M-1,51 L0,56" stroke="#0e0804" stroke-width="1"/></g>
+    <g id="legHind"><path d="M-10,0 C-11,10 -5,18 -1,23 C1,27 0,36 0,46 L-2,51 L6,51 L5,46 C5,36 7,28 7,22 C8,13 10,5 9,0 Z"/><path d="M-2,50 L6,50 L8,56 L-4,56 Z" fill="#231409"/><path d="M2,51 L3,56" stroke="#0e0804" stroke-width="1"/></g>
+
+    <g id="deerBase">
+      <g fill="url(#legFar)">
+        <g transform="translate(-20,6)"><use href="#legFront" class="leg-b"/></g>
+        <g transform="translate(36,2)"><use href="#legHind" class="leg-a"/></g>
+      </g>
+      <g stroke="#5E4630" stroke-linecap="round" fill="none" opacity=".9">
+        <path d="M-44,-64 C-40,-80 -30,-92 -14,-100" stroke-width="3.6"/>
+        <path d="M-36,-82 L-40,-98 M-26,-94 L-24,-110 M-18,-98 L-6,-106" stroke-width="2.6"/>
+      </g>
+      <path filter="url(#furTex)" fill="url(#deerFur)" d="M46,-2 C50,-12 45,-22 30,-23 C14,-25 -6,-22 -20,-26 C-28,-30 -34,-44 -42,-58 C-46,-64 -54,-68 -62,-65 C-70,-62 -78,-55 -83,-49 C-86,-45 -82,-41 -75,-41 C-67,-41 -59,-38 -53,-32 C-47,-22 -43,-10 -40,0 C-38,10 -30,16 -18,16 L20,14 C34,14 44,10 46,-2 Z"/>
+      <path fill="url(#deerHead)" opacity=".85" d="M-42,-58 C-46,-64 -54,-68 -62,-65 C-70,-62 -78,-55 -83,-49 C-86,-45 -82,-41 -75,-41 C-67,-41 -59,-38 -53,-32 C-50,-40 -46,-50 -42,-58 Z"/>
+      <path fill="#C9A47C" opacity=".7" d="M-70,-58 C-76,-54 -82,-50 -83,-47 C-84,-43 -80,-41 -74,-41 C-70,-41 -66,-44 -66,-48 C-66,-52 -67,-56 -70,-58 Z"/>
+      <path fill="#EEE3CF" filter="url(#furTex)" d="M-53,-32 L-58,-22 L-51,-24 L-55,-12 L-48,-15 L-50,-3 L-43,-7 L-42,2 C-41,-10 -46,-22 -53,-32 Z"/>
+      <path fill="#EEE3CF" d="M38,-18 C48,-16 50,-4 46,4 C42,8 36,4 36,-4 C36,-10 36,-15 38,-18 Z"/>
+      <path fill="#F6EFE2" d="M44,-20 C52,-22 54,-14 49,-10 C46,-12 44,-15 44,-20 Z"/>
+      <path fill="#3A2312" opacity=".18" d="M-30,12 C-10,20 20,18 40,8 C30,16 -10,22 -30,12 Z"/>
+      <path fill="#6A4325" d="M-48,-63 C-44,-75 -36,-79 -32,-76 C-33,-69 -40,-63 -48,-63 Z"/>
+      <path fill="#C99A78" d="M-46,-65 C-43,-72 -38,-75 -35,-74 C-37,-70 -41,-66 -46,-65 Z"/>
+      <ellipse cx="-63" cy="-57" rx="3.4" ry="2.7" fill="#140b05" transform="rotate(-12 -63 -57)"/>
+      <circle cx="-64.2" cy="-58" r="1" fill="#fff"/>
+      <path d="M-67,-60 C-64,-62 -60,-61 -59,-59" stroke="#3A2312" stroke-width="1" fill="none" opacity=".6"/>
+      <path d="M-77,-42 C-73,-40 -69,-41 -66,-43" stroke="#3A2312" stroke-width="1.2" fill="none"/>
+      <g stroke="url(#antler)" stroke-linecap="round" fill="none">
+        <path d="M-50,-66 C-48,-82 -38,-96 -22,-104" stroke-width="4.2"/>
+        <path d="M-51,-70 C-56,-74 -62,-74 -66,-80" stroke-width="2.8"/>
+        <path d="M-45,-84 L-56,-94 M-38,-94 L-44,-110 M-30,-100 L-28,-116 M-24,-103 L-12,-112" stroke-width="2.8"/>
+      </g>
+      <path d="M-42,-14 C-34,-22 -26,-26 -18,-27" stroke="url(#strap)" stroke-width="5" fill="none"/>
+      <path d="M-12,-25 C-15,-8 -15,6 -12,16" stroke="url(#strap)" stroke-width="6" fill="none"/>
+      <path d="M-12,-10 L42,-10" stroke="url(#strap)" stroke-width="4" fill="none"/>
+      <g fill="url(#gold)" stroke="#6b4f08" stroke-width=".6">
+        <circle cx="-36" cy="-16" r="3.2"/><circle cx="-29" cy="-21" r="3.2"/><circle cx="-22" cy="-24" r="3.2"/>
+        <rect x="-15.5" y="-13" width="7" height="6" rx="1"/>
+      </g>
+      <g fill="url(#legFur)">
+        <g transform="translate(-28,7)"><use href="#legFront" class="leg-a"/></g>
+        <g transform="translate(28,3)"><use href="#legHind" class="leg-b"/></g>
+      </g>
+    </g>
+  </defs>
+
+  <g filter="url(#soft)">
+  <g fill="#F5D06F">
+    <path class="tw" d="M622,150 l3,8 8,3 -8,3 -3,8 -3,-8 -8,-3 8,-3z"/>
+    <path class="tw" d="M600,182 l2,5 5,2 -5,2 -2,5 -2,-5 -5,-2 5,-2z"/>
+    <circle class="tw" cx="612" cy="128" r="2.6"/>
+    <circle class="tw" cx="630" cy="200" r="2.2"/>
+    <circle class="tw" cx="590" cy="210" r="1.8"/>
+  </g>
+
+  <path d="M452,128 C380,146 300,148 236,140 C190,136 150,140 112,148" stroke="#5A1A12" stroke-width="2.4" fill="none"/>
+  <path d="M236,140 L250,146" stroke="#5A1A12" stroke-width="2.4"/>
+
+  <g class="bob"><use href="#deerBase" transform="translate(110,150)"/></g>
+  <g class="bob2"><use href="#deerBase" transform="translate(250,146)"/></g>
+  <g class="bob"><ellipse cx="25" cy="102" rx="5" ry="4.2" fill="#E11D2E" filter="url(#glow)"/><circle cx="23.5" cy="100.5" r="1.4" fill="#FFC2C2"/></g>
+  <g class="bob2"><ellipse cx="166" cy="98" rx="4.2" ry="3.4" fill="#1a0f08"/></g>
+
+  <g class="sway">
+    <path d="M552,124 C540,96 548,62 574,52 C586,48 596,56 602,70 C612,92 606,116 600,128 Z" fill="url(#burlap)"/>
+    <path d="M560,92 C572,96 588,94 600,88 M556,110 C570,114 590,112 604,106" stroke="#8C6A3C" stroke-width="1" fill="none" opacity=".6"/>
+    <path d="M566,56 C576,62 590,62 598,58" stroke="#7A2A1E" stroke-width="3.5" fill="none"/>
+    <rect x="572" y="30" width="24" height="24" rx="2" fill="#1E6B37" transform="rotate(-8 584 42)"/>
+    <rect x="581" y="29" width="5" height="25" fill="url(#gold)" transform="rotate(-8 584 42)"/>
+    <path d="M583,30 q-10,-12 -14,-2 q7,5 14,2 q10,-12 14,-2 q-7,5 -14,2" fill="url(#gold)"/>
+    <rect x="552" y="48" width="18" height="16" rx="2" fill="#C62828" transform="rotate(10 561 56)"/>
+    <rect x="559" y="47" width="4" height="17" fill="#F5E6B8" transform="rotate(10 561 56)"/>
+
+    <g>
+      <path d="M472,152 C468,124 476,104 500,100 C526,98 544,108 548,152 Z" fill="url(#coat)"/>
+      <path d="M506,104 L506,152" stroke="#F4F1EA" stroke-width="9"/>
+      <path d="M506,104 L506,152" stroke="#D8D3C8" stroke-width="9" stroke-dasharray="2 3" opacity=".6"/>
+      <path d="M484,112 C470,116 460,124 456,130" stroke="#A81E1E" stroke-width="16" stroke-linecap="round" fill="none"/>
+      <path d="M484,110 C474,114 466,120 462,126" stroke="#D93030" stroke-width="6" stroke-linecap="round" fill="none" opacity=".6"/>
+      <ellipse cx="462" cy="129" rx="7" ry="8" fill="#F4F1EA" transform="rotate(30 462 129)"/>
+      <ellipse cx="452" cy="130" rx="7.5" ry="6.5" fill="#1d1612"/>
+      <ellipse cx="506" cy="78" rx="17" ry="19" fill="url(#skin)"/>
+      <ellipse cx="490" cy="80" rx="4" ry="6" fill="#E6AD8C"/>
+      <path d="M488,78 C484,96 488,118 506,130 C524,118 530,96 524,78 C518,88 512,92 506,92 C500,92 494,88 488,78 Z" fill="url(#beard)"/>
+      <path d="M494,96 C496,106 500,116 504,122 M506,96 L506,126 M516,96 C514,106 512,114 508,122 M500,100 C500,110 502,118 505,124" stroke="#C9CED6" stroke-width="1" fill="none"/>
+      <path d="M506,86 C498,82 490,86 486,92 C494,92 500,92 506,89 C512,92 518,92 526,92 C522,86 514,82 506,86 Z" fill="#FFFFFF" stroke="#D0D4DA" stroke-width=".8"/>
+      <ellipse cx="506" cy="82" rx="4.5" ry="4" fill="#E58C76"/>
+      <ellipse cx="495" cy="80" rx="4.5" ry="3" fill="#F0907C" opacity=".45"/>
+      <ellipse cx="517" cy="80" rx="4.5" ry="3" fill="#F0907C" opacity=".45"/>
+      <path d="M496,73 q3,-2.5 6,0 M510,73 q3,-2.5 6,0" stroke="#2A1A10" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M494,69 C497,66 501,66 503,68 M509,68 C511,66 515,66 518,69" stroke="#FFFFFF" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+      <path d="M488,66 C490,44 504,36 520,40 C534,44 544,56 548,72 C538,62 528,58 524,62 Z" fill="url(#coat)"/>
+      <path d="M520,40 C540,40 552,52 556,66" stroke="#A81E1E" stroke-width="11" fill="none" stroke-linecap="round"/>
+      <circle cx="557" cy="70" r="7.5" fill="#F7F4EE" filter="url(#furTex)"/>
+      <path d="M484,66 C496,58 516,58 530,64 C532,68 530,72 526,72 C512,68 498,68 488,74 C484,72 482,69 484,66 Z" fill="#F7F4EE" filter="url(#furTex)"/>
+    </g>
+
+    <path d="M410,172 C398,168 392,150 398,132 C402,120 416,118 421,128 C425,137 417,143 410,139 C414,146 422,150 432,152 L556,152 C574,152 584,140 586,118 C588,104 601,100 606,112 C611,128 602,152 594,168 C588,180 574,186 558,186 L442,186 C428,186 416,182 410,172 Z" fill="url(#lacquer)" stroke="#5a0b0b" stroke-width="1.5"/>
+    <path d="M432,154 L556,154 C570,154 580,146 584,128 C586,140 578,158 560,160 L436,160 Z" fill="url(#sheen)"/>
+    <path d="M424,166 C440,170 540,170 584,162" stroke="url(#gold)" stroke-width="2.4" fill="none"/>
+    <path d="M428,176 C446,180 540,180 580,172" stroke="#1E6B37" stroke-width="2.4" fill="none"/>
+    <g stroke="url(#gold)" stroke-width="1.8" fill="none" stroke-linecap="round">
+      <path d="M470,170 c4,-6 12,-6 14,0 c2,5 -4,8 -7,5"/>
+      <path d="M520,170 c-4,-6 -12,-6 -14,0 c-2,5 4,8 7,5"/>
+      <path d="M492,168 c4,-4 8,-4 9,0 c1,3 -3,5 -5,3"/>
+    </g>
+    <path d="M404,128 C406,122 414,122 416,128 C417,133 412,135 410,132" stroke="url(#gold)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M598,112 C600,106 606,108 606,114" stroke="url(#gold)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M444,186 C442,192 438,196 436,200 M560,186 C562,192 566,196 568,200 M502,186 L502,200" stroke="url(#gold)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M604,202 L420,202 C392,202 380,192 378,176 C376,160 388,152 398,156 C406,160 404,170 396,170" stroke="url(#gold)" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+    <path d="M604,202 C610,202 612,198 610,194" stroke="url(#gold)" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+  </g>
+  </g>
+</svg>
