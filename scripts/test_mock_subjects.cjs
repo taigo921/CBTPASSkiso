@@ -60,7 +60,7 @@ const elements=Object.fromEntries(elementIds.map(id=>[id,new FakeElement(hiddenI
 elements.mockSubjectReviewEmpty.textContent='不正解の問題はありません';
 ctx.el=id=>elements[id];
 ctx.document={createElement:()=>new FakeElement(),querySelectorAll:()=>[]};
-ctx.showOnly=()=>{};ctx.setProgress=()=>{};ctx.openImageZoom=()=>{};ctx.safeSet=()=>{};
+ctx.showOnly=()=>{};ctx.xmasSleighQuestionShown=()=>{};ctx.setProgress=()=>{};ctx.openImageZoom=()=>{};ctx.safeSet=()=>{};
 const scrollToCalls=[];ctx.window.cbtUser={uid:'tester'};ctx.window.scrollTo=options=>scrollToCalls.push(options);ctx.setTimeout=callback=>callback();
 function setSession(session){ctx.__session=session;vm.runInContext('mockSubjectSession=__session',ctx);}
 function render(){ctx.renderMockSubjectPractice();}
@@ -108,5 +108,5 @@ assert.equal(elements.mockSubjectReviewEmpty.classList.contains('hidden'),true,'
 
 assert.match(source,/data-mock-subject-mode="instant"[^>]*>1問ずつ答え合わせ/);
 assert.match(source,/data-mock-subject-mode="exam"[^>]*>本番形式（最後にまとめて）/);
-assert.match(source,/20261118-xmas/);
+assert.match(source,/20261118-xmas-sleigh/);
 console.log('PASS mock subjects: mappings, instant/exam modes, resume, explanations, completed review navigation and wrong-only filtering');

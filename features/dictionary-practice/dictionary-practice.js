@@ -215,6 +215,7 @@
     const saved=progress.answers[item.sourceId];
     picked='';answered=false;
     window.showOnly('dictionaryPractice');
+    window.xmasSleighQuestionShown?.(`dictionary:${sourceKey}:${item.sourceId}`);
     $('footer').classList.add('hidden');
     $('timerChip').classList.remove('show');
     $('routeBackBtn').classList.add('hidden');

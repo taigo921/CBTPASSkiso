@@ -26,7 +26,7 @@ class Element{
  querySelectorAll(){return this.children;}
  click(){if(!this.disabled)this.events.click?.();}
 }
-const elements={},storage={},context={window:{cbtUser:{uid:'test-a'},scrollTo(){}},document:{createElement:()=>new Element(),querySelectorAll:()=>[]},el:id=>elements[id]||(elements[id]=new Element()),safeGet:k=>storage[k]?JSON.parse(storage[k]):null,safeSet:(k,v)=>{storage[k]=JSON.stringify(v);},setInterval:()=>1,clearInterval(){},toast(){},showOnly(){},openImageZoom(){},check,console};
+const elements={},storage={},context={window:{cbtUser:{uid:'test-a'},scrollTo(){}},document:{createElement:()=>new Element(),querySelectorAll:()=>[]},el:id=>elements[id]||(elements[id]=new Element()),safeGet:k=>storage[k]?JSON.parse(storage[k]):null,safeSet:(k,v)=>{storage[k]=JSON.stringify(v);},setInterval:()=>1,clearInterval(){},toast(){},showOnly(){},xmasSleighQuestionShown(){},openImageZoom(){},check,console};
 vm.createContext(context);
 context.cloudSyncSoon=()=>{};
 vm.runInContext(fs.readFileSync(path.join(root,'mock-assets/azabu-2026/blocks.js'),'utf8'),context);
