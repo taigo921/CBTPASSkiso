@@ -46,5 +46,5 @@ assert.equal(elements.guideZoomReset.textContent,'2.5×');
 
 assert.match(source,/scroll\.style\.overflow='hidden'/,'guide zoom freezes native scrolling before layout changes');
 assert.match(source,/restoreGuideScroll\(scroll\.scrollTop,scroll\.scrollLeft\)/,'committed offsets are re-applied after overflow is restored');
-assert.match(source,/20261115-dictreview/);
+assert.match(source,/20261118-xmas/);
 console.log('PASS guide zoom: pinch preview is transform-only and a moved 1x -> 2.5x commit keeps page 221 anchored.');
