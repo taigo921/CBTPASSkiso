@@ -1,6 +1,6 @@
 # Codex progress
 
-最終更新: 2026-11-18
+最終更新: 2026-11-22
 
 基準コミット: `091570f`（検証済み辞典②専用演習の公開）
 
@@ -29,6 +29,8 @@
 - Codex向けのarchitecture、feature map、database、route、development資料。
 
 ## 現在開発している機能
+
+- 通常演習、麻布模試、科目別模試、辞典・歯科理工の出題中だけ開ける「検査値（基準値）表」を追加。回答・成績・模試タイマーを変更しない参照専用ボトムシートで、認証中は非表示、スクロール位置・閉じた後のフォーカスを保持する。320px向け固定table layout、680px以上の2列、Xmas配色を含む。build IDは `20261122-lab-values`。未コミット・未公開。
 
 - 長時間開いたままのアプリが `sw.js` の新buildを定期検知し、通常演習／辞典の回答中、単問セッション、進行中の模試を避けた次の安全な画面遷移・非表示時に保存・同期後自動再読込する仕組みを追加。同buildは10分間隔・最大3回まで再試行可、実行中buildと一致後はguardを削除。Service Workerは `sw.js?check=` をキャッシュせず、既存の更新確認entryもactivate時に削除。build IDは `20261118-autoupdate2`。未コミット・未公開。
 
@@ -94,6 +96,8 @@
 - 未解決（原本不足）: 辞典③の模試2はブロック6表紙に40問とあるが、本文は問261（1）〜266（4）の24問でPDFが終了する。模試2は304問、2模試合計は624問であり、不足16問の原本が追加されるまで推測で補完しない。
 
 ## テスト結果
+
+- 2026-11-22: 検査値表の全35項目／親行と基準値の原本文字列、4画面限定表示、認証再ロック時の自動クローズとスクロール解除、背景inert、Tab／Shift+Tabトラップ、dialog属性、フォーカス・表スクロール位置の復元を `scripts/test_lab_values.cjs` で確認。Firebase公開検査7件、ブラウザ不要のNode回帰27本、全51問題JSON、全インラインscript／Service Worker／辞典scriptの構文、shell構文、Xmas色監査、`git diff --check` に成功。build IDは `20261122-lab-values`。未コミット・未公開。
 
 - 2026-11-18: 長時間起動中の新バージョン自動適用のレビュー4件を修正。`scripts/test_auto_update.cjs` で単問セッション中の延期と離脱後適用、Service Worker更新確認URLの素通し・既存cache清掃、guardの完了後記録・10分後再試行・3回上限・build一致時削除、fetch失敗無視を確認。xmasの `.btn.sec` をクリーム背景・深緑文字・金枠とし、色同一禁止と4.5:1以上を静的監査。Firebase公開検査7件、ブラウザ不要のNode回帰26本、xmas色監査、全51問題JSON、全インラインscript／Service Worker／辞典scriptの構文、shell構文、`git diff --check` に成功。Playwright 3本とFirestore Emulator 3本は必要なローカル依存がなく未実行。build IDは `20261118-autoupdate2`。未コミット。
 

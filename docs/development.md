@@ -31,6 +31,7 @@ node scripts/test_auto_update.cjs
 node scripts/test_access_control.cjs
 node scripts/test_extra_materials_access.cjs
 node scripts/test_guide_zoom.cjs
+node scripts/test_lab_values.cjs
 node scripts/test_school_hours.cjs
 node scripts/test_admin_ranking.cjs
 node scripts/test_paper_progress.cjs

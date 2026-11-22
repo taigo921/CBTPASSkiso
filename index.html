@@ -410,6 +410,36 @@
   .footer{position:fixed;left:0;right:0;bottom:0;z-index:30;background:linear-gradient(180deg,rgba(245,247,245,0),rgba(245,247,245,.96) 30%);
     padding:14px 16px calc(14px + env(safe-area-inset-bottom));}
   .footer .inner{max-width:560px;margin:0 auto;display:flex;gap:10px;}
+  .lab-values-button{position:fixed;right:16px;bottom:calc(98px + env(safe-area-inset-bottom));z-index:42;border:1px solid var(--line);border-radius:999px;padding:9px 13px;background:var(--card);color:var(--green-d);box-shadow:var(--shadow);font-size:13px;font-weight:800;line-height:1;cursor:pointer;white-space:nowrap;}
+  #authGate:not(.ok)~.lab-values-button{display:none!important;}
+  .lab-values-dialog{position:fixed;inset:0;z-index:10020;display:flex;align-items:flex-end;justify-content:center;background:rgba(8,24,19,.58);}
+  .lab-values-sheet{width:100%;height:min(88vh,860px);height:min(88dvh,860px);overflow:hidden;display:flex;flex-direction:column;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -12px 36px rgba(8,24,19,.22);animation:labValuesRise .24s ease-out both;}
+  .lab-values-head{position:relative;z-index:1;flex:none;display:flex;align-items:center;justify-content:space-between;min-height:58px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--card);}
+  .lab-values-head h2{margin:0;color:var(--green-d);font-size:18px;}
+  .lab-values-close{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:var(--card);color:var(--green-d);font-size:24px;line-height:1;cursor:pointer;}
+  .lab-values-scroll{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:14px 12px calc(22px + env(safe-area-inset-bottom));}
+  .lab-values-note{max-width:980px;margin:0 auto 14px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--muted);font-size:12px;line-height:1.65;}
+  .lab-values-columns{max-width:980px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;}
+  .lab-values-column{min-width:0;display:flex;flex-direction:column;gap:14px;}
+  .lab-values-section{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);}
+  .lab-values-section h3{margin:0;padding:10px 12px;background:var(--green);color:#fff;font-size:14px;}
+  .lab-values-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;line-height:1.45;}
+  .lab-values-table th,.lab-values-table td{min-width:0;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere;word-break:normal;}
+  .lab-values-table th{width:47%;color:var(--ink);font-weight:700;text-align:left;}
+  .lab-values-table td{color:var(--ink);font-variant-numeric:tabular-nums;}
+  .lab-values-table tr:last-child th,.lab-values-table tr:last-child td{border-bottom:0;}
+  .lab-values-table .lab-values-parent th{color:var(--green-d);}
+  .lab-values-table .lab-values-child th{padding-left:25px;font-weight:600;}
+  .lab-values-lines{display:flex;flex-direction:column;}
+  .lab-values-lines span+span{margin-top:5px;padding-top:5px;border-top:1px dotted var(--line);}
+  .lab-values-footnote{margin:9px 12px 12px;color:var(--muted);font-size:12px;}
+  html.xmas .lab-values-button,html.xmas .lab-values-head,html.xmas .lab-values-close,html.xmas .lab-values-note,html.xmas .lab-values-section{background:var(--card);border-color:var(--line);color:var(--green-d);}
+  html.xmas .lab-values-dialog{background:rgba(60,30,10,.58);}
+  html.xmas .lab-values-sheet{background:var(--bg);box-shadow:0 -12px 36px rgba(60,30,10,.22);}
+  html.xmas .lab-values-section h3{background:var(--green);color:#fff;}
+  @keyframes labValuesRise{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @media(prefers-reduced-motion:reduce){.lab-values-sheet{animation:none}}
+  @media(min-width:680px){.lab-values-columns{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.lab-values-scroll{padding-left:18px;padding-right:18px}}
   .btn{flex:1;border:none;border-radius:14px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;background:var(--green);color:#fff;box-shadow:0 6px 16px rgba(14,94,69,.28);}
   .btn:active{transform:translateY(1px);}
   .btn.sec{flex:none;width:54px;background:#fff;color:var(--green);border:1.5px solid var(--line);box-shadow:none;font-size:20px;}
@@ -1553,6 +1583,65 @@
   </div>
 </div>
 
+<button type="button" class="lab-values-button hidden" id="labValuesButton" aria-haspopup="dialog" aria-controls="labValuesDialog">🧪 検査値</button>
+<div class="lab-values-dialog hidden" id="labValuesDialog" role="dialog" aria-modal="true" aria-labelledby="labValuesTitle" aria-hidden="true">
+  <div class="lab-values-sheet">
+    <div class="lab-values-head"><h2 id="labValuesTitle">検査値</h2><button type="button" class="lab-values-close" id="labValuesClose" aria-label="検査値を閉じる">×</button></div>
+    <div class="lab-values-scroll" id="labValuesScroll">
+      <p class="lab-values-note">※基準値は検査機器や測定方法などで異なるため、文献によって値が異なります。本表の数値はあくまでも目安として覚えてください。</p>
+      <div class="lab-values-columns">
+        <div class="lab-values-column">
+          <section class="lab-values-section"><h3>血液学検査</h3><table class="lab-values-table"><thead><tr><th scope="col">項目名</th><th scope="col">基準値</th></tr></thead><tbody>
+            <tr><th scope="row">赤血球</th><td><div class="lab-values-lines"><span>(男性) 420〜560万/μL</span><span>(女性) 380〜500万/μL</span></div></td></tr>
+            <tr><th scope="row">ヘモグロビン〈Hb〉</th><td><div class="lab-values-lines"><span>(男性) 13.5〜17.5g/dL</span><span>(女性) 11.5〜15.5g/dL</span></div></td></tr>
+            <tr><th scope="row">ヘマトクリット〈Ht〉</th><td><div class="lab-values-lines"><span>(男性) 40〜50%</span><span>(女性) 35〜45%</span></div></td></tr>
+            <tr><th scope="row">白血球</th><td>3,500〜9,000/μL</td></tr>
+            <tr class="lab-values-parent"><th scope="row">白血球分画</th><td></td></tr>
+            <tr class="lab-values-child"><th scope="row">桿状核好中球</th><td>3〜6%</td></tr>
+            <tr class="lab-values-child"><th scope="row">分葉核好中球</th><td>45〜60%</td></tr>
+            <tr class="lab-values-child"><th scope="row">好酸球</th><td>0〜5%</td></tr>
+            <tr class="lab-values-child"><th scope="row">好塩基球</th><td>0〜1%</td></tr>
+            <tr class="lab-values-child"><th scope="row">単球</th><td>1.5〜8%</td></tr>
+            <tr class="lab-values-child"><th scope="row">リンパ球</th><td>25〜40%</td></tr>
+            <tr><th scope="row">血小板</th><td>15〜35万/μL</td></tr>
+            <tr><th scope="row">プロトロンビン時間</th><td><div class="lab-values-lines"><span>PT：10〜13秒</span><span>PT-INR：0.9〜1.1</span></div></td></tr>
+          </tbody></table></section>
+          <section class="lab-values-section"><h3>生体機能検査</h3><table class="lab-values-table"><thead><tr><th scope="col">項目名</th><th scope="col">基準値</th></tr></thead><tbody>
+            <tr><th scope="row">pH（血液）</th><td>7.35〜7.45</td></tr>
+            <tr><th scope="row">PaCO₂</th><td>35〜45Torr</td></tr>
+            <tr><th scope="row">PaO₂</th><td>90〜100Torr</td></tr>
+            <tr><th scope="row">経皮的動脈血酸素飽和度〈SpO₂〉</th><td>96%以上</td></tr>
+            <tr><th scope="row">推算糸球体濾過量〈eGFR〉</th><td>90mL/分/1.73m²以上*</td></tr>
+          </tbody></table><p class="lab-values-footnote">*クレアチニンクリアランスと近似</p></section>
+        </div>
+        <div class="lab-values-column">
+          <section class="lab-values-section"><h3>生化学検査</h3><table class="lab-values-table"><thead><tr><th scope="col">項目名</th><th scope="col">基準値</th></tr></thead><tbody>
+            <tr><th scope="row">総タンパク〈TP〉</th><td>6.5〜8.2g/dL</td></tr>
+            <tr><th scope="row">アルブミン〈Alb〉</th><td>4.0〜5.0g/dL</td></tr>
+            <tr><th scope="row">総ビリルビン</th><td>0.2〜1.2mg/dL</td></tr>
+            <tr><th scope="row">直接ビリルビン</th><td>0〜0.4mg/dL</td></tr>
+            <tr><th scope="row">AST</th><td>10〜40IU/L</td></tr>
+            <tr><th scope="row">ALT</th><td>5〜40IU/L</td></tr>
+            <tr><th scope="row">尿素窒素〈BUN〉</th><td>8〜20mg/dL</td></tr>
+            <tr><th scope="row">クレアチニン〈Cr〉</th><td><div class="lab-values-lines"><span>(男性) 0.6〜1.2mg/dL</span><span>(女性) 0.5〜1.0mg/dL</span></div></td></tr>
+            <tr><th scope="row">{随時} 血糖</th><td>140mg/dL以下</td></tr>
+            <tr><th scope="row">空腹時血糖〈FBS〉</th><td>70〜109mg/dL</td></tr>
+            <tr><th scope="row">HbA1c</th><td>4.6〜6.2%</td></tr>
+            <tr><th scope="row">総コレステロール〈TC〉</th><td>130〜220mg/dL</td></tr>
+            <tr><th scope="row">トリグリセリド〈TG〉</th><td>50〜150mg/dL</td></tr>
+            <tr><th scope="row">Na</th><td>135〜145mEq/L</td></tr>
+            <tr><th scope="row">K</th><td>3.5〜5.0mEq/L</td></tr>
+            <tr><th scope="row">Fe</th><td><div class="lab-values-lines"><span>(男性) 55〜190μg/dL</span><span>(女性) 40〜160μg/dL</span></div></td></tr>
+          </tbody></table></section>
+          <section class="lab-values-section"><h3>免疫血清学検査</h3><table class="lab-values-table"><thead><tr><th scope="col">項目名</th><th scope="col">基準値</th></tr></thead><tbody>
+            <tr><th scope="row">C反応性タンパク〈CRP〉</th><td><div class="lab-values-lines"><span>定性法：陰性</span><span>定量法：0.3mg/dL以下</span></div></td></tr>
+          </tbody></table></section>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="reward-burst" id="rewardBurst" aria-hidden="true"></div>
 <div class="level-up" id="levelUp" aria-hidden="true"><div class="level-up-card"><small id="levelUpLabel">LEVEL UP</small><b id="levelUpNum">2</b><span id="levelUpMessage">新しいレベルに到達！</span></div></div>
 <div class="image-zoom-viewer hidden" id="imageZoomViewer" aria-hidden="true">
@@ -1899,7 +1988,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261118-answer-fx2';
+const SERVICE_WORKER_BUILD='20261122-lab-values';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -3564,12 +3653,52 @@ function migrateGameData(){
 }
 
 function toast(m){const t=el('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
+const LAB_VALUES_SCREEN_IDS=['quiz','mockExam','mockSubjectPractice','dictionaryPractice'];
+let labValuesBodyOverflow='',labValuesHtmlOverflow='',labValuesLastScroll=0,labValuesInertNodes=[];
+function labValuesAvailable(screenId,authVisible){return LAB_VALUES_SCREEN_IDS.includes(screenId)&&!authVisible;}
+function setLabValuesBackgroundInert(active){
+  if(active){
+    const dialog=el('labValuesDialog');
+    labValuesInertNodes=Array.from(document.body.children).filter(node=>node!==dialog&&!['SCRIPT','STYLE','TEMPLATE'].includes(node.tagName)&&!node.hasAttribute('inert'));
+    labValuesInertNodes.forEach(node=>node.setAttribute('inert',''));
+  }else{
+    labValuesInertNodes.forEach(node=>node.removeAttribute('inert'));labValuesInertNodes=[];
+  }
+}
+function syncLabValuesButton(screenId){
+  const authVisible=!el('authGate').classList.contains('ok'),available=labValuesAvailable(screenId,authVisible);
+  el('labValuesButton').classList.toggle('hidden',!available);
+  if(!available&&!el('labValuesDialog').classList.contains('hidden'))closeLabValues(false);
+}
+function currentLabValuesScreen(){return LAB_VALUES_SCREEN_IDS.find(id=>!el(id).classList.contains('hidden'))||'';}
+function handleLabValuesAuthChange(){syncLabValuesButton(currentLabValuesScreen());}
+function openLabValues(){
+  const dialog=el('labValuesDialog');if(!dialog.classList.contains('hidden'))return;
+  labValuesBodyOverflow=document.body.style.overflow;labValuesHtmlOverflow=document.documentElement.style.overflow;
+  document.body.style.overflow='hidden';document.documentElement.style.overflow='hidden';
+  dialog.classList.remove('hidden');dialog.setAttribute('aria-hidden','false');setLabValuesBackgroundInert(true);
+  el('labValuesScroll').scrollTop=labValuesLastScroll;el('labValuesClose').focus();
+}
+function closeLabValues(restoreFocus=true){
+  const dialog=el('labValuesDialog');if(dialog.classList.contains('hidden'))return;
+  labValuesLastScroll=el('labValuesScroll').scrollTop;dialog.classList.add('hidden');dialog.setAttribute('aria-hidden','true');
+  document.body.style.overflow=labValuesBodyOverflow;document.documentElement.style.overflow=labValuesHtmlOverflow;
+  setLabValuesBackgroundInert(false);if(restoreFocus)el('labValuesButton').focus();
+}
+function trapLabValuesFocus(event){
+  const dialog=el('labValuesDialog');if(event.key!=='Tab'||dialog.classList.contains('hidden'))return false;
+  const focusable=Array.from(dialog.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(node=>!node.classList.contains('hidden'));
+  const first=focusable[0]||el('labValuesClose'),last=focusable[focusable.length-1]||first,active=document.activeElement;
+  if(!dialog.contains(active)||event.shiftKey&&active===first||!event.shiftKey&&active===last){event.preventDefault();(event.shiftKey?last:first).focus();}
+  return true;
+}
 function showOnly(id){
   const screens=['home','studyPlan','quiz','mockExam','mockSubjectPractice','dictionaryPractice','finish','stats','list','sectionList','sectionStart','leaderboard','accessAdmin'];
   const previous=screens.find(screen=>!el(screen).classList.contains('hidden'));
   if(previous!==id)autoUpdateMaybeApply('transition');
   el('routeBackBtn').classList.toggle('hidden',id!=='quiz');
   screens.forEach(s=>el(s).classList.toggle('hidden',s!==id));
+  syncLabValuesButton(id);
   if(id!=='mockExam'&&mockExamState.clock){clearInterval(mockExamState.clock);mockExamState.clock=null;}
   if(previous!==id){xmasSleighFlight(id);autoUpdateMaybeApply('transition');}
 }
@@ -4581,6 +4710,11 @@ el('qEndlessStop').addEventListener('click',stopEndlessStudy);
 el('qFig').addEventListener('click',()=>openImageZoom(el('qFig').currentSrc||el('qFig').src,'問題の画像'));
 el('qFigZoomBtn').addEventListener('click',()=>openImageZoom(el('qFig').currentSrc||el('qFig').src,'問題の画像'));
 el('imageZoomClose').addEventListener('click',closeImageZoom);
+el('labValuesButton').addEventListener('click',openLabValues);
+el('labValuesClose').addEventListener('click',()=>closeLabValues());
+el('labValuesDialog').addEventListener('click',event=>{if(event.target===el('labValuesDialog'))closeLabValues();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!el('labValuesDialog').classList.contains('hidden'))closeLabValues();else trapLabValuesFocus(event);});
+new MutationObserver(handleLabValuesAuthChange).observe(el('authGate'),{attributes:true,attributeFilter:['class']});
 el('imageZoomOut').addEventListener('click',()=>setImageZoom(imageZoomState.scale-.5));
 el('imageZoomIn').addEventListener('click',()=>setImageZoom(imageZoomState.scale+.5));
 el('imageZoomReset').addEventListener('click',()=>{imageZoomState.scale=1;imageZoomState.x=0;imageZoomState.y=0;applyImageZoom();});

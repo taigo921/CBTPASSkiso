@@ -25,6 +25,7 @@
 |`#accessAdmin`|手動停止／休止解除、最終利用日時、授業制限・休校日管理|Access Administration|user list、school controls|`users`, `accessControl`, `activity`, `schoolAccess`|`openAccessAdmin()`, `renderAccessAdmin()`, `renderSchoolSettings()`|
 |`#guideViewer` overlay|ガイド編の参照と拡大|Guide Viewer|page images、zoom controls|`guide/*.webp`、`guide_ref`|`openGuide()`, `buildGuidePages()`|
 |`#imageZoomViewer` overlay|問題・模試画像の拡大|Guide Viewer|zoom/pan stage|表示中の画像URL/data URL|`openImageZoom()` とpointer handlers|
+|`#labValuesDialog` overlay|試験中の検査基準値参照|Practice / Mock Exam / Dictionary Practice|`#labValuesButton`、検査値4表|`index.html` 内の静的表|`syncLabValuesButton()`, `openLabValues()`, `closeLabValues()`|
 |`#unameModal` / `#avatarCropModal`|プロフィール入力・写真crop|Leaderboard & Profile|text input、canvas、zoom|`users/{uid}` profile|`askUsername()`, avatar関数群|
 |`#storageWarning`|端末保存失敗とbackup誘導|Progress & Sync|warning、export button|LocalStorage失敗key|`safeSet()`, `updateStorageWarning()`|
 
@@ -38,6 +39,7 @@
 - `#home` の歯科理工tab → `#dictionaryPractice` → 歯科理工home。CBT辞典の教材選択には表示しない。
 - `#home` → `#stats`、`#leaderboard`、管理者のみ `#accessAdmin`。
 - どの学習画面からでもガイド／画像viewerをoverlay表示でき、閉じると元のscreenを維持する。
+- 検査値表は `#quiz`、`#mockExam`、`#mockSubjectPractice`、`#dictionaryPractice` だけからoverlay表示し、タイマー・回答状態を維持したまま閉じると元のscreenへ戻る。認証画面中は入口を表示しない。
 - 個別停止または授業制限の通知は現在screenをoverlayし、許可が戻った後に認証・同期を再確認する。
 
 新しいscreenを追加するときは、markup、`showOnly()` のscreen一覧、入口event、戻り先、footer/timerの表示、再開状態、access overlayとの共存を一組で変更する。

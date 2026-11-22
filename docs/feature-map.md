@@ -101,16 +101,16 @@
 - 関連ファイル: `index.html`、`features/dictionary-practice/`、`dictionary-assets/dental-materials/`、`scripts/import_dental_materials_forms.py`、`scripts/test_dental_materials_forms.cjs`、`scripts/test_dictionary_browser.cjs`。
 - 他Featureとの依存: Dictionary Practiceとは表示基盤だけを共用する。通常問題集、Study Route、Gamificationとは分離し、Progress & Syncへ専用履歴、Leaderboardへ公開集計だけを渡す。
 
-## ガイド編・画像viewer
+## ガイド編・画像viewer・検査値参照
 
-- 機能: 問題のガイド参照、複数ページ表示、pinch/drag/zoom、問題・模試画像の拡大。
-- Route / 画面: overlay `#guideViewer`、`#imageZoomViewer`。
-- 主なUI: `#guidePages`、guide zoom controls、`#imageZoomStage`。
-- state / hooks相当: `guideZoomState`、`imageZoomState`、`openGuide()`、`openImageZoom()`。
+- 機能: 問題のガイド参照、複数ページ表示、pinch/drag/zoom、問題・模試画像の拡大、出題中に開ける検査基準値表。
+- Route / 画面: overlay `#guideViewer`、`#imageZoomViewer`、`#labValuesDialog`。検査値表は `#quiz`、`#mockExam`、`#mockSubjectPractice`、`#dictionaryPractice` だけで利用する。
+- 主なUI: `#guidePages`、guide zoom controls、`#imageZoomStage`、`#labValuesButton`、`#labValuesScroll`。
+- state / hooks相当: `guideZoomState`、`imageZoomState`、`openGuide()`、`openImageZoom()`、`labValuesAvailable()`、`openLabValues()`、`closeLabValues()`。
 - API / service: なし。
 - DB: なし。
-- 関連ファイル: `index.html` のguide/image viewer、`guide/*.webp`、問題JSONの `guide_ref`/`image_base64`、模試画像。
-- 他Featureとの依存: Practice、Study Route、Mock Examから一方向に呼ばれる共通UI基盤。
+- 関連ファイル: `index.html` のguide/image/reference viewer、`guide/*.webp`、問題JSONの `guide_ref`/`image_base64`、模試画像、`scripts/test_lab_values.cjs`。
+- 他Featureとの依存: Practice、Study Route、Mock Exam、Dictionary Practiceから一方向に呼ばれる共通UI基盤。検査値表は参照専用で回答・成績・タイマーを変更しない。
 
 ## 進捗保存・複数端末同期・バックアップ
 
