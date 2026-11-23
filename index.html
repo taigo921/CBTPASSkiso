@@ -3,8 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#173A78">
 <script>
-(()=>{const value=new URLSearchParams(location.search).get('xmas'),now=new Date(),season=now.getMonth()===10&&now.getDate()>=15||now.getMonth()===11&&now.getDate()<=25;if(value==='1'||value!=='0'&&season)document.documentElement.classList.add('xmas');})();
+window.toGOSeasonTheme=(()=>{
+  const params=new URLSearchParams(location.search),legacy=params.get('xmas'),preview=params.get('season');
+  const seasonForDate=(date=new Date())=>{const month=date.getMonth(),day=date.getDate();return month===10&&day>=15||month===11&&day<=25?'xmas':month===11&&day>=26?'winter':month===0&&day<=7?'newyear':'';};
+  const overridden=legacy==='0'||legacy==='1'||['xmas','winter','newyear','off'].includes(preview);
+  let forcedSeason='';
+  if(legacy==='0'||preview==='off')forcedSeason='';
+  else if(legacy==='1')forcedSeason='xmas';
+  else if(['xmas','winter','newyear'].includes(preview))forcedSeason=preview;
+  const currentSeason=()=>document.documentElement.classList.contains('season-winter')?'winter':document.documentElement.classList.contains('season-newyear')?'newyear':document.documentElement.classList.contains('xmas')?'xmas':'';
+  const setSeasonClasses=season=>{document.documentElement.classList.remove('xmas','season-winter','season-newyear','xmas-paused');if(season){document.documentElement.classList.add('xmas');if(season!=='xmas')document.documentElement.classList.add(`season-${season}`);}};
+  const resolveSeason=()=>overridden?forcedSeason:seasonForDate();
+  return {overridden,seasonForDate,currentSeason,setSeasonClasses,resolveSeason};
+})();
+window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
 </script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -583,7 +597,7 @@
   @keyframes levelPop{from{transform:scale(.65) rotate(-3deg);opacity:0}to{transform:scale(1);opacity:1}}
   @media(prefers-reduced-motion:reduce){.xp-gain,.combo-pill,.reward-line,#quiz .card.answer-correct,.choice.correct,.reward-particle,.level-up-card{animation:none!important}}
 
-  /* Christmas theme: red, gold and evergreen, active only while html.xmas is present. */
+  /* xmas は季節テーマ共通の土台クラス。単独時は従来のクリスマス配色。 */
   html.xmas{
     --green:#166534;--green-d:#14532D;--green-l:#22A35A;
     --xmas-red:#B91C1C;--xmas-red-d:#7F1D1D;
@@ -700,6 +714,83 @@
   html.xmas .xmas-sleigh-art .xs-sway{animation:xs-sway 1.1s ease-in-out infinite alternate}
   html.xmas .xmas-sleigh-art .xs-tw{transform-box:fill-box;transform-origin:50% 50%;animation:xs-tw 1.3s ease-in-out infinite}
   html.xmas .xmas-sleigh-art .xs-tw:nth-child(2n){animation-delay:.45s}html.xmas .xmas-sleigh-art .xs-tw:nth-child(3n){animation-delay:.9s}
+  html.xmas.season-winter{
+    --green:#1E3A5F;--green-d:#132840;--green-l:#3B7DB8;
+    --xmas-red:#2B5C8A;--xmas-red-d:#132840;--xmas-gold:#9CC3E6;--xmas-gold-l:#DCEEFF;
+    --bg:#F4F8FC;--line:#D5E2EE;--ink:#17283B;--muted:#587087;
+    --shadow:0 2px 5px rgba(19,40,64,.08),0 9px 28px rgba(19,40,64,.1);
+  }
+  html.xmas.season-newyear{
+    --green:#A61B29;--green-d:#7A1420;--green-l:#D0453F;
+    --xmas-red:#C8102E;--xmas-red-d:#7A1420;--xmas-gold:#C9A227;--xmas-gold-l:#F2D57A;
+    --bg:#FFFBF3;--line:#E9DDC5;--ink:#302019;--muted:#745E50;
+    --shadow:0 2px 5px rgba(86,35,24,.08),0 9px 28px rgba(86,35,24,.1);
+  }
+  html.xmas.season-winter body{background:radial-gradient(circle at 8% 8%,rgba(220,238,255,.3),transparent 22%),radial-gradient(circle at 92% 28%,rgba(59,125,184,.1),transparent 25%),var(--bg);}
+  html.xmas.season-newyear body{background:radial-gradient(circle at 8% 8%,rgba(242,213,122,.16),transparent 22%),radial-gradient(circle at 92% 28%,rgba(200,16,46,.07),transparent 25%),var(--bg);}
+  html.xmas.season-winter header{background:linear-gradient(115deg,rgba(19,40,64,.97),rgba(30,58,95,.94));box-shadow:0 4px 18px rgba(19,40,64,.2);}
+  html.xmas.season-newyear header{background:linear-gradient(115deg,rgba(122,20,32,.97),rgba(200,16,46,.91));box-shadow:0 4px 18px rgba(86,35,24,.2);}
+  html.xmas.season-winter header::after{background:linear-gradient(90deg,rgba(156,195,230,.18),var(--xmas-gold-l),#fff,var(--xmas-gold),rgba(156,195,230,.18));background-size:220% 100%;}
+  html.xmas.season-newyear header::after{background:linear-gradient(90deg,rgba(201,162,39,.22),var(--xmas-gold-l),#fff,var(--xmas-gold),rgba(201,162,39,.22));background-size:220% 100%;}
+  html.xmas.season-winter .logo{color:#DCEEFF;text-shadow:0 0 10px rgba(220,238,255,.38);}
+  html.xmas.season-newyear .logo{color:#F2D57A;text-shadow:0 0 10px rgba(242,213,122,.4);}
+  html.xmas.season-winter .logo::before{content:'⛄';}
+  html.xmas.season-newyear .logo::before{content:'🎍';}
+  html.xmas.season-winter .logo small,html.xmas.season-winter header .ghost-btn{color:#F2F8FF;}
+  html.xmas.season-newyear .logo small,html.xmas.season-newyear header .ghost-btn{color:#FFF8E8;}
+  html.xmas.season-winter #home .hero{border-color:rgba(220,238,255,.58);background:linear-gradient(150deg,#132840 0%,#1E3A5F 48%,#273A70 100%);box-shadow:0 14px 34px rgba(19,40,64,.23),inset 0 0 32px rgba(220,238,255,.08);}
+  html.xmas.season-winter #home .hero::before{background:radial-gradient(circle at 8% 24%,#fff 0 1px,transparent 2px),radial-gradient(circle at 20% 66%,#DCEEFF 0 1px,transparent 2px),radial-gradient(circle at 34% 18%,#fff 0 1.5px,transparent 2.5px),radial-gradient(circle at 49% 72%,#fff 0 1px,transparent 2px),radial-gradient(circle at 63% 31%,#DCEEFF 0 1.5px,transparent 2.5px),radial-gradient(circle at 76% 68%,#fff 0 1px,transparent 2px),radial-gradient(circle at 92% 42%,#DCEEFF 0 1px,transparent 2px);}
+  html.xmas.season-winter #home .hero::after{left:-8%;right:-8%;bottom:-80px;height:96px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(255,255,255,.72) 0%,rgba(244,248,252,.66) 48%,rgba(220,238,255,.28) 66%,transparent 73%);filter:blur(5px);}
+  html.xmas.season-newyear #home .hero{border-color:rgba(242,213,122,.6);background:linear-gradient(145deg,#7A1420 0%,#A61B29 48%,#C8102E 100%);box-shadow:0 14px 34px rgba(86,35,24,.22),inset 0 0 32px rgba(242,213,122,.08);}
+  html.xmas.season-newyear #home .hero::before{background:radial-gradient(circle at 0 100%,transparent 0 12px,rgba(242,213,122,.14) 13px 14px,transparent 15px 24px,rgba(242,213,122,.1) 25px 26px,transparent 27px),radial-gradient(circle at 24px 100%,transparent 0 12px,rgba(242,213,122,.14) 13px 14px,transparent 15px 24px,rgba(242,213,122,.1) 25px 26px,transparent 27px);background-size:48px 28px;background-position:0 10px,0 -4px;animation:xmasStarTwinkle 6s ease-in-out infinite;}
+  html.xmas.season-newyear #home .hero::after{left:auto;right:-18px;top:-26px;bottom:auto;width:112px;height:112px;border-radius:50%;background:radial-gradient(circle,#FFF5B7 0 14%,#F2D57A 28%,rgba(231,107,52,.7) 48%,rgba(242,213,122,.18) 67%,transparent 72%);filter:blur(2px);}
+  html.xmas.season-winter #home .hero #qcount{position:relative;z-index:2;color:#DCEEFF;text-shadow:0 1px 3px rgba(5,18,34,.95),0 0 8px rgba(19,40,64,.72);}
+  html.xmas.season-newyear #home .hero #qcount{color:#FFF2C6;}
+  html.xmas.season-winter #home .xmas-greeting{color:#DCEEFF;text-shadow:0 0 10px rgba(220,238,255,.5);}
+  html.xmas.season-newyear #home .xmas-greeting{color:#FFF2C6;text-shadow:0 0 10px rgba(242,213,122,.5);}
+  html.xmas.season-winter #home .xmas-garland{top:12px;height:29px;border-top-color:rgba(220,238,255,.62);}
+  html.xmas.season-winter #home .xmas-light{width:7px;height:23px;margin-top:-1px;border-radius:1px 1px 70% 70%;clip-path:polygon(20% 0,80% 0,100% 68%,50% 100%,0 68%);background:linear-gradient(180deg,#fff,#9CC3E6);box-shadow:0 0 7px 1px rgba(220,238,255,.7);animation:xmasIcicleShine 3.2s ease-in-out var(--twinkle-delay) infinite;}
+  html.xmas.season-winter #home .xmas-light::before{display:none;}
+  html.xmas.season-newyear #home .xmas-garland{top:0;left:0;right:0;height:32px;border:0;background:repeating-linear-gradient(90deg,#fff 0 18px,#C8102E 18px 36px);box-shadow:0 3px 0 #C9A227,0 7px 8px rgba(86,35,24,.16);opacity:.96;}
+  html.xmas.season-newyear #home .xmas-light{display:none;}
+  html.xmas.season-winter .book-tab.on::after{content:'❄️';}
+  html.xmas.season-newyear .book-tab.on::after{content:'🎍';}
+  html.xmas.season-winter .game-card{background:linear-gradient(145deg,#132840,#1E3A5F 62%,#274D78);border-color:#9CC3E6;box-shadow:0 12px 28px rgba(19,40,64,.22);}
+  html.xmas.season-winter .game-card::before,html.xmas.season-winter .game-card::after{display:none;}
+  html.xmas.season-winter .game-main::after{content:'⛄';}
+  html.xmas.season-newyear .game-card{background:linear-gradient(145deg,#7A1420,#A61B29 62%,#C8102E);border-color:#C9A227;box-shadow:0 12px 28px rgba(86,35,24,.22);}
+  html.xmas.season-newyear .game-card::before,html.xmas.season-newyear .game-card::after{background:linear-gradient(90deg,#A98016,#F2D57A,#A98016);box-shadow:0 0 8px rgba(242,213,122,.42);}
+  html.xmas.season-newyear .game-main::after{content:'🌅';}
+  html.xmas.season-winter .level-orb{background:linear-gradient(145deg,#F2F8FF,#9CC3E6 62%,#6FA4D2);}
+  html.xmas.season-newyear .level-orb{background:linear-gradient(145deg,#FFF2C6,#F2D57A 62%,#C9A227);}
+  html.xmas.season-winter .game-card .rank-badge{background:#E7F2FC;color:#132840;}
+  html.xmas.season-winter .game-card .game-xp,html.xmas.season-winter .game-card .xp-note{color:#E7F2FC;}
+  html.xmas.season-newyear .game-card .rank-badge{background:#FFF2C6;color:#7A1420;}
+  html.xmas.season-newyear .game-card .game-xp,html.xmas.season-newyear .game-card .xp-note{color:#FFF2C6;}
+  html.xmas.season-winter .timer-chip,html.xmas.season-winter .rank-badge,html.xmas.season-winter .mode .ic,html.xmas.season-winter .mock-exam-clock,html.xmas.season-winter #leaderboard .lb-avatar,html.xmas.season-winter .plan-whitepass-units,html.xmas.season-winter .tag,html.xmas.season-winter .choice .key,html.xmas.season-winter .verdict .tm,html.xmas.season-winter .guide .guide-link,html.xmas.season-winter .rev-no,html.xmas.season-winter .ana-item .no,html.xmas.season-winter .lsec .cnt,html.xmas.season-winter .litem .lno,html.xmas.season-winter .section-start-note,html.xmas.season-winter .dictionary-summary div,html.xmas.season-winter .dictionary-source-id{background:#E3F0FB;}
+  html.xmas.season-winter .plan-rule,html.xmas.season-winter .plan-whitepass,html.xmas.season-winter .mock-result:not(.bad),html.xmas.season-winter #authGate .auth-browser-help,html.xmas.season-winter #authGate .auth-first-guide,html.xmas.season-winter .plan-today-status{background:#F0F6FC;border-color:#CEDDEB;}
+  html.xmas.season-winter .plan-upcoming:active,html.xmas.season-winter .choice:active,html.xmas.season-winter .previous-answer,html.xmas.season-winter .study-time-books div,html.xmas.season-winter .litem.resume-point{background:#EDF4FA;}
+  html.xmas.season-winter .choice.sel:not(.correct):not(.wrong),html.xmas.season-winter .dictionary-modes button.on,html.xmas.season-winter .dictionary-sources button.on,html.xmas.season-winter .dictionary-choice.selected:not(.correct):not(.wrong),html.xmas.season-winter .mock-choice.selected:not(.correct):not(.wrong),html.xmas.season-winter .mock-subject-mode-options button.on{background:#E2F0FB;}
+  html.xmas.season-winter .book-switch{background:#E8F1F8;border-color:#CBDCEB;}
+  html.xmas.season-winter .plan-day{border-color:#D5E2EE;}
+  html.xmas.season-winter .plan-day.light{background:#EAF3FB;border-color:#CADCEB;}
+  html.xmas.season-winter .plan-day.light small{color:#315E88;}
+  html.xmas.season-winter .rbar,html.xmas.season-winter .plan-mastery-bar{background:#DCE8F2;}
+  html.xmas.season-winter .question-progress{background:#F0F6FC;border-color:#CEDDEB;}
+  html.xmas.season-winter .question-result-dot.empty{background:#DCE8F2;color:#4E677E;}
+  html.xmas.season-winter .btn.sec{background:#F5FAFE;color:#132840;border-color:#9CC3E6;}
+  html.xmas.season-winter .btn:disabled,html.xmas.season-winter .dictionary-actions .primary:disabled{background:#D6E1EA;color:#587087;}
+  html.xmas.season-winter .footer{background:linear-gradient(180deg,rgba(244,248,252,0),rgba(244,248,252,.97) 30%);}
+  html.xmas.season-newyear .footer{background:linear-gradient(180deg,rgba(255,251,243,0),rgba(255,251,243,.97) 30%);}
+  html.xmas.season-winter .xmas-dust{background:#F7FCFF;box-shadow:0 0 6px 2px rgba(220,238,255,.8);}
+  html.xmas.season-newyear .xmas-dust{background:#F2D57A;box-shadow:0 0 6px 2px rgba(242,213,122,.72);}
+  html.xmas.season-winter .xmas-particle{filter:drop-shadow(0 0 4px rgba(220,238,255,.95));}
+  html.xmas.season-newyear .xmas-particle{filter:drop-shadow(0 0 4px rgba(242,213,122,.95));}
+  html.xmas.season-winter .xmas-particle::after{background:linear-gradient(90deg,transparent,rgba(220,238,255,.75));}
+  html.xmas.season-newyear .xmas-particle::after{background:linear-gradient(90deg,transparent,rgba(242,213,122,.75));}
+  html.xmas.season-newyear #xmasSnow .xmas-snowflake{border-radius:var(--confetti-radius,1px);animation-name:xmasConfettiFall;}
+  @keyframes xmasIcicleShine{0%,100%{opacity:.45;filter:brightness(.9)}42%{opacity:1;filter:brightness(1.35)}68%{opacity:.7;filter:brightness(1)}}
+  @keyframes xmasConfettiFall{0%{transform:translate3d(0,-8vh,0) rotate(0deg);opacity:0}8%{opacity:var(--flake-opacity,.82)}55%{transform:translate3d(var(--drift),54vh,0) rotate(300deg)}100%{transform:translate3d(var(--drift-back),112vh,0) rotate(680deg);opacity:.18}}
   html.xmas.xmas-paused #xmasSnow .xmas-snowflake,html.xmas.xmas-paused #home .xmas-light,html.xmas.xmas-paused #home .hero::before,html.xmas.xmas-paused header::after,html.xmas.xmas-paused .pbar>i,html.xmas.xmas-paused .xmas-particle,html.xmas.xmas-paused .xmas-dust,html.xmas.xmas-paused .xmas-sleigh-party,html.xmas.xmas-paused .xmas-sleigh-art *{animation-play-state:paused!important;}
   @keyframes xmasSnowFall{0%{transform:translate3d(0,-8vh,0) scale(.85);opacity:0}8%{opacity:var(--flake-opacity,.82)}50%{transform:translate3d(var(--drift),52vh,0) scale(1)}100%{transform:translate3d(var(--drift-back),112vh,0) scale(.92);opacity:.14}}
   @keyframes xmasGoldShimmer{to{background-position:-220% 0}}
@@ -714,7 +805,7 @@
   @keyframes xs-sway{from{transform:translateY(-2px) rotate(-.8deg)}to{transform:translateY(2px) rotate(.8deg)}}
   @keyframes xs-tw{0%,100%{opacity:.15;transform:scale(.5)}50%{opacity:1;transform:scale(1)}}
   @media(max-width:420px){html.xmas header{padding:8px}html.xmas .head-row{gap:4px}html.xmas .head-spacer{min-width:0}html.xmas .logo{flex:none;font-size:14px;letter-spacing:0}html.xmas .logo::before{margin-right:1px;font-size:14px}html.xmas .logo small{margin-left:2px;font-size:9.5px}html.xmas header .ghost-btn{flex:none;padding:5px 6px;font-size:10.5px;line-height:1.25}html.xmas .timer-chip{flex:none;gap:3px;padding:4px 5px;font-size:10.5px;line-height:1.25}}
-  @media(max-width:390px){html.xmas #home .hero{margin-top:14px;padding:68px 15px 20px;border-radius:20px}html.xmas #home .xmas-greeting{top:43px;font-size:10.5px}html.xmas .xmas-particle{max-width:24px}}
+  @media(max-width:390px){html.xmas #home .hero{margin-top:14px;padding:68px 15px 20px;border-radius:20px}html.xmas #home .xmas-greeting{top:43px;font-size:10.5px}html.xmas.season-winter #home .xmas-greeting,html.xmas.season-newyear #home .xmas-greeting{left:8px;right:8px;font-size:9.5px;letter-spacing:0}html.xmas .xmas-particle{max-width:24px}}
   html.xmas .xa-fx{position:fixed;inset:0;z-index:90;overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   html.xmas .xa-fx .xa-defs{position:absolute;width:0;height:0;overflow:hidden}
   html.xmas .xa-fx .xa-full{position:absolute;inset:0}
@@ -1988,7 +2079,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261122-lab-values';
+const SERVICE_WORKER_BUILD='20261124-seasonal-themes';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -3809,7 +3900,7 @@ function xmasSleighQuestionShown(questionKey){
 function xmasSleighFlight(screenId){
   const screens=['home','quiz','mockExam','mockSubjectPractice','dictionaryPractice','stats','list','sectionList','sectionStart','leaderboard'];
   const authGate=el('authGate');
-  if((screenId&&!screens.includes(screenId))||!document.documentElement.classList.contains('xmas')||xmasMotionReduced()||document.hidden||(authGate&&!authGate.classList.contains('ok'))||document.querySelector('.xmas-sleigh-flight'))return;
+  if((screenId&&!screens.includes(screenId))||!document.documentElement.classList.contains('xmas')||document.documentElement.classList.contains('season-winter')||document.documentElement.classList.contains('season-newyear')||xmasMotionReduced()||document.hidden||(authGate&&!authGate.classList.contains('ok'))||document.querySelector('.xmas-sleigh-flight'))return;
   const flight=document.createElement('div');flight.className='xmas-sleigh-flight';flight.setAttribute('aria-hidden','true');
   const template=el('xmasSleighTemplate');if(!template)return;flight.appendChild(template.content.cloneNode(true));
   document.body.appendChild(flight);
@@ -3820,7 +3911,7 @@ function xmasSleighFlight(screenId){
 function xmasCorrectBurst(target){
   if(!document.documentElement.classList.contains('xmas')||xmasMotionReduced()||document.hidden)return;
   const rect=target?.getBoundingClientRect?.(),startX=rect?rect.left+rect.width/2:innerWidth/2,startY=rect?rect.top+rect.height/2:innerHeight/2;
-  const icons=['✨','⭐','✨','✨','⭐','✨','🎁','✨','⭐'];
+  const root=document.documentElement,icons=root.classList.contains('season-winter')?['❄️','✨','❄️','⛄','✨','❄️','✨','⛄','❄️']:root.classList.contains('season-newyear')?['🎍','🌅','✨','🎊','✨','🎍','🎊','✨','🌅']:['✨','⭐','✨','✨','⭐','✨','🎁','✨','⭐'];
   for(let index=0;index<9;index++){
     const particle=document.createElement('span'),angle=-Math.PI+Math.random()*Math.PI,distance=42+Math.random()*68;
     particle.className='xmas-particle';particle.textContent=icons[index];particle.setAttribute('aria-hidden','true');
@@ -3836,6 +3927,7 @@ function xmasAnswerFx(correct,target){
   // Callers only invoke it where the result is shown immediately.
   if(!document.documentElement.classList.contains('xmas')||xmasMotionReduced()||document.hidden)return;
   if(correct){xmasCorrectBurst(target);return;}
+  if(document.documentElement.classList.contains('season-winter')||document.documentElement.classList.contains('season-newyear'))return;
   const template=el('xmasFxNgTemplate');if(!template)return;
   document.querySelectorAll('.xa-fx').forEach(node=>node.remove());
   const fx=template.content.firstElementChild.cloneNode(true);
@@ -3844,26 +3936,61 @@ function xmasAnswerFx(correct,target){
   document.body.appendChild(fx);
   setTimeout(remove,2200);
 }
+const XMAS_THEME_COLOR_DEFAULT=document.querySelector('meta[name="theme-color"]')?.getAttribute('content')||'';
+function clearXmasThemeDecorations(){
+  el('xmasSnow')?.replaceChildren();
+  document.querySelectorAll('#home .xmas-garland,#home .xmas-greeting,.xmas-sleigh-flight,.xa-fx,.xmas-particle,.xmas-dust').forEach(node=>node.remove());
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',XMAS_THEME_COLOR_DEFAULT);
+}
 function initXmasTheme(){
   if(!document.documentElement.classList.contains('xmas'))return;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content','#7F1D1D');
+  const root=document.documentElement,isWinter=root.classList.contains('season-winter'),isNewYear=root.classList.contains('season-newyear');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',isWinter?'#132840':isNewYear?'#7A1420':'#7F1D1D');
   const snow=el('xmasSnow');
-  if(snow&&!snow.childElementCount&&!xmasMotionReduced())for(let index=0;index<30;index++){
-    const flake=document.createElement('i'),drift=Math.round(-28+Math.random()*56),gold=index%3===0,bokeh=index%7===0;
-    flake.className='xmas-snowflake'+(bokeh?' bokeh':'');flake.style.setProperty('--x',`${Math.random()*100}%`);flake.style.setProperty('--size',`${bokeh?8+Math.random()*8:3+Math.random()*5}px`);
-    flake.style.setProperty('--duration',`${8+Math.random()*10}s`);flake.style.setProperty('--delay',`${-Math.random()*18}s`);
-    flake.style.setProperty('--flake-color',gold?'#F5D06F':'#FFFFFF');flake.style.setProperty('--flake-opacity',String(bokeh?0.46:0.7+Math.random()*0.22));flake.style.setProperty('--glow',`${gold?8:5}px`);
+  const flakeCount=isWinter?40:isNewYear?18:30;
+  if(snow&&!snow.childElementCount&&!xmasMotionReduced())for(let index=0;index<flakeCount;index++){
+    const flake=document.createElement('i'),drift=Math.round(-28+Math.random()*56),gold=!isWinter&&!isNewYear&&index%3===0,bokeh=!isNewYear&&index%7===0;
+    flake.className='xmas-snowflake'+(bokeh?' bokeh':'');flake.style.setProperty('--x',`${Math.random()*100}%`);flake.style.setProperty('--size',`${isNewYear?3+Math.random()*5:bokeh?8+Math.random()*8:3+Math.random()*5}px`);
+    flake.style.setProperty('--duration',`${isNewYear?12+Math.random()*10:8+Math.random()*10}s`);flake.style.setProperty('--delay',`${-Math.random()*(isNewYear?22:18)}s`);
+    const confettiColors=['#F2D57A','#C8102E','#FFFFFF'];flake.style.setProperty('--flake-color',isNewYear?confettiColors[index%confettiColors.length]:gold?'#F5D06F':'#FFFFFF');flake.style.setProperty('--flake-opacity',String(bokeh?0.46:0.7+Math.random()*0.22));flake.style.setProperty('--glow',`${isNewYear?2:gold?8:5}px`);
+    if(isNewYear){flake.style.setProperty('--confetti-radius',index%3===0?'50%':'1px');flake.style.height=`${3+Math.random()*8}px`;}
     flake.style.setProperty('--drift',`${drift}px`);flake.style.setProperty('--drift-back',`${Math.round(drift*-.45)}px`);snow.appendChild(flake);
   }
   const hero=document.querySelector('#home .hero');
   if(hero&&!hero.querySelector('.xmas-garland')){
     const garland=document.createElement('div');garland.className='xmas-garland';garland.setAttribute('aria-hidden','true');
-    const colors=['#F5D06F','#FFFBEA','#B91C1C','#22A35A'];
+    const colors=isWinter?['#FFFFFF','#DCEEFF','#9CC3E6']:isNewYear?['#FFFFFF','#C8102E']:['#F5D06F','#FFFBEA','#B91C1C','#22A35A'];
     for(let index=0;index<12;index++){const bulb=document.createElement('i');bulb.className='xmas-light';bulb.style.setProperty('--bulb',colors[index%colors.length]);bulb.style.setProperty('--twinkle-delay',`${index*-.18}s`);garland.appendChild(bulb);}
-    const greeting=document.createElement('div');greeting.className='xmas-greeting';greeting.textContent='🎄 Merry Christmas！ CBTまであと一息';hero.prepend(greeting);hero.prepend(garland);
+    const greeting=document.createElement('div');greeting.className='xmas-greeting';greeting.textContent=isWinter?'⛄ 今年もおつかれさまでした。良いお年を！':isNewYear?'🎍 あけましておめでとうございます！ 今年もCBT合格へ':'🎄 Merry Christmas！ CBTまであと一息';hero.prepend(greeting);hero.prepend(garland);
   }
-  const setVisibility=()=>document.documentElement.classList.toggle('xmas-paused',document.hidden);
-  document.addEventListener('visibilitychange',setVisibility);setVisibility();
+}
+function setXmasThemeVisibility(){
+  document.documentElement.classList.toggle('xmas-paused',document.documentElement.classList.contains('xmas')&&document.hidden);
+}
+function applyXmasSeason(season){
+  const theme=window.toGOSeasonTheme;
+  if(!theme||theme.currentSeason()===season)return false;
+  clearXmasThemeDecorations();
+  theme.setSeasonClasses(season);
+  xmasLastSleighQuestionKey=null;
+  initXmasTheme();
+  setXmasThemeVisibility();
+  return true;
+}
+function refreshXmasSeason(){
+  const theme=window.toGOSeasonTheme;
+  if(!theme||theme.overridden)return false;
+  return applyXmasSeason(theme.resolveSeason());
+}
+let xmasThemeListenersRegistered=false;
+function registerXmasThemeListeners(){
+  if(xmasThemeListenersRegistered)return;
+  xmasThemeListenersRegistered=true;
+  document.addEventListener('visibilitychange',()=>{
+    setXmasThemeVisibility();
+    if(!document.hidden)refreshXmasSeason();
+  });
+  setXmasThemeVisibility();
   const authGate=el('authGate');
   if(authGate){
     const onAuthGateChange=()=>{if(authGate.classList.contains('ok'))xmasSleighFlight('home');};
@@ -3877,7 +4004,7 @@ function initXmasTheme(){
   let lastDustAt=0;
   document.addEventListener('pointerdown',event=>{
     const now=performance.now();
-    if(xmasMotionReduced()||document.hidden||event.isPrimary===false||now-lastDustAt<120)return;
+    if(!document.documentElement.classList.contains('xmas')||xmasMotionReduced()||document.hidden||event.isPrimary===false||now-lastDustAt<120)return;
     lastDustAt=now;
     const count=3+Math.floor(Math.random()*3);
     for(let index=0;index<count;index++){
@@ -3887,6 +4014,11 @@ function initXmasTheme(){
       document.body.appendChild(dust);dust.addEventListener('animationend',()=>dust.remove(),{once:true});setTimeout(()=>dust.remove(),900);
     }
   },{passive:true});
+  if(!window.toGOSeasonTheme?.overridden)setInterval(refreshXmasSeason,60000);
+}
+function initXmasThemeRuntime(){
+  initXmasTheme();
+  registerXmasThemeListeners();
 }
 
 /* ============ タイマー ============ */
@@ -5547,7 +5679,7 @@ document.querySelectorAll('#leaderboard .lb-tab').forEach(t=>t.addEventListener(
   lbMetric=t.dataset.metric; renderLeaderboard();
 }));
 
-initXmasTheme();
+initXmasThemeRuntime();
 
 /* ============ 初期化 ============ */
 (async () => {
