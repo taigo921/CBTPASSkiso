@@ -413,10 +413,10 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
   .guide-page-error{position:absolute;inset:0;display:grid;place-items:center;padding:24px;color:var(--wrong);font-size:14px;line-height:1.7;background:#fff;}
 
   .image-zoom-viewer{position:fixed;inset:0;z-index:10050;display:flex;flex-direction:column;background:rgba(5,14,11,.96);color:#fff;}
-  .image-zoom-toolbar{position:relative;z-index:2;display:flex;align-items:center;gap:8px;padding:calc(9px + env(safe-area-inset-top)) 12px 9px;background:rgba(6,30,23,.92);}
+  .image-zoom-toolbar{position:relative;z-index:2;display:flex;align-items:center;gap:clamp(4px,2vw,8px);padding:calc(9px + env(safe-area-inset-top)) clamp(6px,3vw,12px) 9px;background:rgba(6,30,23,.92);}
   .image-zoom-toolbar strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;font-size:13px;}
-  .image-zoom-toolbar button{min-width:42px;height:38px;border:1px solid rgba(255,255,255,.35);border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font-size:17px;font-weight:900;cursor:pointer;}
-  #imageZoomClose{width:auto;padding:0 12px;font-size:13px;}
+  .image-zoom-toolbar button{flex:0 0 auto;min-width:38px;height:38px;border:1px solid rgba(255,255,255,.35);border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font-size:17px;font-weight:900;cursor:pointer;}
+  #imageZoomClose{width:auto;min-width:48px;padding:0 10px;border-color:rgba(255,255,255,.55);background:rgba(255,255,255,.24);font-size:13px;}
   .image-zoom-stage{position:relative;flex:1;min-height:0;overflow:hidden;display:grid;place-items:center;touch-action:none;user-select:none;-webkit-user-select:none;}
   .image-zoom-stage img{display:block;max-width:100%;max-height:100%;object-fit:contain;transform-origin:center center;will-change:transform;-webkit-user-drag:none;}
   .image-zoom-help{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);margin:0;padding:7px 11px;border-radius:999px;background:rgba(0,0,0,.55);font-size:11px;white-space:nowrap;pointer-events:none;}
@@ -1736,7 +1736,7 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
 <div class="reward-burst" id="rewardBurst" aria-hidden="true"></div>
 <div class="level-up" id="levelUp" aria-hidden="true"><div class="level-up-card"><small id="levelUpLabel">LEVEL UP</small><b id="levelUpNum">2</b><span id="levelUpMessage">新しいレベルに到達！</span></div></div>
 <div class="image-zoom-viewer hidden" id="imageZoomViewer" aria-hidden="true">
-  <div class="image-zoom-toolbar"><button type="button" id="imageZoomClose">閉じる</button><strong id="imageZoomTitle">画像</strong><button type="button" id="imageZoomOut" aria-label="縮小">−</button><button type="button" id="imageZoomReset" aria-label="等倍">1×</button><button type="button" id="imageZoomIn" aria-label="拡大">＋</button></div>
+  <div class="image-zoom-toolbar"><strong id="imageZoomTitle">画像</strong><button type="button" id="imageZoomOut" aria-label="縮小">−</button><button type="button" id="imageZoomReset" aria-label="等倍">1×</button><button type="button" id="imageZoomIn" aria-label="拡大">＋</button><button type="button" id="imageZoomClose">閉じる</button></div>
   <div class="image-zoom-stage" id="imageZoomStage"><img id="imageZoomImage" alt="拡大画像" draggable="false"><p class="image-zoom-help">ピンチで拡大・縮小／指で移動</p></div>
 </div>
 <div class="toast" id="toast"></div>
@@ -2079,7 +2079,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261124-seasonal-themes';
+const SERVICE_WORKER_BUILD='20261126-zoom-close-right';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -3133,6 +3133,27 @@ async function loadPaperChoices(){
     el('paperRegistered').textContent=reports.length?`本の登録済み：${reports.length}問（うち完璧 ${reports.filter(x=>x.round===5).length}問）`:'';
   }catch(_){el('paperPreview').textContent='問題データを読み込めませんでした。閉じてから開き直してください。';}
 }
+function samePlanItemContent(a,b){
+  const keys=new Set([...Object.keys(a||{}),...Object.keys(b||{})]);keys.delete('updatedAt');
+  return [...keys].every(key=>a?.[key]===b?.[key]);
+}
+function preserveRebuiltPlanItem(old,item,now){
+  if(!old)return item;
+  if(planIsMastered(old)){
+    const kept={...old},mastered=planIsMastered(kept);
+    kept.mastered=mastered;kept.completed=mastered;if(mastered)kept.due='9999-12-31';
+    kept.updatedAt=old.updatedAt;return kept;
+  }
+  const oldStreak=planItemStreak(old),historyStreak=planItemStreak(item);
+  item.explained=!!old.explained;item.correctStreak=Math.max(oldStreak,historyStreak);
+  if(oldStreak>=historyStreak){
+    item.correctStreakDate=old.correctStreakDate;item.streakDay=old.streakDay;item.stage=old.stage;item.due=old.due;
+  }
+  const mastered=planIsMastered(item);item.mastered=mastered;item.completed=mastered;
+  if(mastered)item.due='9999-12-31';
+  item.updatedAt=samePlanItemContent(old,item)?old.updatedAt:now;
+  return item;
+}
 function rebuildStudyPlan(showMessage=true){
   const old=planFor(),today=dateKey(),latest={};
   ROUTE_BOOK_KEYS.map(book=>statsByBook[book]).forEach(bookStats=>(bookStats.rankAttempts||[]).forEach(a=>{if(a&&a.u&&(!latest[a.u]||(a.a||0)>latest[a.u]))latest[a.u]=a.a||0;}));
@@ -3141,8 +3162,10 @@ function rebuildStudyPlan(showMessage=true){
     if(((r.correct||0)+(r.wrong||0))<1)return;
     const last=latest[uid]?dateKey(new Date(latest[uid])):today;
     const round=(r.correct||0)+(r.wrong||0),streak=planHistoryStreak(uid),mastered=streak>=PLAN_CORRECT_STREAK_TARGET;
-    p.items[uid]={round,stage:Math.max(0,round-1),due:mastered?'9999-12-31':addPlanDays(last,1),last,explained:false,correctStreak:streak,correctStreakDate:streak?last:null,mastered,completed:mastered,updatedAt:Date.now()};
+    const updatedAt=Date.now(),item={round,stage:Math.max(0,round-1),due:mastered?'9999-12-31':addPlanDays(last,1),last,explained:false,correctStreak:streak,correctStreakDate:streak?last:null,mastered,completed:mastered,updatedAt};
+    p.items[uid]=preserveRebuiltPlanItem(old.items?.[uid],item,updatedAt);
   }));
+  Object.entries(old.items||{}).forEach(([uid,item])=>{if(!p.items[uid])p.items[uid]=item;});
   p.paperProgress=old.paperProgress||{};applyPaperBaseline(p);
   studyPlans.shared=p;saveStudyPlans();
   if(showMessage)toast('学習計画を作成しました');
@@ -4826,7 +4849,7 @@ function movePlanMonth(offset){
 el('planPrevMonth').addEventListener('click',()=>movePlanMonth(-1));
 el('planNextMonth').addEventListener('click',()=>movePlanMonth(1));
 el('planRebuildBtn').addEventListener('click',()=>{
-  if(confirm('現在の回答履歴から学習計画を作り直しますか？')){rebuildStudyPlan();renderStudyPlan();}
+  if(confirm('習得済み・「説明できる」状態と連続正解数を保ったまま、毎日の課題を回答履歴から作り直しますか？')){rebuildStudyPlan();renderStudyPlan();}
 });
 el('sectionModeBtn').addEventListener('click',openSectionList);
 document.querySelectorAll('[data-section-mode]').forEach(button=>button.addEventListener('click',()=>{

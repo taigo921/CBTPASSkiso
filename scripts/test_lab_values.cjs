@@ -93,5 +93,5 @@ assert.match(source,/event\.target===el\('labValuesDialog'\)\)closeLabValues\(\)
 assert.match(source,/event\.key==='Escape'.*labValuesDialog.*closeLabValues\(\)/,'Escape closes the dialog');
 assert.match(source,/new MutationObserver\(handleLabValuesAuthChange\)\.observe\(el\('authGate'\),\{attributes:true,attributeFilter:\['class'\]\}\)/,'auth gate class changes are observed');
 assert.match(source,/screens\.forEach[\s\S]{0,180}syncLabValuesButton\(id\)/,'showOnly updates lab values visibility');
-assert.match(source,/const SERVICE_WORKER_BUILD='20261124-seasonal-themes'/);
+assert.match(source,/const SERVICE_WORKER_BUILD='20261126-zoom-close-right'/);
 console.log(`PASS lab values: ${expected.length} rows/groups, screen/auth gating, inert background, Tab trap, dialog focus and scroll restoration.`);

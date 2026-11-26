@@ -1,6 +1,6 @@
 # Codex progress
 
-最終更新: 2026-11-24
+最終更新: 2026-11-26
 
 基準コミット: `091570f`（検証済み辞典②専用演習の公開）
 
@@ -29,6 +29,10 @@
 - Codex向けのarchitecture、feature map、database、route、development資料。
 
 ## 現在開発している機能
+
+- 画像拡大viewerのツールバーを、タイトル、縮小、等倍、拡大、閉じるの順へ変更し、iPad Split View／Stage Managerの左上ウィンドウ操作と閉じるボタンが重ならないようにした。320px幅でも折返し・横overflowを生じない可変gap・paddingとし、季節テーマでも閉じるボタンを識別しやすい背景へ調整した。イベント処理は変更していない。統合build IDは `20261126-zoom-close-right`。未コミット・未公開。
+
+- 学習計画の「計画を作り直す」で、既存の説明可能・3連続正解の達成状態と高い連続正解数を回答履歴による再生成で下げず、変更のない問題の `updatedAt` を維持して他端末の正しい記録を上書きしないよう修正・回帰済み。履歴にない既存itemも保持し、日次課題の再構築など既存挙動は維持する。現在の統合build IDは `20261126-zoom-close-right`。未コミット・未公開。
 
 - 通常演習、麻布模試、科目別模試、辞典・歯科理工の出題中だけ開ける「検査値（基準値）表」を追加。回答・成績・模試タイマーを変更しない参照専用ボトムシートで、認証中は非表示、スクロール位置・閉じた後のフォーカスを保持する。320px向け固定table layout、680px以上の2列、Xmas配色を含む。現在の統合build IDは `20261124-seasonal-themes`。未コミット・未公開。
 
@@ -98,6 +102,10 @@
 - 未解決（原本不足）: 辞典③の模試2はブロック6表紙に40問とあるが、本文は問261（1）〜266（4）の24問でPDFが終了する。模試2は304問、2模試合計は624問であり、不足16問の原本が追加されるまで推測で補完しない。
 
 ## テスト結果
+
+- 2026-11-26: 画像拡大viewerのツールバー順、狭幅用の可変gap・padding、強調した右端close、build IDを `scripts/test_guide_zoom.cjs` で回帰固定した。ブラウザー不要の全 `scripts/test_*.cjs` 32本を実行し、通常Node回帰29本は成功。Firestore Rules 3本は既知の `@firebase/rules-unit-testing` 未導入によりテスト開始前に停止した。`git diff --check` に成功。build IDは `20261126-zoom-close-right`。未コミット・未公開。
+
+- 2026-11-25: 学習計画再構築の保持回帰 `scripts/test_plan_rebuild_preserves.cjs` を追加し、説明可能itemの習得維持、履歴より高い3連続正解と旧 `updatedAt` の維持、履歴による連続正解の引き上げ、履歴にないitemの保持、未変更itemの旧 `updatedAt` 維持、日次課題リセットを確認。通常Node回帰29本、Firebase公開検査7件、全51問題JSON、全インラインscriptとService Worker構文、shell構文、`git diff --check` に成功。全 `scripts/test_*.cjs` 35本を実行し、上記29本は成功、Playwright 3本は `playwright` 未導入、Firestore rules 3本は `@firebase/rules-unit-testing` 未導入のためテスト開始前に停止した。build IDは `20261125-plan-rebuild-keep`。未コミット・未公開。
 
 - 2026-11-24: 季節テーマの日付再判定を `scripts/test_seasonal_themes.cjs` へ追加。Dateモックで12/25→12/26（前面復帰）、12/31→1/1・1/7→1/8（1分チェック）を通し、各テーマの粒子数、挨拶、theme-colorの復元、装飾の非重複、visibilitychange/click/pointerdownとMutationObserverの単一登録、URL上書き時の再判定停止を確認。Firebase公開検査7件、ブラウザ不要の標準Node回帰一式、全51問題JSON、shell構文、Xmas色監査、全インラインscriptとService Worker構文、`git diff --check` に成功。`APP_BUILD` と `SERVICE_WORKER_BUILD` は `20261124-seasonal-themes` で一致。未コミット・未公開。
 
