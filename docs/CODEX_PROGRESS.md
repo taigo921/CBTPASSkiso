@@ -30,7 +30,7 @@
 
 ## 現在開発している機能
 
-- 問題一覧の各問題へ、直近5回答（新しい順、スキップは×）と累計正答率を2段目として追加。累計は保持上限20件の履歴ではなく `stats.perQ` の正解・誤答数を使い、一覧描画時に `rankAttempts` を問題別Mapへ一度だけまとめる。未解答・異常値、320px折返し、一覧へ戻る／フィルター切替時の再描画を回帰で確認した。統合build IDは `20261127-list-stats`。未コミット・未公開。
+- 問題一覧の各問題へ、直近5回答（新しい順、スキップは×）と累計正答率を2段目として追加。さらに「正答率が低い順」タブを追加し、回答済みは正答率昇順、同率は回答数降順・掲載順、未回答は末尾の掲載順でフラット表示する。累計は保持上限20件の履歴ではなく `stats.perQ` の正解・誤答数を使い、一覧描画時に統計キーと `rankAttempts` をそれぞれ一度だけまとめる。回答後の一覧復帰時の再ソート、未解答・異常値、320px横スクロール、フィルター選択表示を回帰で確認した。統合build IDは `20261127-list-lowacc`。未コミット・未公開。
 
 - 画像拡大viewerのツールバーを、タイトル、縮小、等倍、拡大、閉じるの順へ変更し、iPad Split View／Stage Managerの左上ウィンドウ操作と閉じるボタンが重ならないようにした。320px幅でも折返し・横overflowを生じない可変gap・paddingとし、季節テーマでも閉じるボタンを識別しやすい背景へ調整した。イベント処理は変更していない。統合build IDは `20261127-list-stats`。未コミット・未公開。
 
@@ -105,6 +105,7 @@
 
 ## テスト結果
 
+- 2026-11-27: 問題一覧の「正答率が低い順」について、正答率昇順、回答数・掲載順の同率処理、未回答末尾、0%／100%混在、回答後再描画、選択タブ、狭幅横スクロールを `scripts/test_list_low_accuracy_sort.cjs` で確認。ブラウザ／Firestore Emulator専用6本を除く全 `scripts/test_*.cjs` 28本、全51問題JSON parse、JavaScript構文、`git diff --check` に成功。build IDは `20261127-list-lowacc`。未コミット・未公開。
 - 2026-11-27: 問題一覧の直近回答・累計正答率について、未解答、3件、新しい順の最新5件、スキップ×、2/3の67%丸め、履歴より長い問題別 `rankAttempts`、異常値、回答後／一覧再表示／フィルター切替の再描画を新規 `scripts/test_list_question_stats.cjs` で確認。ブラウザ／Firestore Emulator専用6本を除く全 `scripts/test_*.cjs` 30本、全問題JSON parse、JavaScript構文、`git diff --check` に成功。build IDは `20261127-list-stats`。未コミット・未公開。
 
 - 2026-11-26: 画像拡大viewerのツールバー順、狭幅用の可変gap・padding、強調した右端close、build IDを `scripts/test_guide_zoom.cjs` で回帰固定した。ブラウザー不要の全 `scripts/test_*.cjs` 32本を実行し、通常Node回帰29本は成功。Firestore Rules 3本は既知の `@firebase/rules-unit-testing` 未導入によりテスト開始前に停止した。`git diff --check` に成功。build IDは `20261126-zoom-close-right`。未コミット・未公開。

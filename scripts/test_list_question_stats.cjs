@@ -4,7 +4,7 @@ for(const match of source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))new v
 
 const recentStart=source.indexOf('function recentQuestionAttempts(');
 const recentEnd=source.indexOf('function recentCorrectStreak(',recentStart);
-const listStatsStart=source.indexOf('function listQuestionStatsHtml(');
+const listStatsStart=source.indexOf('function safeQuestionStatCount(');
 const listStatsEnd=source.indexOf('function renderList(',listStatsStart);
 assert.ok(recentStart>=0&&recentEnd>recentStart&&listStatsStart>=0&&listStatsEnd>listStatsStart,'list-stat helpers exist');
 const context={Math,Map,Number,stats:{rankAttempts:[]}};
