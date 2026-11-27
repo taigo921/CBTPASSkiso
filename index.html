@@ -523,9 +523,10 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
   .fbtn.on{border-color:var(--green);background:var(--green);color:#fff;}
   .lsec{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--green-d);display:flex;align-items:center;gap:8px;}
   .lsec .cnt{font-size:11px;font-weight:700;color:var(--muted);background:#eaf2ff;border-radius:999px;padding:2px 9px;}
-  .litem{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  .litem{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:12px;
     padding:11px 13px;margin-bottom:7px;box-shadow:var(--shadow);cursor:pointer;transition:transform .08s;}
   .litem:active{transform:scale(.99);}
+  .litem .lrow{width:100%;display:flex;align-items:center;gap:10px;min-width:0;}
   .litem .lno{font-weight:800;font-size:13px;color:var(--green-d);background:#eaf2ff;border-radius:8px;padding:3px 9px;flex:none;min-width:42px;text-align:center;}
   .litem .lst{font-weight:800;font-size:16px;flex:none;width:22px;text-align:center;}
   .litem .lst.ok{color:var(--correct);} .litem .lst.ng{color:var(--wrong);} .litem .lst.non{color:#c4ccc7;}
@@ -536,6 +537,13 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
   .litem .lic .cf.anx{color:var(--amber);background:var(--amber-bg);}
   .litem .lic .cf.sure{color:var(--correct);background:var(--correct-bg);}
   .litem .lic .cf.skip{color:var(--wrong);background:var(--wrong-bg);}
+  .litem .lstats{width:100%;display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;padding:5px 0 0 74px;color:var(--muted);font-size:11.5px;line-height:1.45;}
+  .litem .lstats-recent{display:inline-flex;gap:4px;}
+  .litem .lstats-result{font-weight:900;}
+  .litem .lstats-result.ok{color:var(--correct);}
+  .litem .lstats-result.ng{color:var(--wrong);}
+  .litem .lstats-sep{color:var(--line);}
+  @media(max-width:350px){.litem .lstats{padding-left:0;}.litem .lstats-sep{display:none;}}
   .litem.resume-point{border-color:var(--green);background:#F1F6FF;box-shadow:0 5px 18px rgba(29,78,216,.13);}
   .resume-tag{flex:none;font-size:11px;font-weight:800;color:#fff;background:var(--green);border-radius:999px;padding:3px 8px;white-space:nowrap;}
   .section-start-note{margin:0 0 12px;padding:11px 13px;border-radius:12px;background:#eaf2ff;color:var(--green-d);font-size:13px;font-weight:700;line-height:1.55;}
@@ -2079,7 +2087,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261126-zoom-close-right';
+const SERVICE_WORKER_BUILD='20261127-list-stats';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -3690,9 +3698,10 @@ function renderPreviousAnswer(q,attempt){
   box.innerHTML=`<b>前回の回答</b>${answerText}<span class="previous-result ${attempt.correct?'ok':'ng'}">${result}</span>${when?`<time>${escapeHtml(when)}</time>`:''}`;
   box.classList.remove('hidden');
 }
-function recentQuestionAttempts(uid,r,limit=5,source=stats){
+function recentQuestionAttempts(uid,r,limit=5,source=stats,rankAttemptsByUid=null){
   const history=(Array.isArray(r?.history)?r.history:[]).filter(Boolean).map(a=>({correct:!!a.correct,skip:!!a.skip,at:+a.at||0}));
-  const ranked=(source?.rankAttempts||[]).filter(a=>a&&a.u===uid).map(a=>({correct:!!a.c,skip:false,at:+a.a||0}));
+  const rankAttempts=rankAttemptsByUid instanceof Map?(rankAttemptsByUid.get(uid)||[]):(source?.rankAttempts||[]).filter(a=>a&&a.u===uid);
+  const ranked=rankAttempts.map(a=>({correct:!!a.c,skip:false,at:+a.a||0}));
   // Local history has the richest skip detail; synced rank attempts can contain more older events.
   return (history.length>=ranked.length?history:ranked).sort((a,b)=>a.at-b.at).slice(-Math.max(0,limit));
 }
@@ -4622,6 +4631,14 @@ function startWrongListSession(startUid=null){
   session={mode:'review',uids:pool,idx,records:[],sessionCorrect:0,single:true,returnTo:'list'};
   el('footer').classList.remove('hidden');renderQuestion();
 }
+function listQuestionStatsHtml(uid,r,rankAttemptsByUid){
+  const count=value=>{const number=Number(value);return Number.isFinite(number)&&number>0?Math.floor(Math.min(number,Number.MAX_SAFE_INTEGER)):0;};
+  const correct=count(r?.correct),wrong=count(r?.wrong),total=correct+wrong;
+  const recent=recentQuestionAttempts(uid,r,5,stats,rankAttemptsByUid).slice().reverse();
+  const recentHtml=recent.length?`<span class="lstats-recent">${recent.map(attempt=>`<b class="lstats-result ${attempt.correct&&!attempt.skip?'ok':'ng'}" aria-label="${attempt.correct&&!attempt.skip?'正解':'不正解'}">${attempt.correct&&!attempt.skip?'○':'×'}</b>`).join('')}</span>`:'未解答';
+  const accuracy=total?`${Math.round(correct/total*100)}%（${correct}/${total}）`:'—';
+  return `<div class="lstats"><span>直近：${recentHtml}</span><span class="lstats-sep">｜</span><span>正答率 ${accuracy}</span></div>`;
+}
 function renderList(){
   document.querySelectorAll('#filterBar .fbtn').forEach(b=>b.classList.toggle('on',b.dataset.f===listFilter));
   const body=el('listBody'); body.innerHTML='';
@@ -4633,6 +4650,8 @@ function renderList(){
   practice.textContent=`間違えた問題をまとめて解く（${total}問）`;
   el('listCount').textContent=`${total} 問`+(listFilter!=='all'?'（絞り込み中）':'');
   if(!total){ body.innerHTML='<div class="empty">該当する問題がありません。</div>'; return; }
+  const rankAttemptsByUid=new Map();
+  (stats.rankAttempts||[]).forEach(attempt=>{if(!attempt?.u)return;const attempts=rankAttemptsByUid.get(attempt.u)||[];attempts.push(attempt);rankAttemptsByUid.set(attempt.u,attempts);});
   Object.keys(groups).forEach(sec=>{
     const h=document.createElement('div');h.className='lsec';
     h.innerHTML=`${escapeHtml(sec)}<span class="cnt">${groups[sec].length}</span>`; body.appendChild(h);
@@ -4642,8 +4661,8 @@ function renderList(){
       let ic='';
       if(r.fav)ic+='<span class="star">★</span>';
       const it=document.createElement('div');it.className='litem';
-      it.innerHTML=`<span class="lno">${qno(q)}</span><span class="lst ${st}">${mark}</span>
-        <span class="lq">${escapeHtml(q.question.split('\n')[0])}</span><span class="lic">${ic}</span>`;
+      it.innerHTML=`<div class="lrow"><span class="lno">${qno(q)}</span><span class="lst ${st}">${mark}</span>
+        <span class="lq">${escapeHtml(q.question.split('\n')[0])}</span><span class="lic">${ic}</span></div>${listQuestionStatsHtml(qkey(q),r,rankAttemptsByUid)}`;
       it.addEventListener('click',()=>listFilter==='wrong'?startWrongListSession(qkey(q)):startSectionSession(qkey(q),'list'));
       body.appendChild(it);
     });

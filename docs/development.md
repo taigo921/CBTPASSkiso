@@ -41,6 +41,7 @@ node scripts/test_study_plan_load.cjs
 node scripts/test_plan_wrong_retry.cjs
 node scripts/test_plan_rebuild_preserves.cjs
 node scripts/test_question_progress.cjs
+node scripts/test_list_question_stats.cjs
 node scripts/test_current_accuracy.cjs
 node scripts/test_reported_question_images.cjs
 node scripts/test_dictionary_practice.cjs
