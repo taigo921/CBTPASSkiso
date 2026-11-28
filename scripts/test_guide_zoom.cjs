@@ -64,5 +64,5 @@ assert.match(guideHeader,/<span class="guide-close-short">戻る<\/span>/);
 assert.match(source,/<div class="image-zoom-toolbar"><strong id="imageZoomTitle">画像<\/strong><button[^>]+id="imageZoomOut"[\s\S]*id="imageZoomReset"[\s\S]*id="imageZoomIn"[\s\S]*id="imageZoomClose">閉じる<\/button><\/div>/,'image zoom controls end with the close button');
 assert.match(source,/\.image-zoom-toolbar\{[^}]*gap:clamp\(4px,2vw,8px\)[^}]*padding:[^;}]*clamp\(6px,3vw,12px\)/,'image zoom toolbar compresses at narrow widths');
 assert.match(source,/#imageZoomClose\{[^}]*min-width:48px[^}]*background:rgba\(255,255,255,\.24\)/,'image zoom close button remains prominent on the dark seasonal-safe toolbar');
-assert.match(source,/20261128-guide-back-right/);
+assert.match(source,/20261128-seasonal-fx/);
 console.log('PASS guide zoom: right-aligned controls, reserved top-left space, and pinch anchoring on page 221.');
