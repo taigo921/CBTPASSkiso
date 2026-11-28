@@ -78,7 +78,7 @@ Firestore権限を変えた場合は、実プロジェクトではなくロー�
 |認証・停止・授業|access control、school hours、blocked login browser、rules emulator|
 |ランキング|admin ranking、leaderboard rules、sync|
 |Service Worker・更新|app update、browser tests|
-|ガイドviewer・ズーム|guide zoom、browser tests|
+|ガイドviewer・ズーム|guide zoom（ヘッダー右端の戻るボタン・左上の操作領域・ズーム）、browser tests|
 
 ## Release boundaries
 

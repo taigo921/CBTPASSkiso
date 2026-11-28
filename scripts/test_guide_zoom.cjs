@@ -46,8 +46,23 @@ assert.equal(elements.guideZoomReset.textContent,'2.5×');
 
 assert.match(source,/scroll\.style\.overflow='hidden'/,'guide zoom freezes native scrolling before layout changes');
 assert.match(source,/restoreGuideScroll\(scroll\.scrollTop,scroll\.scrollLeft\)/,'committed offsets are re-applied after overflow is restored');
+const guideHeader=source.match(/<div class="guide-viewer-head">([\s\S]*?)<div class="guide-viewer-scroll"/)?.[1];
+assert.ok(guideHeader,'guide header is present above the scroll area');
+assert.deepEqual(
+  [...guideHeader.matchAll(/<(?:button|a|input|select|textarea|summary|strong)\b[^>]*>/g)].map(([tag])=>tag.match(/\bid="([^"]+)"/)?.[1]),
+  ['guideTitle','guideZoomOut','guideZoomReset','guideZoomIn','guideCloseBtn'],
+  'the title precedes every control and the back button is last'
+);
+assert.match(source,/\.guide-viewer-head\{[^}]*display:flex[^}]*padding:calc\(10px \+ env\(safe-area-inset-top\)\)/);
+assert.match(source,/\.guide-viewer-head strong\{[^}]*flex:1;min-width:90px[^}]*overflow-wrap:anywhere/,'the non-interactive title reserves the top-left space and wraps at narrow widths');
+assert.match(source,/\.guide-zoom-controls\{[^}]*flex:none/,'the zoom group stays to the right of the title');
+const guideCloseRule=source.match(/^\s*#guideCloseBtn\{([^}]+)\}/m)?.[1];
+assert.match(guideCloseRule,/^flex:none;white-space:nowrap;/);
+assert.doesNotMatch(guideCloseRule,/\b(?:position|inset(?:-[\w-]+)?|top|left):/,'the back button stays in the header flow');
+assert.match(source,/@media\(max-width:420px\)\{\s*#guideCloseBtn \.guide-close-full\{display:none;\}\s*#guideCloseBtn \.guide-close-short\{display:inline;\}/);
+assert.match(guideHeader,/<span class="guide-close-short">戻る<\/span>/);
 assert.match(source,/<div class="image-zoom-toolbar"><strong id="imageZoomTitle">画像<\/strong><button[^>]+id="imageZoomOut"[\s\S]*id="imageZoomReset"[\s\S]*id="imageZoomIn"[\s\S]*id="imageZoomClose">閉じる<\/button><\/div>/,'image zoom controls end with the close button');
 assert.match(source,/\.image-zoom-toolbar\{[^}]*gap:clamp\(4px,2vw,8px\)[^}]*padding:[^;}]*clamp\(6px,3vw,12px\)/,'image zoom toolbar compresses at narrow widths');
 assert.match(source,/#imageZoomClose\{[^}]*min-width:48px[^}]*background:rgba\(255,255,255,\.24\)/,'image zoom close button remains prominent on the dark seasonal-safe toolbar');
-assert.match(source,/20261127-list-lowacc/);
-console.log('PASS guide zoom: pinch preview is transform-only and a moved 1x -> 2.5x commit keeps page 221 anchored.');
+assert.match(source,/20261128-guide-back-right/);
+console.log('PASS guide zoom: right-aligned controls, reserved top-left space, and pinch anchoring on page 221.');
