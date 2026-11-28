@@ -23,6 +23,24 @@ const progress={
 assert.deepEqual([...helpers.filteredIndices('wrong',items,progress)],[0,2],'wrong mode uses lastCorrect === false only');
 assert.deepEqual([...helpers.filteredIndices('fav',items,progress)],[1,3],'favorite mode uses favorites[sourceId].on only');
 
+progress.grades={A001:{g:'A'},A002:{g:'B'},B001:{g:'C'},B002:{g:null}};
+for(const [mode,index] of [['A',0],['B',1],['C',2],['ungraded',3]]){
+  assert.deepEqual([...helpers.filteredIndices(mode,items,progress)],[index]);
+}
+assert.deepEqual([...helpers.filteredIndices('ungraded',items,{grades:{A001:{g:'invalid'}}})],[0,1,2,3]);
+assert.equal(Object.keys(helpers.normalizeProgress({grades:[]}).grades).length,0);
+assert.deepEqual([...helpers.orderedIndices('all','lowacc',items,progress)],[2,0,1,3]);
+assert.deepEqual([...helpers.orderedIndices('wrong','lowacc',items,progress)],[2,0]);
+assert.deepEqual([...helpers.orderedIndices('wrong','published',items,progress)],[0,2]);
+const tied={answers:{
+  A001:{attempts:[{correct:true},{correct:false}]},
+  A002:{attempts:[{correct:false},{correct:true},{correct:false},{correct:true}]},
+  B001:{attempts:[{correct:false},{correct:true}]},
+  B002:{attempts:[null,{correct:'false'}]}
+}};
+assert.deepEqual([...helpers.orderedIndices('all','lowacc',items,tied)],[1,0,2,3]);
+assert.equal(helpers.resumeIndexForSave('all',1,progress.index,'lowacc'),3);
+
 const snapshot=[...helpers.filteredIndices('wrong',items,progress)];
 progress.answers.A001.lastCorrect=true;
 assert.deepEqual(snapshot,[0,2],'the filtered session snapshot does not shrink after a correct answer');
@@ -37,13 +55,14 @@ assert.equal(helpers.resumeIndexForSave('all',1,progress.index),1,'all mode stil
 
 const before=helpers.summaryProgress(progress);
 progress.favorites.EXTRA={on:true,at:40};
+progress.grades.EXTRA={g:'A',at:41};
 assert.deepEqual(helpers.summaryProgress(progress),before,'favorites are excluded from answered, correct and attempt summaries');
 assert.equal(Object.keys(helpers.normalizeProgress({answers:{},favorites:null,index:2}).favorites).length,0,'missing or invalid favorites default to an empty object');
 
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-for(const id of ['dictionaryModes','dictionaryFavBtn'])assert.match(html,new RegExp(`id="${id}"`));
-for(const mode of ['all','wrong','fav'])assert.match(html,new RegExp(`data-dictionary-mode="${mode}"`));
+for(const id of ['dictionaryModes','dictionaryFavBtn','dictionarySortControls','dictionaryGrade'])assert.match(html,new RegExp(`id="${id}"`));
+for(const mode of ['all','wrong','fav','A','B','C','ungraded'])assert.match(html,new RegExp(`data-dictionary-mode="${mode}"`));
 assert.match(html,/title="お気に入り"/);
 assert.match(source,/progress\.favorites\[item\.sourceId\]=\{on:/);
 assert.match(source,/sessionMode==='all'/);
-console.log('PASS dictionary review modes: wrong/favorite filters, fixed snapshots, resume isolation, and summary isolation.');
+console.log('PASS dictionary review modes: wrong/favorite/grade filters, accuracy sort, fixed snapshots, resume isolation, and summary isolation.');

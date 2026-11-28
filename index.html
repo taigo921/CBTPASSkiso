@@ -842,11 +842,93 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
   @keyframes xaNgSanta{0%,16%{transform:translate(120.000%,0)}34%{transform:translate(36.667%,0)}40%{transform:translate(33.333%,0)}46%,52%{transform:translate(30.667%,0)}56%{transform:translate(38.667%,0)}74%,100%{transform:translate(-110.000%,-2.333%)}}
   @keyframes xaNgSpeed{0%,54%{opacity:0}58%,72%{opacity:.9}78%,100%{opacity:0}}
   @keyframes xaNgPuff{0%,62%{opacity:0;transform:scale(.3)}70%{opacity:.95;transform:scale(1)}88%,100%{opacity:0;transform:scale(1.4)}}
-  @media(prefers-reduced-motion:reduce){html.xmas #xmasSnow{display:none}html.xmas #home .xmas-light,html.xmas #home .hero::before,html.xmas header::after,html.xmas .pbar>i{animation:none!important}html.xmas .xmas-particle,html.xmas .xmas-dust,html.xmas .xmas-sleigh-flight,html.xmas .xa-fx{display:none!important}}
+  html.xmas .xs-winter .xs-rider{animation:xs-bob .65s ease-in-out infinite alternate}
+  html.xmas .xs-winter .xs-flurry circle{animation:xsFlurry .85s ease-out infinite}
+  html.xmas .xs-winter .xs-flurry circle:nth-child(2n){animation-delay:-.4s}
+  html.xmas .xs-newyear .xs-kite{transform-origin:320px 110px;animation:xsKite 1.1s ease-in-out infinite alternate}
+  html.xmas .xs-newyear .xs-tail{transform-box:fill-box;transform-origin:50% 0;animation:xsTail .38s ease-in-out infinite alternate}
+  html.xmas .xs-newyear .xs-tail + .xs-tail{animation-delay:-.25s}
+  @keyframes xsFlurry{from{opacity:.95}to{opacity:0;transform:translate(45px,-15px)}}
+  @keyframes xsKite{from{transform:translateY(-9px) rotate(-7deg)}to{transform:translateY(9px) rotate(7deg)}}
+  @keyframes xsTail{from{transform:rotate(-13deg)}to{transform:rotate(17deg)}}
+  html.xmas .xa-seasonal{display:grid;place-items:center;background:rgba(13,27,56,.46);animation:xaNgDim 2.1s both}
+  html.xmas .xa-seasonal svg{width:min(84vw,420px,72vh);height:auto}
+  html.xmas .xa-winter .xa-ball,html.xmas .xa-winter .xa-splat{transform-origin:160px 120px}
+  html.xmas .xa-winter .xa-ball{animation:xaBall 2.1s ease-in both}
+  html.xmas .xa-winter .xa-splat{animation:xaSplat 2.1s both}
+  html.xmas .xa-winter .xa-spray{animation:xaSpray 2.1s both}
+  html.xmas .xa-newyear{background:rgba(45,14,18,.5)}
+  html.xmas .xa-newyear svg{animation:xaLion 2.1s both}
+  html.xmas .xa-newyear .xa-jaw{transform-origin:160px 132px;animation:xaBite 2.1s both}
+  html.xmas .xa-newyear .xa-caption{position:absolute;top:calc(50% + min(28vw,140px,24vh));margin:0;color:#FFE092;font-size:clamp(13px,4vw,17px);font-weight:700;text-shadow:0 2px 4px #351417;animation:xaCaption 2.1s both}
+  html.xmas.xmas-paused :is(.xs-winter,.xs-newyear,.xa-seasonal),html.xmas.xmas-paused .xa-seasonal *{animation-play-state:paused!important}
+  @keyframes xaBall{0%{opacity:0;transform:translate(56px,-44px) scale(.04)}12%{opacity:1}31%{opacity:1;transform:scale(2.5)}32%,100%{opacity:0;transform:scale(2.5)}}
+  @keyframes xaSplat{0%,31%{opacity:0;transform:scale(.4)}36%,49%{opacity:1;transform:scale(1)}74%{opacity:.8;transform:translateY(42px) scale(1.08,.62)}91%,100%{opacity:0;transform:translateY(120px) scale(1.1,.25)}}
+  @keyframes xaSpray{0%,31%{opacity:0;transform:translateY(20px) scale(.35);transform-origin:center}42%{opacity:1;transform:translateY(-14px) scale(1.06);transform-origin:center}83%,100%{opacity:0;transform:translateY(120px) scale(1.2);transform-origin:center}}
+  @keyframes xaLion{0%{transform:translateY(60vh)}28%{transform:translateY(-9px)}40%,68%{transform:translateY(0)}100%{transform:translateY(26px)}}
+  @keyframes xaBite{0%,26%,48%,100%{transform:rotate(0)}39%{transform:translateY(20px) rotate(9deg)}53%{transform:translateY(4px)}}
+  @keyframes xaCaption{0%,51%{opacity:0;transform:translateY(6px)}61%,84%{opacity:1;transform:translateY(0)}100%{opacity:0}}
+  @media(prefers-reduced-motion:reduce){html.xmas #xmasSnow{display:none}html.xmas #home .xmas-light,html.xmas #home .hero::before,html.xmas header::after,html.xmas .pbar>i{animation:none!important}html.xmas .xmas-particle,html.xmas .xmas-dust,html.xmas .xmas-sleigh-flight,html.xmas .xa-fx,html.xmas .xs-winter,html.xmas .xs-newyear,html.xmas .xa-seasonal{display:none!important}}
 </style>
 </head>
 <body>
 <div id="xmasSnow" aria-hidden="true"></div>
+<template id="winterSleighTemplate">
+  <div class="xmas-sleigh-party xs-winter">
+    <svg viewBox="0 0 640 240" class="xmas-sleigh-art" aria-hidden="true">
+      <g class="xs-flurry" fill="#E2F5FF"><circle cx="434" cy="170" r="19"/><circle cx="475" cy="159" r="13"/><circle cx="500" cy="186" r="11"/><circle cx="528" cy="149" r="8"/><circle cx="554" cy="175" r="6"/><circle cx="585" cy="159" r="4"/></g>
+      <g class="xs-rider">
+        <ellipse cx="307" cy="134" rx="59" ry="43" fill="#EDF9FF" stroke="#AACEDD" stroke-width="5"/>
+        <circle cx="287" cy="79" r="37" fill="#FFFFFF" stroke="#AACEDD" stroke-width="5"/>
+        <path d="M271 76l-30 10 32 4" fill="#F59A45"/><circle cx="275" cy="70" r="4" fill="#243547"/><circle cx="291" cy="72" r="4" fill="#243547"/>
+        <path d="M254 104q31 18 65 1l9 13-14 7 13 33-18 5-16-36q-25 3-44-10Z" fill="#C84154"/>
+        <path d="M265 49l-5-28 46-5 5 31Z" fill="#465B70" stroke="#26374B" stroke-width="5"/><path d="M259 23l49-5" stroke="#A7B8C8" stroke-width="6" stroke-linecap="round"/>
+        <path d="M233 171q-20-8-22-26 16 18 46 18h163l-16 29H260q-20 0-27-21Z" fill="#AB3948" stroke="#652B40" stroke-width="5"/>
+        <path d="M278 193v11m99-11v11m38 2H243q-37 0-37-20" fill="none" stroke="#E7BD73" stroke-width="8" stroke-linecap="round"/>
+      </g>
+    </svg>
+  </div>
+</template>
+<template id="newyearKiteTemplate">
+  <div class="xmas-sleigh-party xs-newyear">
+    <svg viewBox="0 0 640 240" class="xmas-sleigh-art" aria-hidden="true">
+      <g class="xs-kite">
+        <path d="M319 107q73 72 274 120" fill="none" stroke="#BE913E" stroke-width="4" stroke-linecap="round"/>
+        <path class="xs-tail" d="M291 145q3 35-20 68l19 4q20-33 20-66Z" fill="#FFFAEE" stroke="#C99844" stroke-width="4"/>
+        <path class="xs-tail" d="M329 148q-3 37 20 66l19-8q-21-27-21-62Z" fill="#C72F3B" stroke="#C99844" stroke-width="4"/>
+        <path d="M291 51l7-25 44 0 7 25 68 17-12 55-50-11 12 52h-94l12-52-50 11-12-55Z" fill="#C72F3B" stroke="#EAC172" stroke-width="6" stroke-linejoin="round"/>
+        <path d="M291 51l29 28 29-28 6 61 12 52h-94l12-52Z" fill="#FFFAEE"/>
+        <path d="M297 39h46l-4-13h-38Z" fill="#57252E"/><path d="M307 49h2m22 0h2m-18 9q5 5 10 0" fill="none" stroke="#57252E" stroke-width="4" stroke-linecap="round"/>
+        <path d="M284 114h72m-63-63 27 28 27-28" fill="none" stroke="#C99844" stroke-width="5"/>
+        <path d="M320 121l13 13-13 13-13-13Z" fill="#C72F3B"/>
+      </g>
+    </svg>
+  </div>
+</template>
+<template id="winterFxNgTemplate"><div class="xa-fx xa-seasonal xa-winter" aria-hidden="true">
+  <svg viewBox="0 0 320 240">
+    <g class="xa-ball"><circle cx="160" cy="120" r="32" fill="#F4FCFF"/><path d="M136 124q18 18 46 4-10 29-33 19-12-5-13-23" fill="#BADBEA"/></g>
+    <path class="xa-splat" d="M95 126q-30-8-13-22l29-4-14-19q-6-15 13-9l32 18 14-32q12-19 21 3l6 27 29-14q19-4 13 12l-13 18 27 10q18 10-2 20l-33 2 10 24q1 15-19 9l-24-12-9 26q-9 14-20-4l-7-22-25 10q-20 4-13-11l9-18Z" fill="#F5FCFF" stroke="#BBDFEF" stroke-width="6"/>
+    <g class="xa-spray" fill="#E6F8FF"><circle cx="53" cy="101" r="8"/><circle cx="79" cy="58" r="6"/><circle cx="124" cy="32" r="5"/><circle cx="206" cy="46" r="9"/><circle cx="255" cy="76" r="6"/><circle cx="271" cy="135" r="9"/><circle cx="231" cy="177" r="6"/><circle cx="71" cy="162" r="9"/></g>
+  </svg>
+</div></template>
+<template id="newyearFxNgTemplate"><div class="xa-fx xa-seasonal xa-newyear" aria-hidden="true">
+  <svg viewBox="0 0 320 240">
+    <path d="M88 98q65-36 144 2 32 35 48 100-29 24-64 6-29 10-56 1-27 9-56-1-35 18-64-6 14-65 48-102Z" fill="#256A4D" stroke="#CBB467" stroke-width="5"/>
+    <path d="M57 191q8-21 26-20c18 2 8 21-1 15m23 9q12-25 30-21c16 3 8 18-2 14m45 7q11-25 30-21c16 3 8 18-2 14m26 5q8-21 23-17c12 4 6 16-1 12" fill="none" stroke="#BDE0A0" stroke-width="5" stroke-linecap="round"/>
+    <g stroke="#662331" stroke-width="5" stroke-linejoin="round">
+      <path class="xa-jaw" d="M96 125q64-14 128 0l-10 28q-55 31-108 0Z" fill="#9B2634"/>
+      <path d="M89 66L68 49q-17 30 13 48m150-31 21-17q17 30-13 48" fill="#E45443"/>
+      <path d="M82 117q-7-47 22-66 20-16 56-8 36-8 56 8 29 19 22 66l-14 17q-64-13-128 0Z" fill="#CB3438"/>
+      <path d="M147 59q13-13 26 0l-13 14Z" fill="#FFE092"/>
+      <circle cx="117" cy="85" r="21" fill="#F3C455"/><circle cx="203" cy="85" r="21" fill="#F3C455"/>
+      <path d="M107 85h9m88 0h9" stroke-linecap="round" stroke-width="8"/>
+      <path d="M100 130q14-19 39-18l21-12 21 12q25-1 39 18-15 16-60 8-45 8-60-8Z" fill="#F4CA6D"/>
+      <path d="M119 138l8 12 10-11m46 0 10 11 8-12" fill="#FFF6DF" stroke-width="3"/>
+    </g>
+  </svg>
+  <p class="xa-caption">獅子に噛まれて厄払い！</p>
+</div></template>
 <template id="xmasSleighTemplate">
   <div class="xmas-sleigh-party">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240" class="xmas-sleigh-art">
@@ -1305,10 +1387,22 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
           <div><b id="dictionaryCorrect">0</b>前回正解</div>
           <div><b id="dictionaryAttempts">0</b>総回答</div>
         </div>
+        <div class="sec-h hidden" id="dictionaryFilterLabel">絞り込み</div>
         <div class="dictionary-modes" id="dictionaryModes" role="group" aria-label="出題する問題を選ぶ">
           <button type="button" class="on" data-dictionary-mode="all">すべて</button>
           <button type="button" data-dictionary-mode="wrong">✗ 間違えた問題 (<span>0</span>)</button>
           <button type="button" data-dictionary-mode="fav">★ お気に入り (<span>0</span>)</button>
+          <button type="button" class="hidden" data-dictionary-mode="A" data-dictionary-grade-filter>A (<span>0</span>)</button>
+          <button type="button" class="hidden" data-dictionary-mode="B" data-dictionary-grade-filter>B (<span>0</span>)</button>
+          <button type="button" class="hidden" data-dictionary-mode="C" data-dictionary-grade-filter>C (<span>0</span>)</button>
+          <button type="button" class="hidden" data-dictionary-mode="ungraded" data-dictionary-grade-filter>未評価 (<span>0</span>)</button>
+        </div>
+        <div id="dictionarySortControls" class="hidden">
+          <div class="sec-h" id="dictionarySortLabel">並び順</div>
+          <div class="dictionary-modes" role="group" aria-labelledby="dictionarySortLabel" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+            <button type="button" class="on" data-dictionary-sort="published" aria-pressed="true">掲載順</button>
+            <button type="button" data-dictionary-sort="lowacc" aria-pressed="false">正答率が低い順</button>
+          </div>
         </div>
         <button type="button" class="btn" id="dictionaryStart" disabled>読み込み中…</button>
         <div class="sec-h">領域から始める</div>
@@ -1570,6 +1664,12 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
         <button type="button" id="dictionaryNext">次へ</button>
       </div>
       <div id="dictionaryResult" class="dictionary-result hidden" aria-live="polite"></div>
+      <div id="dictionaryGrade" class="confrow hidden" role="group" aria-labelledby="dictionaryGradeLabel">
+        <span class="clab" id="dictionaryGradeLabel">理解確認</span>
+        <button type="button" data-grade="A" aria-pressed="false">A</button>
+        <button type="button" data-grade="B" aria-pressed="false">B</button>
+        <button type="button" data-grade="C" aria-pressed="false">C</button>
+      </div>
       <div id="dictionaryExplanation" class="dictionary-explanation hidden">
         <h2>📣 <span id="dictionaryExplanationTitle">公式解説</span></h2>
         <img id="dictionaryExplanationImage" class="dictionary-image" alt="辞典②の公式解説">
@@ -5245,12 +5345,12 @@ const PRACTICE_PROGRESS_PREFIXES={
 };
 function practiceProgressKey(source,uid=window.cbtUser?.uid||'local'){return (PRACTICE_PROGRESS_PREFIXES[source]||'')+uid;}
 function localPracticePayload(){
-  return Object.fromEntries(Object.keys(PRACTICE_PROGRESS_PREFIXES).map(source=>[source,safeGet(practiceProgressKey(source))||{index:0,answers:{},favorites:{},updatedAt:0}]));
+  return Object.fromEntries(Object.keys(PRACTICE_PROGRESS_PREFIXES).map(source=>[source,safeGet(practiceProgressKey(source))||{index:0,answers:{},favorites:{},grades:{},updatedAt:0}]));
 }
 function mergePracticePayload(local,remote){
   const result={};
   for(const source of Object.keys(PRACTICE_PROGRESS_PREFIXES)){
-    const a=local?.[source]||{},b=remote?.[source]||{},answers={},favorites={};
+    const a=local?.[source]||{},b=remote?.[source]||{},answers={},favorites={},grades={};
     for(const id of new Set([...Object.keys(a.answers||{}),...Object.keys(b.answers||{})])){
       const left=a.answers?.[id]||{},right=b.answers?.[id]||{},attempts=[],seen=new Set();
       for(const attempt of [...(Array.isArray(left.attempts)?left.attempts:[]),...(Array.isArray(right.attempts)?right.attempts:[])]){
@@ -5274,8 +5374,19 @@ function mergePracticePayload(local,remote){
       const selected=rightValid&&(!leftValid||rightAt>leftAt)?right:left;
       favorites[id]={on:selected.on,at:Number.isFinite(+selected.at)?+selected.at:0};
     }
+    for(const id of new Set([...Object.keys(a.grades||{}),...Object.keys(b.grades||{})])){
+      const left=a.grades?.[id],right=b.grades?.[id];
+      const leftValid=left&&typeof left==='object'&&!Array.isArray(left);
+      const rightValid=right&&typeof right==='object'&&!Array.isArray(right);
+      if(!leftValid&&!rightValid)continue;
+      const leftAt=leftValid&&Number.isFinite(+left.at)?+left.at:0;
+      const rightAt=rightValid&&Number.isFinite(+right.at)?+right.at:0;
+      const useRight=rightValid&&(!leftValid||rightAt>leftAt);
+      const grade=(useRight?right:left).g;
+      grades[id]={g:['A','B','C'].includes(grade)?grade:null,at:useRight?rightAt:leftAt};
+    }
     const newer=(b.updatedAt||0)>(a.updatedAt||0)?b:a;
-    result[source]={...newer,index:Number.isInteger(newer.index)?newer.index:0,answers,favorites,updatedAt:Math.max(a.updatedAt||0,b.updatedAt||0)};
+    result[source]={...newer,index:Number.isInteger(newer.index)?newer.index:0,answers,favorites,grades,updatedAt:Math.max(a.updatedAt||0,b.updatedAt||0)};
   }
   return result;
 }

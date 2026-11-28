@@ -10,9 +10,12 @@
   let sourceKey='dictionary2';
   let manifest=null;
   let loadPromise=null;
-  let progress={answers:{},favorites:{},index:0,updatedAt:0};
+  const GRADES=['A','B','C'];
+  let progress=normalizeProgress(null);
   let mode='all';
+  let sortOrder='published';
   let sessionMode='all';
+  let sessionSort='published';
   let sessionIndices=null;
   let sessionPosition=0;
   let currentIndex=0;
@@ -22,12 +25,15 @@
   const $=id=>document.getElementById(id);
   const owner=()=>window.cbtUser?.uid||'local';
   const source=()=>SOURCES[sourceKey];
+  const supportsGrades=()=>sourceKey!=='dentalMaterials';
+  const activeSort=()=>supportsGrades()?sortOrder:'published';
   const storeKey=()=>source().prefix+owner();
 
   function normalizeProgress(value){
     const normalized=value&&typeof value==='object'&&!Array.isArray(value)?value:{answers:{},favorites:{},index:0,updatedAt:0};
     if(!normalized.answers||typeof normalized.answers!=='object'||Array.isArray(normalized.answers))normalized.answers={};
     if(!normalized.favorites||typeof normalized.favorites!=='object'||Array.isArray(normalized.favorites))normalized.favorites={};
+    if(!normalized.grades||typeof normalized.grades!=='object'||Array.isArray(normalized.grades))normalized.grades={};
     normalized.index=Number.isInteger(normalized.index)?normalized.index:0;
     return normalized;
   }
@@ -38,10 +44,10 @@
     return progress;
   }
 
-  function resumeIndexForSave(activeMode,index,previous){return activeMode==='all'?index:previous;}
+  function resumeIndexForSave(activeMode,index,previous,order='published'){return activeMode==='all'&&order==='published'?index:previous;}
 
   function saveProgress(){
-    progress.index=resumeIndexForSave(sessionMode,currentIndex,progress.index);
+    progress.index=resumeIndexForSave(sessionMode,currentIndex,progress.index,sessionSort);
     progress.updatedAt=Date.now();
     try{localStorage.setItem(storeKey(),JSON.stringify(progress));}
     catch(error){console.warn('dictionary progress save failed',error);}
@@ -99,38 +105,60 @@
     if(selectedMode==='all')return items.map((_,index)=>index);
     if(selectedMode==='wrong')return items.flatMap((item,index)=>value?.answers?.[item.sourceId]?.lastCorrect===false?[index]:[]);
     if(selectedMode==='fav')return items.flatMap((item,index)=>value?.favorites?.[item.sourceId]?.on===true?[index]:[]);
+    if(selectedMode==='ungraded')return items.flatMap((item,index)=>GRADES.includes(value?.grades?.[item.sourceId]?.g)?[]:[index]);
+    if(GRADES.includes(selectedMode))return items.flatMap((item,index)=>value?.grades?.[item.sourceId]?.g===selectedMode?[index]:[]);
     return [];
+  }
+
+  function orderedIndices(selectedMode,order,items,value){
+    const indices=filteredIndices(selectedMode,items,value);
+    if(order!=='lowacc')return indices;
+    return indices.map(index=>{
+      const attempts=value?.answers?.[items[index].sourceId]?.attempts;
+      let correct=0,total=0;
+      if(Array.isArray(attempts))for(const attempt of attempts){
+        if(typeof attempt?.correct!=='boolean')continue;
+        total++;if(attempt.correct)correct++;
+      }
+      return {index,correct,total};
+    }).sort((a,b)=>{
+      if(!a.total||!b.total)return b.total-a.total||a.index-b.index;
+      return a.correct*b.total-b.correct*a.total||b.total-a.total||a.index-b.index;
+    }).map(item=>item.index);
   }
 
   function moveSnapshotPosition(indices,position,delta){return Math.max(0,Math.min(indices.length-1,position+delta));}
 
   function setSource(next){
     if(!SOURCES[next]||next===sourceKey)return false;
-    sourceKey=next;manifest=null;loadPromise=null;progress=normalizeProgress(null);currentIndex=0;mode='all';sessionMode='all';sessionIndices=null;sessionPosition=0;
+    sourceKey=next;manifest=null;loadPromise=null;progress=normalizeProgress(null);currentIndex=0;mode='all';sessionMode='all';sessionSort='published';sessionIndices=null;sessionPosition=0;
     return true;
   }
 
-  function modeLabel(selectedMode){return selectedMode==='wrong'?'間違えた問題':'お気に入り';}
+  function modeLabel(selectedMode){return {all:'すべて',wrong:'間違えた問題',fav:'お気に入り',A:'評価A',B:'評価B',C:'評価C',ungraded:'未評価'}[selectedMode];}
 
   function renderHomeMode(){
     if(!manifest)return;
-    const allIndices=filteredIndices('all',manifest.items,progress);
-    const wrongIndices=filteredIndices('wrong',manifest.items,progress);
-    const favIndices=filteredIndices('fav',manifest.items,progress);
-    const byMode={all:allIndices,wrong:wrongIndices,fav:favIndices};
+    const selected=filteredIndices(mode,manifest.items,progress);
     document.querySelectorAll('[data-dictionary-mode]').forEach(button=>{
-      button.classList.toggle('on',button.dataset.dictionaryMode===mode);
-      button.setAttribute('aria-pressed',String(button.dataset.dictionaryMode===mode));
+      const key=button.dataset.dictionaryMode;
+      if(!supportsGrades()&&button.hasAttribute('data-dictionary-grade-filter'))return;
+      button.classList.toggle('on',key===mode);
+      button.setAttribute('aria-pressed',String(key===mode));
       const count=button.querySelector('span');
-      if(count)count.textContent=byMode[button.dataset.dictionaryMode].length;
+      if(count)count.textContent=(key===mode?selected:filteredIndices(key,manifest.items,progress)).length;
     });
-    const selected=byMode[mode];
     const start=$('dictionaryStart');
-    if(mode==='all'){
+    const order=activeSort();
+    document.querySelectorAll('[data-dictionary-sort]').forEach(button=>{
+      const on=button.dataset.dictionarySort===order;
+      button.classList.toggle('on',on);button.setAttribute('aria-pressed',String(on));
+    });
+    if(mode==='all'&&order==='published'){
       start.textContent=summary().answered?'続きから再開':'最初から始める';
       start.disabled=false;
     }else if(selected.length){
-      start.textContent=`${modeLabel(mode)}を解く（${selected.length}問）`;
+      start.textContent=`${modeLabel(mode)}を${order==='lowacc'?'正答率が低い順で':''}解く（${selected.length}問）`;
       start.disabled=false;
     }else{
       start.textContent=`${modeLabel(mode)}はありません`;
@@ -156,6 +184,8 @@
       :'辞典②・③の問題画像を解き、回答後に公式解説を確認できます。回答成績はランキングに含まれますが、通常問題集・学習ルート・XPとは別記録です。';
     document.querySelector('.dictionary-sources')?.classList.toggle('hidden',scope==='dentalMaterials');
     document.querySelectorAll('[data-dictionary-source]').forEach(button=>button.classList.toggle('on',button.dataset.dictionarySource===sourceKey));
+    for(const id of ['dictionaryFilterLabel','dictionarySortControls'])$(id)?.classList.toggle('hidden',!supportsGrades());
+    document.querySelectorAll('[data-dictionary-grade-filter]').forEach(button=>button.classList.toggle('hidden',!supportsGrades()));
     renderGroupButtons();
     try{
       const loaded=await loadManifest();
@@ -178,29 +208,32 @@
 
   function selectSource(next){if(setSource(next))renderHome('dictionary');}
 
-  async function open(index,requestedMode=mode){
-    try{await loadManifest();loadProgress();}
+  async function open(index,requestedMode=mode,group){
+    const requestedSource=sourceKey,order=activeSort();
+    try{await loadManifest();if(sourceKey!==requestedSource||!manifest)return;loadProgress();}
     catch(error){console.error(error);return;}
-    sessionMode=requestedMode;
-    if(sessionMode==='all'){
-      sessionIndices=null;sessionPosition=0;
-      currentIndex=Math.max(0,Math.min(manifest.items.length-1,Number.isInteger(index)?index:progress.index));
-    }else{
-      sessionIndices=filteredIndices(sessionMode,manifest.items,progress);
-      if(!sessionIndices.length){renderHomeMode();return;}
-      const requestedPosition=sessionIndices.indexOf(index);
-      sessionPosition=requestedPosition>=0?requestedPosition:0;
+    if(!supportsGrades()&&(GRADES.includes(requestedMode)||requestedMode==='ungraded'))requestedMode='all';
+    const resume=requestedMode==='all'&&order==='published';
+    const indices=resume&&!group?null:orderedIndices(requestedMode,order,manifest.items,progress);
+    if(group){
+      index=indices.find(index=>groupFor(manifest.items[index].sourceId)===group);
+      if(index===undefined){renderHomeMode();return;}
+    }
+    if(indices&&!indices.length){renderHomeMode();return;}
+    sessionMode=requestedMode;sessionSort=order;
+    sessionIndices=resume?null:indices;
+    if(sessionIndices){
+      sessionPosition=Math.max(0,sessionIndices.indexOf(index));
       currentIndex=sessionIndices[sessionPosition];
+    }else{
+      sessionPosition=0;
+      currentIndex=Math.max(0,Math.min(manifest.items.length-1,Number.isInteger(index)?index:progress.index));
     }
     saveProgress();renderQuestion();
   }
 
-  function firstIndexForGroup(group,indices=filteredIndices(mode,manifest.items,progress)){
-    return indices.find(index=>groupFor(manifest.items[index].sourceId)===group)??-1;
-  }
-
-  function sessionLength(){return sessionMode==='all'?manifest.items.length:sessionIndices.length;}
-  function sessionOrdinal(){return sessionMode==='all'?currentIndex+1:sessionPosition+1;}
+  function sessionLength(){return sessionIndices?sessionIndices.length:manifest.items.length;}
+  function sessionOrdinal(){return sessionIndices?sessionPosition+1:currentIndex+1;}
   function isFirst(){return sessionOrdinal()===1;}
   function isLast(){return sessionOrdinal()===sessionLength();}
 
@@ -208,6 +241,24 @@
     const item=manifest.items[currentIndex],on=progress.favorites[item.sourceId]?.on===true,button=$('dictionaryFavBtn');
     if(!button)return;
     button.textContent=on?'★':'☆';button.classList.toggle('on',on);button.setAttribute('aria-pressed',String(on));
+  }
+
+  function renderGrade(){
+    const visible=answered&&supportsGrades();
+    $('dictionaryGrade')?.classList.toggle('hidden',!visible);
+    const grade=visible?progress.grades[manifest.items[currentIndex].sourceId]?.g:null;
+    document.querySelectorAll('#dictionaryGrade [data-grade]').forEach(button=>{
+      const on=button.dataset.grade===grade;
+      button.classList.toggle('on',on);button.setAttribute('aria-pressed',String(on));
+    });
+  }
+
+  function toggleGrade(grade){
+    if(!answered||!supportsGrades()||!GRADES.includes(grade))return;
+    const id=manifest.items[currentIndex].sourceId,previous=progress.grades[id];
+    const prevAt=Number.isFinite(+previous?.at)?+previous.at:0;
+    progress.grades[id]={g:previous?.g===grade?null:grade,at:Math.max(Date.now(),prevAt+1)};
+    saveProgress();renderGrade();
   }
 
   function renderQuestion(){
@@ -260,6 +311,7 @@
     }else if(pending)delete progress.pendingPick;
     $('dictionarySubmit').disabled=picked.length!==requiredChoices;$('dictionarySubmit').textContent='回答する';
     $('dictionaryResult').classList.add('hidden');
+    renderGrade();
     $('dictionaryExplanation').classList.add('hidden');
     $('dictionaryExplanationImage').removeAttribute('src');
     if(saved){
@@ -279,7 +331,7 @@
     if(answered||!picked)return;
     const item=manifest.items[currentIndex];
     delete progress.pendingPick;
-    answered=true;
+    answered=true;renderGrade();
     const correct=picked===item.answer;
     $('dictionaryChoices').querySelectorAll('button').forEach(button=>{
       button.disabled=true;button.classList.remove('selected');
@@ -302,23 +354,21 @@
 
   function move(delta){
     saveProgress();
-    if(sessionMode==='all')currentIndex=Math.max(0,Math.min(manifest.items.length-1,currentIndex+delta));
+    if(!sessionIndices)currentIndex=Math.max(0,Math.min(manifest.items.length-1,currentIndex+delta));
     else{sessionPosition=moveSnapshotPosition(sessionIndices,sessionPosition,delta);currentIndex=sessionIndices[sessionPosition];}
     renderQuestion();
   }
 
   function bindGroupButtons(){
-    document.querySelectorAll('[data-dictionary-group]').forEach(button=>button.addEventListener('click',async()=>{
-      await loadManifest();
-      const indices=filteredIndices(mode,manifest.items,progress),index=firstIndexForGroup(button.dataset.dictionaryGroup,indices);
-      if(index>=0)open(index,mode);
-    }));
+    document.querySelectorAll('[data-dictionary-group]').forEach(button=>button.addEventListener('click',()=>open(undefined,mode,button.dataset.dictionaryGroup)));
   }
 
   function bind(){
-    $('dictionaryStart')?.addEventListener('click',()=>open(mode==='all'?progress.index:undefined,mode));
+    $('dictionaryStart')?.addEventListener('click',()=>open(undefined,mode));
     document.querySelectorAll('[data-dictionary-source]').forEach(button=>button.addEventListener('click',()=>selectSource(button.dataset.dictionarySource)));
-    document.querySelectorAll('[data-dictionary-mode]').forEach(button=>button.addEventListener('click',()=>{mode=button.dataset.dictionaryMode;renderHomeMode();}));
+    document.querySelectorAll('[data-dictionary-mode]').forEach(button=>button.addEventListener('click',()=>{if(!supportsGrades()&&button.hasAttribute('data-dictionary-grade-filter'))return;mode=button.dataset.dictionaryMode;renderHomeMode();}));
+    document.querySelectorAll('[data-dictionary-sort]').forEach(button=>button.addEventListener('click',()=>{if(!supportsGrades())return;sortOrder=button.dataset.dictionarySort;renderHomeMode();}));
+    document.querySelectorAll('#dictionaryGrade [data-grade]').forEach(button=>button.addEventListener('click',()=>toggleGrade(button.dataset.grade)));
     bindGroupButtons();
     $('dictionaryHomeBack')?.addEventListener('click',()=>window.renderHome());
     $('dictionaryFavBtn')?.addEventListener('click',toggleFavorite);
@@ -328,6 +378,6 @@
     for(const id of ['dictionaryQuestionImage','dictionaryExplanationImage'])$(id)?.addEventListener('click',event=>window.openImageZoom(event.currentTarget.currentSrc||event.currentTarget.src,event.currentTarget.alt));
   }
 
-  window.dictionaryPractice={renderHome,open,reloadProgress:loadProgress,filteredIndices,moveSnapshotPosition,resumeIndexForSave,summaryProgress,normalizeProgress};
+  window.dictionaryPractice={renderHome,open,reloadProgress:loadProgress,filteredIndices,orderedIndices,moveSnapshotPosition,resumeIndexForSave,summaryProgress,normalizeProgress};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
 })();

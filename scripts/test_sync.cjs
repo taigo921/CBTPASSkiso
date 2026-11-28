@@ -43,6 +43,13 @@ assert(favoriteMerged.favorites.A001.on===false&&favoriteMerged.favorites.A001.a
 assert(favoriteMerged.favorites.B001.on===true,'independent favorites form a union');
 const favoriteTie=mergePracticePayload({dictionary2:{favorites:{A001:{on:true,at:300}}}},{dictionary2:{favorites:{A001:{on:false,at:300}}}}).dictionary2;
 assert(favoriteTie.favorites.A001.on===true,'equal favorite timestamps keep local state');
+const localGrades={dictionary2:{updatedAt:500,grades:{A001:{g:'A',at:10},A002:{g:'A',at:50},A003:{g:'B',at:15},A004:{g:'C',at:30}}}};
+const remoteGrades={dictionary2:{updatedAt:400,grades:{A001:{g:null,at:20},A002:{g:'C',at:40},A003:{g:'invalid',at:25},A004:{g:'A',at:30},A005:{g:'B',at:60}}}};
+const expectedGrades={A001:{g:null,at:20},A002:{g:'A',at:50},A003:{g:null,at:25},A004:{g:'C',at:30},A005:{g:'B',at:60}};
+const mergedGrades=mergeCloudPayloads({practiceSets:remoteGrades},{practiceSets:localGrades});
+assert(JSON.stringify(mergedGrades.practiceSets.dictionary2.grades)===JSON.stringify(expectedGrades),'grades merge per question, sanitize invalid values, retain clears and prefer local on ties');
+assert(JSON.stringify(decodeCloudProgress(encodeCloudProgress(mergedGrades)).practiceSets.dictionary2.grades)===JSON.stringify(expectedGrades),'grades survive the compact sync roundtrip');
+assert(Object.keys(mergePracticePayload({dictionary2:{answers:{}}},{}).dictionary2.grades).length===0,'old practice payloads without grades remain valid');
 assert(Object.keys(mergePracticePayload({dictionary2:{answers:{}}},{dictionary2:{answers:{}}}).dictionary2.favorites).length===0,'old practice payloads without favorites remain valid');
 const streakPayload=compactStatsPayload({perQ:{q:{correct:3,wrong:0,last:'correct',history:[{correct:true,at:20}],streak:3,streakDay:'2026-11-10'}},rankAttempts:[]});
 assert(streakPayload.perQ.q.s===3&&streakPayload.perQ.q.sd==='2026-11-10','compact payload keeps the per-question streak and update day');
