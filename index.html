@@ -335,8 +335,9 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
   .confrow{display:flex;align-items:center;gap:8px;margin:16px 0 2px;flex-wrap:wrap;}
   .confrow .clab{font-size:12px;font-weight:800;color:var(--muted);}
   .confrow button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;}
-  .confrow button[data-oc="explained"].on{border-color:var(--correct);background:var(--correct-bg);color:var(--correct);}
-  .confrow button[data-oc="review"].on{border-color:var(--wrong);background:var(--wrong-bg);color:var(--wrong);}
+  .confrow button[data-oc="explained"].on,.confrow button[data-grade="A"].on{border-color:var(--correct);background:var(--correct-bg);color:var(--correct);}
+  .confrow button[data-grade="B"].on{border-color:var(--amber);background:var(--amber-bg);color:var(--amber);}
+  .confrow button[data-oc="review"].on,.confrow button[data-grade="C"].on{border-color:var(--wrong);background:var(--wrong-bg);color:var(--wrong);}
   .skiprow{display:flex;justify-content:flex-end;margin:14px 0 2px;}
   .skip-btn{border:1.5px solid #efc6c2;background:#fff8f7;color:var(--wrong);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:800;cursor:pointer;}
   .skip-btn:disabled{opacity:.45;cursor:default;}
@@ -524,7 +525,9 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
 
   .hidden{display:none!important;}
   /* list */
-  .filterbar{position:sticky;top:62px;z-index:15;display:flex;gap:8px;overflow-x:auto;padding:10px 0 12px;background:var(--bg);-webkit-overflow-scrolling:touch;}
+  .list-controls{position:sticky;top:62px;z-index:15;background:var(--bg);padding:8px 0 4px;}
+  .list-control-label{font-size:12px;font-weight:800;color:var(--muted);}
+  .filterbar{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;-webkit-overflow-scrolling:touch;}
   .fbtn{flex:none;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;}
   .fbtn.on{border-color:var(--green);background:var(--green);color:#fff;}
   .lsec{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--green-d);display:flex;align-items:center;gap:8px;}
@@ -1498,6 +1501,9 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
           <span class="clab">理解確認</span>
           <button data-oc="explained">誤答理由まで説明できる</button>
           <button data-oc="review">まだ説明できない</button>
+          <button class="hidden" data-grade="A" type="button" aria-pressed="false">A</button>
+          <button class="hidden" data-grade="B" type="button" aria-pressed="false">B</button>
+          <button class="hidden" data-grade="C" type="button" aria-pressed="false">C</button>
         </div>
         <div class="exp">
           <h4>📣 解説</h4>
@@ -1618,12 +1624,23 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
   <!-- LIST -->
   <section id="list" class="hidden">
     <div class="hero"><h1 style="font-size:22px;">📋 問題一覧</h1><p id="listCount">—</p></div>
-    <div class="filterbar" id="filterBar">
+    <div class="list-controls">
+    <div class="list-control-label" id="listFilterLabel">絞り込み</div>
+    <div class="filterbar" id="filterBar" role="group" aria-labelledby="listFilterLabel">
       <button class="fbtn on" data-f="all">すべて</button>
       <button class="fbtn" data-f="unanswered">未回答</button>
       <button class="fbtn" data-f="wrong">間違えた問題</button>
       <button class="fbtn" data-f="fav">★お気に入り</button>
-      <button class="fbtn" data-f="lowacc">正答率が低い順</button>
+      <button class="fbtn hidden" data-f="A" data-answer-filter>A</button>
+      <button class="fbtn hidden" data-f="B" data-answer-filter>B</button>
+      <button class="fbtn hidden" data-f="C" data-answer-filter>C</button>
+      <button class="fbtn hidden" data-f="ungraded" data-answer-filter>未評価</button>
+    </div>
+    <div class="list-control-label" id="listSortLabel">並び順</div>
+    <div class="filterbar" id="listSortBar" role="group" aria-labelledby="listSortLabel">
+      <button class="fbtn on" data-sort="published">掲載順</button>
+      <button class="fbtn" data-sort="lowacc">正答率が低い順</button>
+    </div>
     </div>
     <button class="btn hidden" id="listPracticeBtn" type="button">間違えた問題をまとめて解く</button>
     <div id="listBody"></div>
@@ -2172,6 +2189,7 @@ function updateExtraMaterialsAccess(returnHome=true){
   if(answerSelected){
     if(session&&session.records&&session.idx<session.uids.length)saveSession();
     saveStats();activeBook='book1';settings.activeBook='book1';saveSettings();
+    resetAnswerListFilter();
     stats=statsByBook.book1;QUESTIONS=resolveQuestions();session=null;
     const url=new URL(location.href);url.searchParams.set('book','book1');history.replaceState(null,'',url);
   }
@@ -4192,6 +4210,7 @@ async function switchBook(book){
   if(session&&session.records&&session.idx<session.uids.length)saveSession();
   saveStats();
   activeBook=book;settings.activeBook=book;if(isAnswerBook(book))settings.answerBook=book;saveSettings();
+  resetAnswerListFilter();
   const url=new URL(location.href);url.searchParams.set('book',book);history.replaceState(null,'',url);
   stats=statsByBook[activeBook];QUESTIONS=resolveQuestions();session=null;
   renderHome();toast(`${BOOKS[book].title}に切り替えました`);
@@ -4205,6 +4224,7 @@ function activatePlanQuestion(uid){
   if(!session||!['plan','routeReview'].includes(session.mode))return;
   const book=(session.bookByUid||{})[uid]||planBookForUid(uid);if(!book||book===activeBook)return;
   saveStats();activeBook=book;stats=statsByBook[book];QUESTIONS=resolveQuestions();settings.activeBook=book;saveSettings();
+  resetAnswerListFilter();
   const url=new URL(location.href);url.searchParams.set('book',book);history.replaceState(null,'',url);
   const logoSmall=document.querySelector('.logo small');if(logoSmall)logoSmall.textContent=BOOKS[book].title;
 }
@@ -4334,8 +4354,10 @@ function renderQuestion(){
   el('resultBlock').classList.add('hidden');
   el('qPreviousAnswer').innerHTML='';
   el('qPreviousAnswer').classList.add('hidden');
-  el('postConf').classList.toggle('hidden',session.mode!=='plan');
-  document.querySelectorAll('#postConf button').forEach(b=>b.classList.remove('on'));
+  const answerBook=isAnswerBook(activeBook);
+  el('postConf').classList.toggle('hidden',!answerBook&&session.mode!=='plan');
+  document.querySelectorAll('#postConf [data-oc]').forEach(b=>{b.classList.toggle('hidden',answerBook);b.classList.remove('on');});
+  renderAnswerGrade(r?.grade);
   el('nextBtn').textContent='回答する'; el('nextBtn').disabled=!picked;
   el('prevBtn').style.display=noback?'none':'';
   el('prevBtn').disabled=session.idx===0;
@@ -4362,15 +4384,31 @@ function restorePlanItemBeforeFeedback(record){
   if(!p.active||!snapshot)return false;
   p.items[record.uid]={...snapshot};p.updatedAt=Date.now();saveStudyPlans(false);return true;
 }
-document.querySelectorAll('#postConf button').forEach(b=>{
+function renderAnswerGrade(grade){
+  const answerBook=isAnswerBook(activeBook);
+  document.querySelectorAll('#postConf [data-grade]').forEach(b=>{
+    const selected=answerBook&&b.dataset.grade===grade;
+    b.classList.toggle('hidden',!answerBook);b.classList.toggle('on',selected);b.setAttribute('aria-pressed',String(selected));
+  });
+}
+document.querySelectorAll('#postConf [data-grade]').forEach(b=>b.addEventListener('click',()=>{
+  const uid=session?.uids[session.idx];
+  if(!uid||!answered||!isAnswerBook(activeBook))return;
+  const r=rec(uid);
+  if(r.grade===b.dataset.grade)delete r.grade;
+  else r.grade=b.dataset.grade;
+  r.gradeAt=Math.max(Date.now(),(r.gradeAt||0)+1);
+  renderAnswerGrade(r.grade);saveStats();cloudSyncSoon();
+}));
+document.querySelectorAll('#postConf [data-oc]').forEach(b=>{
   b.addEventListener('click',()=>{
     const wasOn=b.classList.contains('on');
     const r=session.records[session.records.length-1];
-    if(!r||session.mode!=='plan')return;
+    if(!r||session.mode!=='plan'||isAnswerBook(activeBook))return;
     const pr=rec(r.uid);
     if(!r.planItemBeforeFeedback){const item=planFor().items[r.uid];if(item)r.planItemBeforeFeedback={...item};}
     if(!Number.isInteger(r.postHistoryStart))r.postHistoryStart=pr.post.length;
-    document.querySelectorAll('#postConf button').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('#postConf [data-oc]').forEach(x=>x.classList.remove('on'));
     restorePlanItemBeforeFeedback(r);
     pr.post=pr.post.slice(0,r.postHistoryStart);
     if(wasOn){
@@ -4618,6 +4656,8 @@ function groupBySection(arr){
 
 /* ============ 問題一覧 ============ */
 let listFilter='all';
+let listSort='published';
+function resetAnswerListFilter(){if(!isAnswerBook(activeBook)&&['A','B','C','ungraded'].includes(listFilter))listFilter='all';}
 function openList(){
   el('footer').classList.add('hidden'); el('timerChip').classList.remove('show'); setProgress(0);
   renderList();
@@ -4625,14 +4665,29 @@ function openList(){
 }
 function statusOf(q){ const r=stats.perQ[qkey(q)]; if(!r||(r.correct+r.wrong)===0)return 'non'; return r.last==='correct'?'ok':'ng'; }
 function listQuestions(){
-  return QUESTIONS.filter(q=>{const r=stats.perQ[qkey(q)];
+  const filtered=QUESTIONS.filter(q=>{const r=stats.perQ[qkey(q)];
     if(listFilter==='unanswered')return !r||(r.correct+r.wrong)===0;
     if(listFilter==='wrong')return r&&r.last==='wrong';
     if(listFilter==='fav')return r&&r.fav;
+    if(listFilter==='ungraded')return !['A','B','C'].includes(r?.grade);
+    if(['A','B','C'].includes(listFilter))return r?.grade===listFilter;
     return true;});
+  if(listSort!=='lowacc')return filtered;
+  return filtered.map((q,originalIndex)=>{
+    const r=stats.perQ[qkey(q)]||{};
+    const correct=safeQuestionStatCount(r.correct),wrong=safeQuestionStatCount(r.wrong);
+    return {q,total:correct+wrong,correctInt:BigInt(correct),totalInt:BigInt(correct)+BigInt(wrong),originalIndex};
+  }).sort((a,b)=>{
+    if(!a.total||!b.total)return a.total? -1:(b.total?1:a.originalIndex-b.originalIndex);
+    const left=a.correctInt*b.totalInt,right=b.correctInt*a.totalInt;
+    if(left!==right)return left<right?-1:1;
+    if(a.totalInt!==b.totalInt)return a.totalInt>b.totalInt?-1:1;
+    return a.originalIndex-b.originalIndex;
+  }).map(item=>item.q);
 }
 function startWrongListSession(startUid=null){
-  const pool=listQuestions().map(qkey);
+  const filtered=listQuestions();
+  const pool=(listSort==='lowacc'?filtered:Object.values(groupBySection(filtered)).flat()).map(qkey);
   if(listFilter!=='wrong'||!pool.length){toast('間違えた問題がありません');return;}
   let idx=startUid?pool.indexOf(startUid):0;if(idx<0)idx=0;
   session={mode:'review',uids:pool,idx,records:[],sessionCorrect:0,single:true,returnTo:'list'};
@@ -4654,6 +4709,7 @@ function appendListQuestionRow(body,q,rankAttemptsByUid){
   const st=statusOf(q),mark=st==='ok'?'○':(st==='ng'?'✗':'・');
   let ic='';
   if(r.fav)ic+='<span class="star">★</span>';
+  if(isAnswerBook(activeBook)&&['A','B','C'].includes(r.grade))ic+=`<span class="cf ${{A:'sure',B:'anx',C:'skip'}[r.grade]}">${escapeHtml(r.grade)}</span>`;
   const it=document.createElement('div');it.className='litem';
   it.innerHTML=`<div class="lrow"><span class="lno">${qno(q)}</span><span class="lst ${st}">${mark}</span>
     <span class="lq">${escapeHtml(q.question.split('\n')[0])}</span><span class="lic">${ic}</span></div>${listQuestionStatsHtml(qkey(q),r,rankAttemptsByUid)}`;
@@ -4661,10 +4717,15 @@ function appendListQuestionRow(body,q,rankAttemptsByUid){
   body.appendChild(it);
 }
 function renderList(){
-  document.querySelectorAll('#filterBar .fbtn').forEach(b=>b.classList.toggle('on',b.dataset.f===listFilter));
+  resetAnswerListFilter();
+  const answerBook=isAnswerBook(activeBook);
+  document.querySelectorAll('#filterBar .fbtn').forEach(b=>{
+    if(b.dataset.answerFilter!==undefined)b.classList.toggle('hidden',!answerBook);
+    b.classList.toggle('on',b.dataset.f===listFilter);
+  });
+  document.querySelectorAll('#listSortBar .fbtn').forEach(b=>b.classList.toggle('on',b.dataset.sort===listSort));
   const body=el('listBody'); body.innerHTML='';
   const filtered=listQuestions();
-  const groups=groupBySection(filtered);
   const total=filtered.length;
   const practice=el('listPracticeBtn');
   practice.classList.toggle('hidden',listFilter!=='wrong'||!total);
@@ -4673,23 +4734,13 @@ function renderList(){
   if(!total){ body.innerHTML='<div class="empty">該当する問題がありません。</div>'; return; }
   const rankAttemptsByUid=new Map();
   (stats.rankAttempts||[]).forEach(attempt=>{if(!attempt?.u)return;const attempts=rankAttemptsByUid.get(attempt.u)||[];attempts.push(attempt);rankAttemptsByUid.set(attempt.u,attempts);});
-  if(listFilter==='lowacc'){
-    const ordered=filtered.map((q,originalIndex)=>{
-      const r=stats.perQ[qkey(q)]||{};
-      const correct=safeQuestionStatCount(r.correct),wrong=safeQuestionStatCount(r.wrong);
-      return {q,total:correct+wrong,correctInt:BigInt(correct),totalInt:BigInt(correct)+BigInt(wrong),originalIndex};
-    }).sort((a,b)=>{
-      if(!a.total||!b.total)return a.total? -1:(b.total?1:a.originalIndex-b.originalIndex);
-      const left=a.correctInt*b.totalInt,right=b.correctInt*a.totalInt;
-      if(left!==right)return left<right?-1:1;
-      if(a.totalInt!==b.totalInt)return a.totalInt>b.totalInt?-1:1;
-      return a.originalIndex-b.originalIndex;
-    });
+  if(listSort==='lowacc'){
     const h=document.createElement('div');h.className='lsec';
-    h.innerHTML=`正答率が低い順<span class="cnt">${ordered.length}</span>`;body.appendChild(h);
-    ordered.forEach(item=>appendListQuestionRow(body,item.q,rankAttemptsByUid));
+    h.innerHTML=`正答率が低い順<span class="cnt">${total}</span>`;body.appendChild(h);
+    filtered.forEach(q=>appendListQuestionRow(body,q,rankAttemptsByUid));
     return;
   }
+  const groups=groupBySection(filtered);
   Object.keys(groups).forEach(sec=>{
     const h=document.createElement('div');h.className='lsec';
     h.innerHTML=`${escapeHtml(sec)}<span class="cnt">${groups[sec].length}</span>`; body.appendChild(h);
@@ -4904,6 +4955,7 @@ document.querySelectorAll('[data-section-mode]').forEach(button=>button.addEvent
 }));
 el('sectionStartBack').addEventListener('click',openSectionList);
 document.querySelectorAll('#filterBar .fbtn').forEach(b=>b.addEventListener('click',()=>{listFilter=b.dataset.f;renderList();}));
+document.querySelectorAll('#listSortBar .fbtn').forEach(b=>b.addEventListener('click',()=>{listSort=b.dataset.sort;renderList();}));
 el('listPracticeBtn').addEventListener('click',()=>startWrongListSession());
 el('resumeCard').addEventListener('click',resumeSession);
 el('nextBtn').addEventListener('click',next);
@@ -4994,10 +5046,12 @@ function compactStatsPayload(source){
   for(const uid in source.perQ){
     const r=source.perQ[uid];const att=(r.correct||0)+(r.wrong||0);
     const lastAttempt=Array.isArray(r.history)&&r.history.length?r.history[r.history.length-1]:null;
-    if(att>0 || r.fav){
+    const gradeAt=Number.isFinite(r.gradeAt)&&r.gradeAt>0?r.gradeAt:0;
+    if(att>0 || r.fav || gradeAt){
       pq[uid]={c:r.correct||0,w:r.wrong||0,f:r.fav?1:0,l:r.last||null,x:r.xpV?1:0,d:r.xpDay||null,r:r.rankV?1:0,h:lastAttempt};
       if(typeof r.streak==='number'&&Number.isFinite(r.streak))pq[uid].s=r.streak;
       if(r.streakDay)pq[uid].sd=r.streakDay;
+      if(gradeAt){pq[uid].ga=gradeAt;pq[uid].g=['A','B','C'].includes(r.grade)?r.grade:null;}
     }
   }
   return Object.assign(statsSummaryFor(source),{perQ:pq,lastDay:source.lastDay||null,rankAttempts:(source.rankAttempts||[]).slice(-200)});
@@ -5051,6 +5105,14 @@ function mergeStatsTarget(target,cd){
       else if(c.h&&localLast&&(+c.h.at||0)===(+localLast.at||0)&&cloudStreak!==null){l.streak=Math.max(Number.isFinite(l.streak)?l.streak:0,cloudStreak);if(cloudStreakDay)l.streakDay=l.streakDay?String(l.streakDay)>cloudStreakDay?l.streakDay:cloudStreakDay:cloudStreakDay;}
     }
     if(localFav||c.f)target.perQ[uid].fav=true;
+    const localGradeAt=Number.isFinite(l?.gradeAt)?l.gradeAt:0,cloudGradeAt=Number.isFinite(c.ga)?c.ga:0;
+    const gradeAt=Math.max(localGradeAt,cloudGradeAt);
+    if(gradeAt>0){
+      const grade=cloudGradeAt>=localGradeAt?c.g:l.grade;
+      const record=target.perQ[uid];record.gradeAt=gradeAt;
+      if(['A','B','C'].includes(grade))record.grade=grade;
+      else delete record.grade;
+    }
   }
   const rankMap=new Map();
   [...(target.rankAttempts||[]),...(cd.rankAttempts||[])].forEach(a=>{if(a&&a.i)rankMap.set(a.i,a);});

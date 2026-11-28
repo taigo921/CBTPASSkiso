@@ -25,6 +25,7 @@ async function loadDefaultQuestions(){}
 function resolveQuestions(){return DEFAULT_QUESTIONS_BY_BOOK[activeBook]||[];}
 ${slice('function isAccessOwner(', 'function isLeaderboardMember(')}
 ${slice('async function switchBook(', '/* ============ セッション ============ */')}
+${slice("let listFilter='all';", 'function openList(')}
 const qkey=q=>q.uid||q.id;
 ${slice('function planQuestions()', 'function planQuestion(')}
 ${slice('function latestQuestionOutcome(', 'function fullStatsPayload(')}
