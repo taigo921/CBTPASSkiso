@@ -857,17 +857,17 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
   html.xmas .xa-winter .xa-ball{animation:xaBall 2.1s ease-in both}
   html.xmas .xa-winter .xa-splat{animation:xaSplat 2.1s both}
   html.xmas .xa-winter .xa-spray{animation:xaSpray 2.1s both}
-  html.xmas .xa-newyear{background:rgba(45,14,18,.5)}
-  html.xmas .xa-newyear svg{animation:xaLion 2.1s both}
-  html.xmas .xa-newyear .xa-jaw{transform-origin:160px 132px;animation:xaBite 2.1s both}
-  html.xmas .xa-newyear .xa-caption{position:absolute;top:calc(50% + min(28vw,140px,24vh));margin:0;color:#FFE092;font-size:clamp(13px,4vw,17px);font-weight:700;text-shadow:0 2px 4px #351417;animation:xaCaption 2.1s both}
+  html.xmas .xa-newyear{background:rgba(45,14,18,.5);animation-duration:3s}
+  html.xmas .xa-newyear svg{animation:xaLion 3s both}
+  html.xmas .xa-newyear .xa-jaw{transform-origin:160px 132px;animation:xaBite 3s both}
+  html.xmas .xa-newyear .xa-caption{position:absolute;top:calc(50% + min(28vw,140px,24vh));margin:0;color:#FFE092;font-size:clamp(13px,4vw,17px);font-weight:700;text-shadow:0 2px 4px #351417;animation:xaCaption 3s both}
   html.xmas.xmas-paused :is(.xs-winter,.xs-newyear,.xa-seasonal),html.xmas.xmas-paused .xa-seasonal *{animation-play-state:paused!important}
   @keyframes xaBall{0%{opacity:0;transform:translate(56px,-44px) scale(.04)}12%{opacity:1}31%{opacity:1;transform:scale(2.5)}32%,100%{opacity:0;transform:scale(2.5)}}
   @keyframes xaSplat{0%,31%{opacity:0;transform:scale(.4)}36%,49%{opacity:1;transform:scale(1)}74%{opacity:.8;transform:translateY(42px) scale(1.08,.62)}91%,100%{opacity:0;transform:translateY(120px) scale(1.1,.25)}}
   @keyframes xaSpray{0%,31%{opacity:0;transform:translateY(20px) scale(.35);transform-origin:center}42%{opacity:1;transform:translateY(-14px) scale(1.06);transform-origin:center}83%,100%{opacity:0;transform:translateY(120px) scale(1.2);transform-origin:center}}
-  @keyframes xaLion{0%{transform:translateY(60vh)}28%{transform:translateY(-9px)}40%,68%{transform:translateY(0)}100%{transform:translateY(26px)}}
-  @keyframes xaBite{0%,26%,48%,100%{transform:rotate(0)}39%{transform:translateY(20px) rotate(9deg)}53%{transform:translateY(4px)}}
-  @keyframes xaCaption{0%,51%{opacity:0;transform:translateY(6px)}61%,84%{opacity:1;transform:translateY(0)}100%{opacity:0}}
+  @keyframes xaLion{0%{transform:translateY(60vh)}19.6%{transform:translateY(-9px)}28%,68%{transform:translateY(0)}100%{transform:translateY(26px)}}
+  @keyframes xaBite{0%,18.2%,33.6%,70%,100%{transform:rotate(0)}27.3%{transform:translateY(20px) rotate(9deg)}37.1%{transform:translateY(4px)}}
+  @keyframes xaCaption{0%,34%{opacity:0;transform:translateY(6px)}38%,82%{opacity:1;transform:translateY(0)}100%{opacity:0}}
   @media(prefers-reduced-motion:reduce){html.xmas #xmasSnow{display:none}html.xmas #home .xmas-light,html.xmas #home .hero::before,html.xmas header::after,html.xmas .pbar>i{animation:none!important}html.xmas .xmas-particle,html.xmas .xmas-dust,html.xmas .xmas-sleigh-flight,html.xmas .xa-fx,html.xmas .xs-winter,html.xmas .xs-newyear,html.xmas .xa-seasonal{display:none!important}}
 </style>
 </head>
@@ -1405,6 +1405,7 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
           </div>
         </div>
         <button type="button" class="btn" id="dictionaryStart" disabled>読み込み中…</button>
+        <button type="button" class="ghost-btn hidden" id="dictionaryOpenList" disabled>📋 問題一覧</button>
         <div class="sec-h">領域から始める</div>
         <div class="dictionary-groups" id="dictionaryGroups">
           <button type="button" class="dictionary-group" data-dictionary-group="A">A<span>準備中</span></button>
@@ -1643,6 +1644,31 @@ window.toGOSeasonTheme.setSeasonClasses(window.toGOSeasonTheme.resolveSeason());
       <div id="mockSubjectReviewNav" class="mock-subject-review-nav hidden"><button type="button" id="mockSubjectReviewPrev">‹ 前の問題</button><button type="button" id="mockSubjectWrongOnly" aria-pressed="false">×の問題だけ</button><button type="button" id="mockSubjectReviewNext">次の問題 ›</button><p id="mockSubjectReviewEmpty" class="mock-subject-review-empty hidden">不正解の問題はありません</p></div>
       <div id="mockSubjectReview" class="mock-question-list hidden"></div>
     </div>
+  </section>
+
+  <section id="dictionaryList" class="hidden">
+    <div class="dictionary-head">
+      <div><h1 id="dictionaryListTitle"></h1><p id="dictionaryListCount"></p></div>
+      <button type="button" class="ghost-btn" id="dictionaryListBack">辞典ホームへ</button>
+    </div>
+    <div class="list-controls">
+      <div class="list-control-label" id="dictionaryListFilterLabel">絞り込み</div>
+      <div class="filterbar" role="group" aria-labelledby="dictionaryListFilterLabel">
+        <button type="button" class="fbtn" data-dictionary-mode="all">すべて</button>
+        <button type="button" class="fbtn" data-dictionary-mode="wrong">✗ 間違えた問題</button>
+        <button type="button" class="fbtn" data-dictionary-mode="fav">★ お気に入り</button>
+        <button type="button" class="fbtn" data-dictionary-mode="A">A</button>
+        <button type="button" class="fbtn" data-dictionary-mode="B">B</button>
+        <button type="button" class="fbtn" data-dictionary-mode="C">C</button>
+        <button type="button" class="fbtn" data-dictionary-mode="ungraded">未評価</button>
+      </div>
+      <div class="list-control-label" id="dictionaryListSortLabel">並び順</div>
+      <div class="filterbar" role="group" aria-labelledby="dictionaryListSortLabel">
+        <button type="button" class="fbtn" data-dictionary-sort="published">掲載順</button>
+        <button type="button" class="fbtn" data-dictionary-sort="lowacc">正答率が低い順</button>
+      </div>
+    </div>
+    <div id="dictionaryListBody"></div>
   </section>
 
   <section id="dictionaryPractice" class="hidden dictionary-practice">
@@ -2211,7 +2237,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261128-guide-back-right';
+const SERVICE_WORKER_BUILD='20261128-seasonal-fx';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -2284,7 +2310,7 @@ function updateExtraMaterialsAccess(returnHome=true){
   if(allowed)return;
   const answerSelected=isAnswerBook(activeBook);
   const extraSelected=answerSelected||mockHomeSelected||dictionaryHomeSelected||dentalMaterialsHomeSelected;
-  const extraScreen=['mockExam','mockSubjectPractice','dictionaryPractice'].some(id=>!el(id).classList.contains('hidden'));
+  const extraScreen=['mockExam','mockSubjectPractice','dictionaryPractice','dictionaryList'].some(id=>!el(id).classList.contains('hidden'));
   mockHomeSelected=false;dictionaryHomeSelected=false;dentalMaterialsHomeSelected=false;
   if(answerSelected){
     if(session&&session.records&&session.idx<session.uids.length)saveSession();
@@ -2338,7 +2364,7 @@ function autoUpdateDecision({pendingBuild,attemptAllowed,reason,activeMock,unsaf
   return 'defer';
 }
 function visibleAppScreen(){
-  const screens=['home','studyPlan','quiz','mockExam','mockSubjectPractice','dictionaryPractice','finish','stats','list','sectionList','sectionStart','leaderboard','accessAdmin'];
+  const screens=['home','studyPlan','quiz','mockExam','mockSubjectPractice','dictionaryPractice','dictionaryList','finish','stats','list','sectionList','sectionStart','leaderboard','accessAdmin'];
   return screens.find(id=>!el(id).classList.contains('hidden'))||'';
 }
 function activeMockSession(){
@@ -3941,7 +3967,7 @@ function trapLabValuesFocus(event){
   return true;
 }
 function showOnly(id){
-  const screens=['home','studyPlan','quiz','mockExam','mockSubjectPractice','dictionaryPractice','finish','stats','list','sectionList','sectionStart','leaderboard','accessAdmin'];
+  const screens=['home','studyPlan','quiz','mockExam','mockSubjectPractice','dictionaryPractice','dictionaryList','finish','stats','list','sectionList','sectionStart','leaderboard','accessAdmin'];
   const previous=screens.find(screen=>!el(screen).classList.contains('hidden'));
   if(previous!==id)autoUpdateMaybeApply('transition');
   el('routeBackBtn').classList.toggle('hidden',id!=='quiz');
@@ -4048,6 +4074,10 @@ function setProgress(p){el('pbarFill').style.width=Math.max(0,Math.min(100,p))+'
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 function xmasMotionReduced(){return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches===true;}
+function xmasEffectSeason(){
+  const classes=document.documentElement.classList;
+  return classes.contains('season-winter')?'winter':classes.contains('season-newyear')?'newyear':'xmas';
+}
 let xmasLastSleighQuestionKey=null;
 function xmasSleighQuestionShown(questionKey){
   const key=String(questionKey||'');
@@ -4057,9 +4087,10 @@ function xmasSleighQuestionShown(questionKey){
 function xmasSleighFlight(screenId){
   const screens=['home','quiz','mockExam','mockSubjectPractice','dictionaryPractice','stats','list','sectionList','sectionStart','leaderboard'];
   const authGate=el('authGate');
-  if((screenId&&!screens.includes(screenId))||!document.documentElement.classList.contains('xmas')||document.documentElement.classList.contains('season-winter')||document.documentElement.classList.contains('season-newyear')||xmasMotionReduced()||document.hidden||(authGate&&!authGate.classList.contains('ok'))||document.querySelector('.xmas-sleigh-flight'))return;
+  if((screenId&&!screens.includes(screenId))||!document.documentElement.classList.contains('xmas')||xmasMotionReduced()||document.hidden||(authGate&&!authGate.classList.contains('ok'))||document.querySelector('.xmas-sleigh-flight'))return;
   const flight=document.createElement('div');flight.className='xmas-sleigh-flight';flight.setAttribute('aria-hidden','true');
-  const template=el('xmasSleighTemplate');if(!template)return;flight.appendChild(template.content.cloneNode(true));
+  const season=xmasEffectSeason();
+  const template=el(season==='winter'?'winterSleighTemplate':season==='newyear'?'newyearKiteTemplate':'xmasSleighTemplate');if(!template)return;flight.appendChild(template.content.cloneNode(true));
   document.body.appendChild(flight);
   const party=flight.firstElementChild,remove=()=>flight.remove();
   party.addEventListener('animationend',event=>{if(event.target===party&&event.animationName==='xmasSleighFlight')remove();});
@@ -4080,18 +4111,19 @@ function xmasCorrectBurst(target){
   }
 }
 function xmasAnswerFx(correct,target){
-  // Correct: gold sparkles from the chosen answer. Wrong: full-screen Santa snatches the gift.
   // Callers only invoke it where the result is shown immediately.
   if(!document.documentElement.classList.contains('xmas')||xmasMotionReduced()||document.hidden)return;
   if(correct){xmasCorrectBurst(target);return;}
-  if(document.documentElement.classList.contains('season-winter')||document.documentElement.classList.contains('season-newyear'))return;
-  const template=el('xmasFxNgTemplate');if(!template)return;
+  const season=xmasEffectSeason(),authGate=el('authGate');
+  if(season!=='xmas'&&authGate&&!authGate.classList.contains('ok'))return;
+  const template=el(season==='winter'?'winterFxNgTemplate':season==='newyear'?'newyearFxNgTemplate':'xmasFxNgTemplate');if(!template)return;
   document.querySelectorAll('.xa-fx').forEach(node=>node.remove());
   const fx=template.content.firstElementChild.cloneNode(true);
   let removed=false;const remove=()=>{if(removed)return;removed=true;fx.remove();};
   fx.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();remove();});
+  if(season!=='xmas')fx.addEventListener('animationend',event=>{if(event.target===fx&&event.animationName==='xaNgDim')remove();});
   document.body.appendChild(fx);
-  setTimeout(remove,2200);
+  setTimeout(remove,season==='newyear'?3100:2200);
 }
 const XMAS_THEME_COLOR_DEFAULT=document.querySelector('meta[name="theme-color"]')?.getAttribute('content')||'';
 function clearXmasThemeDecorations(){

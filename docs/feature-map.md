@@ -82,7 +82,7 @@
 ## CBT辞典演習
 
 - 機能: 辞典② 956問、辞典③の誌上模試1（320問）・模試2（304問）を選び、原本ID順または領域／ブロック別に解く。正誤確定後に公式解説を表示し、教材別・端末別に再開する。問題別お気に入りと、間違えた問題だけ／お気に入りだけの固定スナップショット演習を持つ。
-- Route / 画面: `#dictionaryHome`、`#dictionaryPractice`。
+- Route / 画面: `#dictionaryHome`、`#dictionaryList`、`#dictionaryPractice`。問題一覧はホームと絞り込み・並び順を共有し、一覧の順序を固定した演習を選択行から開始する。
 - 主なUI: `[data-dictionary-source]`、`#dictionaryModes`、`#dictionaryStart`、`[data-dictionary-group]`、`#dictionaryFavBtn`、`#dictionaryQuestionImage`、`#dictionaryChoices`、`#dictionaryResult`、`#dictionaryExplanationImage`。
 - state / hooks相当: `features/dictionary-practice/dictionary-practice.js` 内の `SOURCES`、`sourceKey`、`manifest`、`progress`、`mode`、`sessionMode`、`sessionIndices`、`currentIndex`、`renderHome()`、`open()`、`renderQuestion()`、`submit()`。
 - API / service: 各教材manifestの静的fetch、LocalStorage、共通 `openImageZoom()`、`cloudSyncSoon()`。

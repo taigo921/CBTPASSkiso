@@ -20,6 +20,7 @@
 |`#sectionStart`|掲載順modeの開始位置を選択|Browse & Analysis|`#sectionStartBody`|問題、端末内section再開位置|`openSectionStart()`, `startSectionModeSession()`|
 |`#mockExam`|block別模試、採点、公式解説|Mock Exam|source image、A-E、prev/next、zoom|block問題、写真page、block進捗|`renderMockExam()`, `submitMockExam()`|
 |`#mockSubjectPractice`|科目をblock横断で順番演習|Mock Exam|subject question/choices/review|科目分類、端末内科目session|`startMockSubjectPractice()`, `renderMockSubjectPractice()`|
+|`#dictionaryList`|CBT辞典②・③の問題一覧|Dictionary Practice|ホームと共通の絞り込み・並び順、回答履歴・正答率、問題を選択して演習開始|選択教材のmanifestと端末進捗|`features/dictionary-practice/`|
 |`#dictionaryPractice`|CBT辞典または独立した歯科理工Formsの共用出題画面。入口ごとの教材以外は混在させない|Dictionary Practice / Dental Materials Practice|お気に入り、問題画像、A〜J、結果、解説画像、固定スナップショット内の前後移動|選択Featureのmanifest／画像、分離した端末進捗|`features/dictionary-practice/` と各教材assets|
 |`#leaderboard`|公開集計の順位、名前・写真編集|Leaderboard & Profile|tabs、list、rename、avatar|`leaderboard/{uid}`、本人profile|`openLeaderboard()`, `renderLeaderboard()`|
 |`#accessAdmin`|手動停止／休止解除、最終利用日時、授業制限・休校日管理|Access Administration|user list、school controls|`users`, `accessControl`, `activity`, `schoolAccess`|`openAccessAdmin()`, `renderAccessAdmin()`, `renderSchoolSettings()`|
@@ -35,7 +36,7 @@
 - `#home` → 通常mode／学習計画／一覧／セクション → 共通 `#quiz` → `#finish` または元画面。
 - `#home` のANSWER tab → 許可ユーザーだけ4巻selector → 選択巻の通常mode／一覧／セクション／分析 → 共通 `#quiz`。学習計画入口は表示しない。権限喪失時は問題集1のhomeへ戻る。
 - `#home` の模試tab → `#mockExam` または `#mockSubjectPractice` → 模試home。
-- `#home` のCBT辞典tab → `#dictionaryPractice` → 辞典home。通常問題のfooter・timerは使わない。
+- `#home` のCBT辞典tab → `#dictionaryPractice` → 辞典home。通常問題のfooter・timerは使わない。問題一覧経由では辞典home → `#dictionaryList` → `#dictionaryPractice` → `#dictionaryList` と戻り、一覧の戻るボタンで辞典homeへ戻る。
 - `#home` の歯科理工tab → `#dictionaryPractice` → 歯科理工home。CBT辞典の教材選択には表示しない。
 - `#home` → `#stats`、`#leaderboard`、管理者のみ `#accessAdmin`。
 - どの学習画面からでもガイド／画像viewerをoverlay表示でき、閉じると元のscreenを維持する。

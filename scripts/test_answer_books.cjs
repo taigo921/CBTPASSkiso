@@ -2,7 +2,7 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),asse
 const source=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 const slice=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b));
 const tabs=['answer','mock','dictionary','dentalMaterials'].map(book=>({dataset:{book},hidden:false}));
-const screens=Object.fromEntries(['mockExam','mockSubjectPractice','dictionaryPractice'].map(id=>[id,{classList:{contains:()=>true}}]));
+const screens=Object.fromEntries(['mockExam','mockSubjectPractice','dictionaryPractice','dictionaryList'].map(id=>[id,{classList:{contains:()=>true}}]));
 let homes=0,toasts=[];
 const context={
   console:{warn(){},log(){}},Date,JSON,Math,Map,Set,Object,Number,String,URL,

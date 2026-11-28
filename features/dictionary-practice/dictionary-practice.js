@@ -18,6 +18,7 @@
   let sessionSort='published';
   let sessionIndices=null;
   let sessionPosition=0;
+  let returnToList=false;
   let currentIndex=0;
   let picked='';
   let answered=false;
@@ -75,10 +76,12 @@
     return loadPromise;
   }
 
+  function dictionaryGroup(sourceId){return sourceId.startsWith('E')?sourceId.slice(0,2):sourceId.slice(0,1);}
+
   function groupFor(sourceId){
     if(source().groups){const item=manifest?.items.find(entry=>entry.sourceId===sourceId);return item?.group||source().groups[0];}
     if(source().mock){const item=manifest?.items.find(entry=>entry.sourceId===sourceId);return item?`B${item.block}`:'';}
-    return sourceId.startsWith('E')?sourceId.slice(0,2):sourceId.slice(0,1);
+    return dictionaryGroup(sourceId);
   }
 
   function groupKeys(){return source().groups||(source().mock?['B1','B2','B3','B4','B5','B6']:['A','B','C','D','E1','E2','E3','E4']);}
@@ -110,21 +113,96 @@
     return [];
   }
 
+  function validAttempts(answer){
+    return Array.isArray(answer?.attempts)?answer.attempts.filter(attempt=>typeof attempt?.correct==='boolean'):[];
+  }
+
   function orderedIndices(selectedMode,order,items,value){
     const indices=filteredIndices(selectedMode,items,value);
     if(order!=='lowacc')return indices;
     return indices.map(index=>{
-      const attempts=value?.answers?.[items[index].sourceId]?.attempts;
-      let correct=0,total=0;
-      if(Array.isArray(attempts))for(const attempt of attempts){
-        if(typeof attempt?.correct!=='boolean')continue;
-        total++;if(attempt.correct)correct++;
-      }
-      return {index,correct,total};
+      const attempts=validAttempts(value?.answers?.[items[index].sourceId]);
+      return {index,correct:attempts.filter(attempt=>attempt.correct).length,total:attempts.length};
     }).sort((a,b)=>{
       if(!a.total||!b.total)return b.total-a.total||a.index-b.index;
       return a.correct*b.total-b.correct*a.total||b.total-a.total||a.index-b.index;
     }).map(item=>item.index);
+  }
+
+  function listRows(selectedMode,order,items,value){
+    return orderedIndices(selectedMode,order,items,value).map(index=>{
+      const {sourceId,mock,block}=items[index];
+      const answer=value?.answers?.[sourceId],attempts=validAttempts(answer);
+      const grade=value?.grades?.[sourceId]?.g;
+      return {
+        index,sourceId,group:mock?`ブロック${block}`:dictionaryGroup(sourceId),
+        lastCorrect:answer?.lastCorrect,favorite:value?.favorites?.[sourceId]?.on===true,
+        grade:GRADES.includes(grade)?grade:null,
+        recent:attempts.slice(-5).map(attempt=>attempt.correct),
+        correct:attempts.filter(attempt=>attempt.correct).length,total:attempts.length
+      };
+    });
+  }
+
+  function appendListRow(fragment,row,start){
+    const state=row.lastCorrect===true?'ok':row.lastCorrect===false?'ng':'non';
+    const mark={ok:'○',ng:'✗',non:'・'}[state];
+    const recent=row.recent.length?`<span class="lstats-recent">${row.recent.map(correct=>`<b class="lstats-result ${correct?'ok':'ng'}" aria-label="${correct?'正解':'不正解'}">${correct?'○':'×'}</b>`).join('')}</span>`:'未解答';
+    const accuracy=row.total?`${Math.round(row.correct/row.total*100)}%（${row.correct}/${row.total}）`:'—';
+    const favorite=row.favorite?'<span class="star" aria-label="お気に入り">★</span>':'';
+    const grade=row.grade?`<span class="cf ${{A:'sure',B:'anx',C:'skip'}[row.grade]}">${row.grade}</span>`:'';
+    const button=document.createElement('button');button.type='button';button.className='litem';
+    button.innerHTML=`<span class="lrow"><span class="lno"></span><span class="lst ${state}">${mark}</span>
+      <span class="lq"></span><span class="lic">${favorite}${grade}</span></span>
+      <span class="lstats"><span>直近：${recent}</span><span class="lstats-sep">｜</span><span>正答率 ${accuracy}</span></span>`;
+    button.querySelector('.lno').textContent=row.sourceId;
+    button.querySelector('.lq').textContent=row.group;
+    button.addEventListener('click',start);
+    fragment.appendChild(button);
+  }
+
+  function renderList(){
+    const selectedMode=mode,order=sortOrder;
+    const rows=listRows(selectedMode,order,manifest.items,progress);
+    const body=$('dictionaryListBody');
+    $('dictionaryListCount').textContent=`${rows.length} 問${selectedMode==='all'?'':'（絞り込み中）'}`;
+    if(!rows.length){body.innerHTML='<div class="empty">該当する問題がありません。</div>';return;}
+    const indices=rows.map(row=>row.index);
+    const fragment=document.createDocumentFragment();
+    let previousGroup=null;
+    rows.forEach((row,position)=>{
+      const group=order==='lowacc'?'正答率が低い順':row.group;
+      if(group!==previousGroup){
+        previousGroup=group;
+        let count=rows.length;
+        if(order==='published'){
+          let end=position+1;
+          while(end<rows.length&&rows[end].group===group)end++;
+          count=end-position;
+        }
+        const heading=document.createElement('div');heading.className='lsec';heading.textContent=group;
+        const badge=document.createElement('span');badge.className='cnt';badge.textContent=count;
+        heading.appendChild(badge);fragment.appendChild(heading);
+      }
+      appendListRow(fragment,row,()=>startSession(row.index,selectedMode,order,indices,true));
+    });
+    body.replaceChildren(fragment);
+  }
+
+  async function openList(){
+    if(!supportsGrades()||window.canUseExtraMaterials?.()===false)return;
+    const requestedKey=sourceKey;
+    try{if(!manifest)await loadManifest();}
+    catch(error){console.error(error);return;}
+    if(sourceKey!==requestedKey||!manifest||window.canUseExtraMaterials?.()===false)return;
+    loadProgress();renderHomeMode();
+    $('dictionaryListTitle').textContent=`📋 ${source().shortTitle} 問題一覧`;
+    renderList();
+    window.showOnly('dictionaryList');
+    $('footer').classList.add('hidden');
+    $('timerChip').classList.remove('show');
+    $('pbarFill').style.width='0%';
+    window.scrollTo({top:0,behavior:'smooth'});
   }
 
   function moveSnapshotPosition(indices,position,delta){return Math.max(0,Math.min(indices.length-1,position+delta));}
@@ -186,6 +264,9 @@
     document.querySelectorAll('[data-dictionary-source]').forEach(button=>button.classList.toggle('on',button.dataset.dictionarySource===sourceKey));
     for(const id of ['dictionaryFilterLabel','dictionarySortControls'])$(id)?.classList.toggle('hidden',!supportsGrades());
     document.querySelectorAll('[data-dictionary-grade-filter]').forEach(button=>button.classList.toggle('hidden',!supportsGrades()));
+    const listButton=$('dictionaryOpenList');
+    listButton?.classList.toggle('hidden',!supportsGrades());
+    if(listButton)listButton.disabled=!supportsGrades()||!manifest;
     renderGroupButtons();
     try{
       const loaded=await loadManifest();
@@ -199,6 +280,7 @@
       const formsGap=sourceKey==='dentalMaterials'?` ／ 原本50問中、正答表示のない${manifest.unresolved.length}問は未収録`:'';
       status.textContent=`原本ID・正答・解説画面を検証済み（全${manifest.count}問）${gap}${formsGap}`;
       renderHomeMode();
+      if(listButton)listButton.disabled=!supportsGrades();
     }catch(error){
       if(sourceKey!==requestedKey)return;
       console.error(error);status.textContent=`${source().shortTitle}を読み込めませんでした。通信を確認して開き直してください。`;
@@ -220,8 +302,13 @@
       if(index===undefined){renderHomeMode();return;}
     }
     if(indices&&!indices.length){renderHomeMode();return;}
+    startSession(index,requestedMode,order,resume?null:indices);
+  }
+
+  function startSession(index,requestedMode,order,indices,fromList=false){
     sessionMode=requestedMode;sessionSort=order;
-    sessionIndices=resume?null:indices;
+    returnToList=fromList;
+    sessionIndices=indices;
     if(sessionIndices){
       sessionPosition=Math.max(0,sessionIndices.indexOf(index));
       currentIndex=sessionIndices[sessionPosition];
@@ -272,7 +359,7 @@
     $('routeBackBtn').classList.add('hidden');
     $('pbarFill').style.width=`${sessionOrdinal()/sessionLength()*100}%`;
     $('dictionaryPracticeTitle').textContent=source().shortTitle;
-    $('dictionaryHomeBack').textContent=sourceKey==='dentalMaterials'?'歯科理工へ':'辞典一覧へ';
+    $('dictionaryHomeBack').textContent=sourceKey==='dentalMaterials'?'歯科理工へ':returnToList?'問題一覧へ':'辞典一覧へ';
     $('dictionaryNumber').textContent=item.sourceId;
     $('dictionaryProgress').textContent=sessionMode==='all'?`${sessionOrdinal()} / ${sessionLength()}問`:`${sessionOrdinal()} / ${sessionLength()}問（${modeLabel(sessionMode)}）`;
     renderFavorite();
@@ -349,7 +436,7 @@
     progress.answers[item.sourceId]=record;saveProgress();
     $('dictionaryHistory').textContent=`この問題の回答回数 ${record.attempts.length}回 ・ 今回 ${correct?'○':'×'}`;
     $('dictionaryHistory').classList.remove('hidden');
-    $('dictionarySubmit').disabled=false;$('dictionarySubmit').textContent=isLast()?'ホームへ戻る':'次の問題へ';
+    $('dictionarySubmit').disabled=false;$('dictionarySubmit').textContent=isLast()?(returnToList?'問題一覧へ戻る':'ホームへ戻る'):'次の問題へ';
   }
 
   function move(delta){
@@ -363,21 +450,34 @@
     document.querySelectorAll('[data-dictionary-group]').forEach(button=>button.addEventListener('click',()=>open(undefined,mode,button.dataset.dictionaryGroup)));
   }
 
+  function returnFromPractice(){
+    if(returnToList)openList();
+    else window.renderHome();
+  }
+
+  function updateReviewControls(){
+    renderHomeMode();
+    const list=$('dictionaryList');
+    if(list&&!list.classList.contains('hidden')&&supportsGrades())renderList();
+  }
+
   function bind(){
+    $('dictionaryOpenList')?.addEventListener('click',openList);
+    $('dictionaryListBack')?.addEventListener('click',()=>window.renderHome());
     $('dictionaryStart')?.addEventListener('click',()=>open(undefined,mode));
     document.querySelectorAll('[data-dictionary-source]').forEach(button=>button.addEventListener('click',()=>selectSource(button.dataset.dictionarySource)));
-    document.querySelectorAll('[data-dictionary-mode]').forEach(button=>button.addEventListener('click',()=>{if(!supportsGrades()&&button.hasAttribute('data-dictionary-grade-filter'))return;mode=button.dataset.dictionaryMode;renderHomeMode();}));
-    document.querySelectorAll('[data-dictionary-sort]').forEach(button=>button.addEventListener('click',()=>{if(!supportsGrades())return;sortOrder=button.dataset.dictionarySort;renderHomeMode();}));
+    document.querySelectorAll('[data-dictionary-mode]').forEach(button=>button.addEventListener('click',()=>{if(!supportsGrades()&&button.hasAttribute('data-dictionary-grade-filter'))return;mode=button.dataset.dictionaryMode;updateReviewControls();}));
+    document.querySelectorAll('[data-dictionary-sort]').forEach(button=>button.addEventListener('click',()=>{if(!supportsGrades())return;sortOrder=button.dataset.dictionarySort;updateReviewControls();}));
     document.querySelectorAll('#dictionaryGrade [data-grade]').forEach(button=>button.addEventListener('click',()=>toggleGrade(button.dataset.grade)));
     bindGroupButtons();
-    $('dictionaryHomeBack')?.addEventListener('click',()=>window.renderHome());
+    $('dictionaryHomeBack')?.addEventListener('click',returnFromPractice);
     $('dictionaryFavBtn')?.addEventListener('click',toggleFavorite);
     $('dictionaryPrev')?.addEventListener('click',()=>move(-1));
     $('dictionaryNext')?.addEventListener('click',()=>move(1));
-    $('dictionarySubmit')?.addEventListener('click',()=>{if(!answered)submit();else if(!isLast())move(1);else window.renderHome();});
+    $('dictionarySubmit')?.addEventListener('click',()=>{if(!answered)submit();else if(!isLast())move(1);else returnFromPractice();});
     for(const id of ['dictionaryQuestionImage','dictionaryExplanationImage'])$(id)?.addEventListener('click',event=>window.openImageZoom(event.currentTarget.currentSrc||event.currentTarget.src,event.currentTarget.alt));
   }
 
-  window.dictionaryPractice={renderHome,open,reloadProgress:loadProgress,filteredIndices,orderedIndices,moveSnapshotPosition,resumeIndexForSave,summaryProgress,normalizeProgress};
+  window.dictionaryPractice={renderHome,open,openList,listRows,reloadProgress:loadProgress,filteredIndices,orderedIndices,moveSnapshotPosition,resumeIndexForSave,summaryProgress,normalizeProgress};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
 })();

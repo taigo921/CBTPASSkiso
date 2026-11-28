@@ -65,4 +65,129 @@ for(const mode of ['all','wrong','fav','A','B','C','ungraded'])assert.match(html
 assert.match(html,/title="お気に入り"/);
 assert.match(source,/progress\.favorites\[item\.sourceId\]=\{on:/);
 assert.match(source,/sessionMode==='all'/);
-console.log('PASS dictionary review modes: wrong/favorite/grade filters, accuracy sort, fixed snapshots, resume isolation, and summary isolation.');
+const modes=['all','wrong','fav','A','B','C','ungraded'];
+const orders=['published','lowacc'];
+const history=[false,true,true,false,true,false];
+const row=helpers.listRows('all','published',[{sourceId:'001',mock:2,block:3}],{
+  answers:{'001':{lastCorrect:false,attempts:history.map(correct=>({correct}))}},
+  favorites:{'001':{on:true}},grades:{'001':{g:'B'}}
+})[0];
+assert.deepEqual({...row,recent:[...row.recent]},{
+  index:0,sourceId:'001',group:'ブロック3',lastCorrect:false,favorite:true,grade:'B',
+  recent:history.slice(-5),correct:3,total:6
+});
+
+function element(dataset={}){
+  const classes=new Set(),children=[],listeners={};
+  return {
+    dataset,children,textContent:'',style:{},
+    classList:{
+      add:name=>classes.add(name),remove:name=>classes.delete(name),
+      contains:name=>classes.has(name),toggle:(name,on)=>on?classes.add(name):classes.delete(name)
+    },
+    set innerHTML(value){this.markup=value;children.length=0;},
+    appendChild:child=>children.push(child),
+    replaceChildren:fragment=>children.splice(0,children.length,...fragment.children),
+    querySelector(selector){return (this.nodes??={})[selector]??=element();},
+    querySelectorAll(){return children;},
+    addEventListener:(name,handler)=>{listeners[name]=handler;},
+    click:()=>listeners.click?.(),
+    setAttribute(){},removeAttribute(){},hasAttribute(){return false;}
+  };
+}
+
+(async()=>{
+  const data=JSON.parse(fs.readFileSync(path.join(root,'dictionary-assets/exercises/manifest.json'),'utf8'));
+  const sample=data.items.slice(0,4);
+  const lastResults=[false,true,false,true];
+  const saved={index:7,answers:{},favorites:{},grades:{}};
+  sample.forEach(({sourceId},index)=>{
+    const correct=lastResults[index];
+    saved.answers[sourceId]={lastCorrect:correct,attempts:index===0?[{correct:true},{correct}]:[{correct}]};
+    saved.favorites[sourceId]={on:index!==0};
+    if(index!==3)saved.grades[sourceId]={g:'ABC'[index]};
+  });
+  const store=new Map([['togo_dictionary2_progress_v1_local',JSON.stringify(saved)]]);
+  const nodes=new Map(),get=id=>{
+    if(!nodes.has(id))nodes.set(id,element());
+    return nodes.get(id);
+  };
+  const homeModeButtons=modes.map(dictionaryMode=>element({dictionaryMode}));
+  const modeButtons=modes.map(dictionaryMode=>element({dictionaryMode}));
+  const sortButtons=orders.map(dictionarySort=>element({dictionarySort}));
+  const runtime={
+    console,
+    window:{
+      showOnly(id){
+        for(const screen of ['dictionaryList','dictionaryPractice','home'])get(screen).classList.toggle('hidden',screen!==id);
+      },
+      renderHome(){this.showOnly('home');},scrollTo(){}
+    },
+    document:{
+      readyState:'complete',getElementById:get,createElement:()=>element(),createDocumentFragment:()=>element(),
+      querySelector:()=>null,
+      querySelectorAll(selector){
+        if(selector==='[data-dictionary-mode]')return [...homeModeButtons,...modeButtons];
+        return selector==='[data-dictionary-sort]'?sortButtons:[];
+      }
+    },
+    localStorage:{getItem:key=>store.get(key),setItem:(key,value)=>store.set(key,value)},
+    fetch:async url=>({ok:true,json:async()=>url.includes('dental-materials')
+      ?JSON.parse(fs.readFileSync(path.join(root,url),'utf8')):data})
+  };
+  vm.runInNewContext(source,runtime);
+  const feature=runtime.window.dictionaryPractice;
+  runtime.window.showOnly('home');
+  await feature.renderHome();
+  await get('dictionaryOpenList').click();
+  assert.match(get('dictionaryListTitle').textContent,/CBTの辞典② 問題一覧/);
+  assert.equal(get('footer').classList.contains('hidden'),true);
+  for(const [modeIndex,mode] of modes.entries()){
+    modeButtons[modeIndex].click();
+    assert.equal(homeModeButtons[modeIndex].classList.contains('on'),true);
+    for(const [orderIndex,order] of orders.entries()){
+      sortButtons[orderIndex].click();
+      const expected=[...feature.orderedIndices(mode,order,data.items,saved)];
+      const body=get('dictionaryListBody');
+      const rows=body.children.filter(node=>node.className==='litem');
+      const headings=body.children.filter(node=>node.className==='lsec');
+      assert.deepEqual(rows.map(node=>node.querySelector('.lno').textContent),expected.map(index=>data.items[index].sourceId));
+      assert.equal(get('dictionaryListCount').textContent,`${expected.length} 問${mode==='all'?'':'（絞り込み中）'}`);
+      if(order==='lowacc'){
+        assert.equal(headings.length,1);
+        assert.equal(headings[0].textContent,'正答率が低い順');
+      }
+      assert.equal(headings.reduce((total,heading)=>total+heading.children[0].textContent,0),expected.length);
+      const start=Math.min(1,rows.length-1);
+      rows[start].click();
+      assert.equal(get('dictionaryNumber').textContent,data.items[expected[start]].sourceId);
+      assert.equal(get('dictionaryHomeBack').textContent,'問題一覧へ');
+      if(start){
+        get('dictionaryPrev').click();
+        assert.equal(get('dictionaryNumber').textContent,data.items[expected[0]].sourceId);
+        get('dictionaryNext').click();
+      }
+      for(let position=start+1;position<expected.length;position++){
+        get('dictionaryNext').click();
+        assert.equal(get('dictionaryNumber').textContent,data.items[expected[position]].sourceId);
+      }
+      assert.equal(get('dictionaryNext').disabled,true);
+      await get('dictionaryHomeBack').click();
+      assert.equal(get('dictionaryList').classList.contains('hidden'),false);
+    }
+  }
+  store.set('togo_dictionary2_progress_v1_local',JSON.stringify({}));
+  await feature.openList();
+  modeButtons[modes.indexOf('wrong')].click();
+  assert.equal(get('dictionaryListCount').textContent,'0 問（絞り込み中）');
+  assert.match(get('dictionaryListBody').markup,/該当する問題がありません。/);
+  get('dictionaryListBack').click();
+  assert.equal(get('dictionaryList').classList.contains('hidden'),true);
+  await feature.renderHome('dentalMaterials');
+  assert.equal(get('dictionaryOpenList').classList.contains('hidden'),true);
+  await feature.openList();
+  assert.equal(get('dictionaryList').classList.contains('hidden'),true);
+  await get('dictionaryStart').click();
+  assert.equal(get('dictionaryHomeBack').textContent,'歯科理工へ');
+  console.log('PASS dictionary review modes: filters, accuracy sort, list order and row sessions, return navigation, Forms isolation, and resume isolation.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
