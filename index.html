@@ -2237,7 +2237,7 @@ async function saveSchoolSettings(policy){
 // Keep this in sync with sw.js APP_BUILD. A new value gives an already-open
 // home-screen app its own one-time reload key, so sync/schema fixes do not
 // leave the previous JavaScript running indefinitely.
-const SERVICE_WORKER_BUILD='20261128-seasonal-fx';
+const SERVICE_WORKER_BUILD='20261129-no-season-correct-fx';
 // Actual data access also requires verified email and Firestore rules.
 const LEADERBOARD_ENABLED=true;
 const BLOCKED_LOGIN_NOTICE_KEY='togo_blocked_login_notice_v1';
@@ -4097,9 +4097,9 @@ function xmasSleighFlight(screenId){
   setTimeout(remove,5200);
 }
 function xmasCorrectBurst(target){
-  if(!document.documentElement.classList.contains('xmas')||xmasMotionReduced()||document.hidden)return;
+  if(!document.documentElement.classList.contains('xmas')||xmasEffectSeason()!=='xmas'||xmasMotionReduced()||document.hidden)return;
   const rect=target?.getBoundingClientRect?.(),startX=rect?rect.left+rect.width/2:innerWidth/2,startY=rect?rect.top+rect.height/2:innerHeight/2;
-  const root=document.documentElement,icons=root.classList.contains('season-winter')?['❄️','✨','❄️','⛄','✨','❄️','✨','⛄','❄️']:root.classList.contains('season-newyear')?['🎍','🌅','✨','🎊','✨','🎍','🎊','✨','🌅']:['✨','⭐','✨','✨','⭐','✨','🎁','✨','⭐'];
+  const icons=['✨','⭐','✨','✨','⭐','✨','🎁','✨','⭐'];
   for(let index=0;index<9;index++){
     const particle=document.createElement('span'),angle=-Math.PI+Math.random()*Math.PI,distance=42+Math.random()*68;
     particle.className='xmas-particle';particle.textContent=icons[index];particle.setAttribute('aria-hidden','true');

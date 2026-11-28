@@ -36,7 +36,7 @@ function queryAll(root,selector){
 function makeHarness(year,month,day,search=''){
   const root=new Node('html'),body=new Node('body'),home=new Node(),hero=new Node(),snow=new Node(),meta=new Node('meta'),authGate=new Node();
   home.setAttribute('id','home');hero.className='hero';home.appendChild(hero);snow.setAttribute('id','xmasSnow');authGate.setAttribute('id','authGate');meta.setAttribute('name','theme-color');meta.setAttribute('content','#173A78');
-  const elements={xmasSnow:snow,authGate},listeners={},intervals=[],observers=[];
+  const elements={xmasSnow:snow,authGate,dictionaryResult:new Node()},listeners={},intervals=[],observers=[];
   for(const match of source.matchAll(/<template id="(\w+)"[^>]*>\s*<div class="([^"]+)"/g)){
     const content=new Node('fragment'),child=new Node();child.className=match[2];child.setAttribute('data-template',match[1]);content.appendChild(child);
     elements[match[1]]={content};
@@ -62,6 +62,28 @@ function assertDecorations(harness,season,count,greeting){
   assert.equal(harness.hero.querySelectorAll('.xmas-garland').length,season?1:0,'one garland/curtain at most');
   assert.equal(harness.hero.querySelectorAll('.xmas-greeting').length,season?1:0,'one greeting at most');
   if(greeting)assert.match(harness.hero.querySelector('.xmas-greeting').textContent,greeting);
+}
+
+function assertCorrectEffects(harness,expectedParticles){
+  const {context,listeners}=harness;
+  const assertParticles=entryPoint=>{
+    const particles=context.document.querySelectorAll('.xmas-particle');
+    assert.equal(particles.length,expectedParticles,`${harness.season()} correct answer via ${entryPoint}`);
+    particles.forEach(particle=>particle.remove());
+  };
+  vm.runInContext('xmasAnswerFx(true)',context);
+  assertParticles('xmasAnswerFx');
+
+  const submit=new Node('button'),result=context.el('dictionaryResult');
+  submit.textContent='回答する';
+  const callbacks=[],originalSetTimeout=context.setTimeout;
+  context.setTimeout=(handler,delay)=>{if(delay===0)callbacks.push(handler);};
+  listeners.click[0]({target:{closest:selector=>selector==='#dictionarySubmit'?submit:null}});
+  result.textContent='○ 正解';
+  assert.equal(callbacks.length,1,'dictionary result is checked after submission');
+  callbacks[0]();
+  context.setTimeout=originalSetTimeout;
+  assertParticles('dictionary submit');
 }
 
 function assertEffects(harness,flightId,wrongId){
@@ -111,6 +133,7 @@ function assertEffects(harness,flightId,wrongId){
 const h=makeHarness(2026,12,25);
 assertDecorations(h,'xmas',30,/Merry Christmas/);
 assertEffects(h,'xmasSleighTemplate','xmasFxNgTemplate');
+assertCorrectEffects(h,9);
 assert.deepEqual(Object.fromEntries(['visibilitychange','click','pointerdown'].map(name=>[name,h.listeners[name]?.length||0])),{visibilitychange:1,click:1,pointerdown:1});
 assert.equal(h.intervals.length,1,'one minute date checker is registered');assert.equal(h.observers.length,1,'one auth observer is registered');
 vm.runInContext('initXmasThemeRuntime()',h.context);
@@ -118,9 +141,11 @@ assert.deepEqual(Object.fromEntries(['visibilitychange','click','pointerdown'].m
 
 h.setDate(2026,12,26);h.listeners.visibilitychange[0]();assertDecorations(h,'winter',40,/良いお年を/);assert.equal(h.meta.getAttribute('content'),'#132840');
 assertEffects(h,'winterSleighTemplate','winterFxNgTemplate');
+assertCorrectEffects(h,0);
 h.setDate(2026,12,31);h.intervals[0]();assertDecorations(h,'winter',40,/良いお年を/);
 h.setDate(2027,1,1);h.intervals[0]();assertDecorations(h,'newyear',18,/あけまして/);assert.equal(h.meta.getAttribute('content'),'#7A1420');
 assertEffects(h,'newyearKiteTemplate','newyearFxNgTemplate');
+assertCorrectEffects(h,0);
 h.setDate(2027,1,7);h.intervals[0]();assertDecorations(h,'newyear',18,/あけまして/);
 h.setDate(2027,1,8);h.intervals[0]();assertDecorations(h,'',0);assert.equal(h.meta.getAttribute('content'),'#173A78','theme color returns to its original value');
 assert.deepEqual(Object.fromEntries(['visibilitychange','click','pointerdown'].map(name=>[name,h.listeners[name]?.length||0])),{visibilitychange:1,click:1,pointerdown:1},'date transitions do not duplicate listeners');
